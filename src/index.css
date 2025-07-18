@@ -1,0 +1,344 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Performance optimizations to prevent visual glitches */
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    /* Prevent layout shifts */
+    overflow-x: hidden;
+    /* Hardware acceleration for smooth scrolling */
+    -webkit-overflow-scrolling: touch;
+    /* Theme transition support removed for performance */
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-background-primary text-text-primary antialiased;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    font-optical-sizing: auto;
+    /* Prevent visual glitches during loading */
+    opacity: 1;
+    /* Smooth font rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Prevent layout shifts */
+    overflow-x: hidden;
+    /* Optimize rendering performance - animations removed */
+  }
+
+  /* Sophisticated typography hierarchy */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display text-text-primary;
+    letter-spacing: -0.025em;
+    font-weight: 600;
+    /* Prevent text rendering glitches */
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1 { @apply text-5xl lg:text-6xl leading-tight; }
+  h2 { @apply text-4xl lg:text-5xl leading-tight; }
+  h3 { @apply text-3xl lg:text-4xl leading-snug; }
+  h4 { @apply text-2xl lg:text-3xl leading-snug; }
+  h5 { @apply text-xl lg:text-2xl leading-normal; }
+  h6 { @apply text-lg lg:text-xl leading-normal; }
+
+  /* Enhanced focus styles for accessibility */
+  *:focus {
+    @apply outline-none ring-2 ring-primary-300 ring-offset-2 ring-offset-background-primary;
+  }
+
+  /* Transitions removed for performance */
+}
+
+@layer components {
+  /* Performance optimization classes - animations removed */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .prevent-layout-shift {
+    contain: layout style paint;
+  }
+
+  /* Premium interaction patterns - animations removed */
+  .premium-hover:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .premium-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+  }
+
+  .premium-card:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Page transitions removed for performance */
+
+  /* Sophisticated Input System */
+  .input-field {
+    @apply w-full px-4 py-3.5 border border-neutral-200 rounded-lg bg-background-tertiary;
+    @apply focus:ring-2 focus:ring-primary-200 focus:border-primary-400;
+    @apply placeholder:text-text-tertiary text-text-primary;
+    @apply shadow-subtle hover:shadow-soft focus:shadow-medium;
+    @apply text-base leading-relaxed;
+  }
+
+  .input-field-luxury {
+    @apply input-field border-neutral-300 bg-gradient-to-br from-background-tertiary to-background-secondary;
+    @apply focus:border-primary-500 focus:ring-primary-300/50;
+    @apply hover:border-neutral-400;
+  }
+
+  /* Luxury Toggle */
+  .toggle-checkbox {
+    @apply appearance-none w-14 h-7 bg-neutral-300 rounded-full relative cursor-pointer;
+    @apply checked:bg-gradient-to-r checked:from-accent-500 checked:to-accent-600;
+    @apply shadow-inner hover:shadow-md;
+  }
+  .toggle-checkbox::before {
+    @apply content-[''] w-6 h-6 bg-white rounded-full absolute top-0.5 left-0.5;
+    @apply shadow-md border border-neutral-200;
+  }
+  .toggle-checkbox:checked::before {
+    @apply translate-x-7 border-accent-200;
+  }
+
+  /* Luxury Button System - Sophisticated E-commerce Standards */
+  .btn {
+    @apply inline-flex items-center justify-center px-6 py-3.5 rounded-lg font-medium;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply relative overflow-hidden text-base transition-all duration-200;
+    letter-spacing: 0.015em;
+    min-height: 44px; /* Touch-friendly minimum */
+  }
+
+  .btn-primary {
+    @apply btn bg-neutral-900 text-white;
+    @apply shadow-lg hover:shadow-xl hover:bg-neutral-800;
+    @apply focus:ring-neutral-300;
+    @apply disabled:bg-neutral-400 disabled:shadow-none disabled:cursor-not-allowed;
+    @apply hover:-translate-y-0.5 active:translate-y-0;
+  }
+
+  .btn-secondary {
+    @apply btn bg-white border-2 border-neutral-200 text-neutral-900;
+    @apply shadow-md hover:shadow-lg hover:bg-neutral-50 hover:border-neutral-300;
+    @apply focus:ring-neutral-200;
+    @apply hover:-translate-y-0.5 active:translate-y-0;
+  }
+
+  .btn-outline {
+    @apply btn bg-transparent border-2 border-neutral-900 text-neutral-900;
+    @apply hover:bg-neutral-900 hover:text-white;
+    @apply focus:ring-neutral-300;
+    @apply hover:-translate-y-0.5 active:translate-y-0;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-neutral-700;
+    @apply hover:bg-neutral-100 hover:text-neutral-900;
+    @apply focus:ring-neutral-200;
+    @apply shadow-none hover:shadow-sm;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-600 text-white;
+    @apply shadow-lg hover:shadow-xl hover:bg-red-700;
+    @apply focus:ring-red-300;
+    @apply hover:-translate-y-0.5 active:translate-y-0;
+  }
+
+  .btn-success {
+    @apply btn bg-emerald-600 text-white;
+    @apply shadow-lg hover:shadow-xl hover:bg-emerald-700;
+    @apply focus:ring-emerald-300;
+    @apply hover:-translate-y-0.5 active:translate-y-0;
+  }
+
+  /* Button Sizes */
+  .btn-sm {
+    @apply px-4 py-2 text-sm;
+    min-height: 36px;
+  }
+
+  .btn-lg {
+    @apply px-8 py-4 text-lg;
+    min-height: 52px;
+  }
+
+  .btn-xl {
+    @apply px-10 py-5 text-xl;
+    min-height: 60px;
+  }
+
+  /* Luxury Card System - E-commerce Optimized */
+  .card-base {
+    @apply bg-white border border-neutral-200 rounded-xl;
+    @apply shadow-sm hover:shadow-md transition-all duration-200;
+    @apply backdrop-blur-sm;
+  }
+
+  .card-luxury {
+    @apply card-base;
+    @apply hover:border-neutral-300 hover:-translate-y-1;
+    @apply hover:shadow-lg;
+  }
+
+  .card-premium {
+    @apply card-luxury border-neutral-300;
+    @apply bg-gradient-to-br from-white to-neutral-50;
+    @apply hover:border-neutral-400;
+  }
+
+  .card-elevated {
+    @apply card-luxury shadow-lg;
+    @apply hover:shadow-xl hover:-translate-y-2;
+  }
+
+  .card-interactive {
+    @apply card-luxury cursor-pointer;
+    @apply hover:scale-[1.02] active:scale-[0.98];
+    @apply hover:shadow-xl;
+  }
+
+  /* Product Card Specific */
+  .product-card {
+    @apply card-luxury overflow-hidden;
+    @apply hover:shadow-xl hover:-translate-y-2;
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .product-card-image {
+    @apply aspect-square overflow-hidden bg-neutral-50;
+    @apply group-hover:bg-neutral-100 transition-colors duration-200;
+  }
+
+  .product-card-image img {
+    @apply w-full h-full object-cover;
+    @apply group-hover:scale-105 transition-transform duration-300;
+  }
+
+  /* Elegant Navigation System */
+  .nav-link {
+    @apply relative px-5 py-3 text-text-secondary rounded-lg;
+    @apply hover:text-text-primary hover:bg-background-secondary;
+    @apply font-medium tracking-wide;
+  }
+
+  .nav-link-active {
+    @apply nav-link text-primary-600 bg-primary-50 font-semibold;
+    @apply shadow-inner;
+  }
+
+  /* Refined Typography Classes */
+  .text-luxury {
+    @apply text-text-primary font-medium tracking-wide;
+  }
+
+  .text-luxury-muted {
+    @apply text-text-tertiary tracking-wide;
+  }
+
+  .heading-luxury {
+    @apply font-luxury text-text-primary tracking-tight;
+  }
+
+  /* Luxury Form Elements */
+  .form-group {
+    @apply space-y-2;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-neutral-700;
+    @apply tracking-wide;
+  }
+
+  .form-input {
+    @apply w-full px-4 py-3.5 border border-neutral-200 rounded-lg;
+    @apply bg-white text-neutral-900 placeholder:text-neutral-400;
+    @apply focus:ring-2 focus:ring-neutral-200 focus:border-neutral-400;
+    @apply shadow-sm hover:shadow-md focus:shadow-lg;
+    @apply transition-all duration-200;
+    min-height: 44px;
+  }
+
+  .form-input-error {
+    @apply form-input border-red-300 focus:border-red-400 focus:ring-red-200;
+  }
+
+  .form-error {
+    @apply text-sm text-red-600 mt-1;
+  }
+
+  .form-help {
+    @apply text-sm text-neutral-500 mt-1;
+  }
+
+  /* Trust and Social Proof Elements */
+  .trust-badge {
+    @apply inline-flex items-center space-x-2 px-3 py-2;
+    @apply bg-emerald-50 text-emerald-700 rounded-lg;
+    @apply border border-emerald-200;
+    @apply text-sm font-medium;
+  }
+
+  .security-indicator {
+    @apply inline-flex items-center space-x-2 px-3 py-2;
+    @apply bg-blue-50 text-blue-700 rounded-lg;
+    @apply border border-blue-200;
+    @apply text-sm font-medium;
+  }
+
+  .social-proof {
+    @apply bg-neutral-50 border border-neutral-200 rounded-lg p-4;
+    @apply text-sm text-neutral-600;
+  }
+
+  /* Spacing and Layout Utilities */
+  .section-padding {
+    @apply py-16 lg:py-24;
+  }
+
+  .section-padding-sm {
+    @apply py-8 lg:py-12;
+  }
+
+  .container-luxury {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .grid-luxury {
+    @apply grid gap-8 lg:gap-12;
+  }
+
+  /* Animation and Interaction Utilities */
+  .luxury-transition {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .luxury-hover-lift {
+    @apply hover:-translate-y-1 hover:shadow-lg;
+  }
+
+  .luxury-hover-scale {
+    @apply hover:scale-105 active:scale-95;
+  }
+}

@@ -1,0 +1,166 @@
+import React from 'react';
+import { X, Minus, Plus, ShoppingBag } from 'lucide-react';
+import { useCart } from '../../contexts/CartContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
+
+interface CartSidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => {
+  const { items, updateQuantity, removeItem, total, clearCart, loading, itemCount } = useCart();
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-50 z-50"
+            onClick={onClose}
+          />
+          
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-xl z-50 overflow-hidden"
+          >
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-neutral-200">
+                <h2 className="text-xl font-semibold text-neutral-900">Shopping Cart ({itemCount})</h2>
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-neutral-100 rounded-lg transition-colors duration-200"
+                  aria-label="Close cart"
+                >
+                  <X className="h-5 w-5 text-neutral-600" />
+                </button>
+              </div>
+
+              {/* Cart Items */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {loading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-900"></div>
+                  </div>
+                ) : items.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-64 text-neutral-500">
+                    <ShoppingBag className="h-16 w-16 mb-4 text-neutral-300" />
+                    <p className="text-lg font-medium mb-2 text-neutral-700">Your cart is empty</p>
+                    <p className="text-sm text-neutral-500">Add some products to get started!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <AnimatePresence>
+                      {items.map((item) => (
+                        <motion.div
+                          key={item.product.id}
+                          layout
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg"
+                        >
+                          <img
+                            src={item.product.images[0]}
+                            alt={item.product.name}
+                            className="w-16 h-16 object-cover rounded-lg"
+                          />
+                          
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-gray-900 truncate">
+                              {item.product.name}
+                            </h3>
+                            <p className="text-sm text-gray-500">${item.product.price}</p>
+                            
+                            <div className="flex items-center space-x-2 mt-2">
+                              <button
+                                onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                className="p-1 hover:bg-gray-100 rounded"
+                                aria-label={`Decrease quantity of ${item.product.name}`}
+                                disabled={item.quantity <= 1}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </button>
+                              <span className="px-2 py-1 bg-gray-100 rounded text-sm min-w-[40px] text-center">
+                                {item.quantity}
+                              </span>
+                              <button
+                                onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                className="p-1 hover:bg-gray-100 rounded"
+                                aria-label={`Increase quantity of ${item.product.name}`}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <div className="text-right">
+                            <p className="font-semibold text-gray-900">
+                              ${(item.product.price * item.quantity).toFixed(2)}
+                            </p>
+                            <button
+                              onClick={() => removeItem(item.product.id)}
+                              className="text-red-500 text-sm hover:text-red-700 mt-1"
+                              aria-label={`Remove ${item.product.name} from cart`}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                    
+                    {items.length > 0 && (
+                      <button
+                        onClick={clearCart}
+                        className="w-full text-red-500 text-sm hover:text-red-700 py-2 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                      >
+                        Clear Cart
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              {items.length > 0 && (
+                <div className="border-t border-neutral-200 p-6 bg-neutral-50">
+                  <div className="flex items-center justify-between mb-6">
+                    <span className="text-lg font-semibold text-neutral-700">Total:</span>
+                    <span className="text-2xl font-bold text-neutral-900">${total.toFixed(2)}</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Link to="/checkout" onClick={onClose}>
+                      <motion.button
+                        className="w-full bg-neutral-900 text-white py-3.5 px-6 rounded-lg font-medium hover:bg-neutral-800 transition-colors duration-200 shadow-lg hover:shadow-xl"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        Proceed to Checkout
+                      </motion.button>
+                    </Link>
+                    <button
+                      onClick={onClose}
+                      className="w-full bg-white border-2 border-neutral-200 text-neutral-900 py-3.5 px-6 rounded-lg font-medium hover:bg-neutral-50 hover:border-neutral-300 transition-colors duration-200"
+                    >
+                      Continue Shopping
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+};

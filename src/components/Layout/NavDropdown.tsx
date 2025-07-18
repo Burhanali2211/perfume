@@ -1,0 +1,39 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
+
+interface DropdownItem {
+  name: string;
+  href: string;
+  description?: string;
+}
+
+interface NavDropdownProps {
+  items: DropdownItem[];
+}
+
+export const NavDropdown: React.FC<NavDropdownProps> = ({ items }) => {
+  return (
+    <div className="absolute top-full left-0 mt-3 w-64 bg-white border border-gray-200 rounded-lg shadow-lg">
+      <div className="p-2">
+        {items.map((item) => (
+          <Link
+            key={item.name}
+            to={item.href}
+            className="group block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold">{item.name}</p>
+                {item.description && (
+                  <p className="text-sm text-gray-500">{item.description}</p>
+                )}
+              </div>
+              <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+};
