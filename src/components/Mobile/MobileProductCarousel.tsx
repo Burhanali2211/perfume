@@ -221,29 +221,40 @@ export const MobileCompactCarousel: React.FC<{
   );
 };
 
-// Grid layout for mobile product listings
+// Enhanced Grid layout for mobile product listings with luxury design
 interface MobileProductGridProps {
   products: Product[];
   columns?: 1 | 2;
-  variant?: 'default' | 'compact';
+  variant?: 'default' | 'compact' | 'luxury';
 }
 
 export const MobileProductGrid: React.FC<MobileProductGridProps> = ({
   products,
   columns = 2,
-  variant = 'default',
+  variant = 'luxury',
 }) => {
   const gridCols = columns === 1 ? 'grid-cols-1' : 'grid-cols-2';
-  const gap = variant === 'compact' ? 'gap-3' : 'gap-4';
+  const gap = variant === 'compact' ? 'gap-3' : variant === 'luxury' ? 'gap-4 sm:gap-6' : 'gap-4';
+  const padding = variant === 'luxury' ? 'px-4 sm:px-6' : 'p-4';
 
   return (
-    <div className={`grid ${gridCols} ${gap} p-4`}>
-      {products.map((product) => (
-        <MobileProductCard
+    <div className={`grid ${gridCols} ${gap} ${padding} py-6`}>
+      {products.map((product, index) => (
+        <motion.div
           key={product.id}
-          product={product}
-          variant={variant}
-        />
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            delay: index * 0.1,
+            duration: 0.4,
+            ease: "easeOut"
+          }}
+        >
+          <MobileProductCard
+            product={product}
+            variant={variant}
+          />
+        </motion.div>
       ))}
     </div>
   );

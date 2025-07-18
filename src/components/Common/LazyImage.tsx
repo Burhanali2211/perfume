@@ -51,6 +51,9 @@ export const LazyImage: React.FC<LazyImageProps> = ({
     setHasError(true);
   };
 
+  // Safe fallback image
+  const fallbackImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2Y5ZmFmYiIvPgogIDx0ZXh0IHg9IjIwMCIgeT0iMjAwIiBmb250LXNpemU9IjE2IiBmaWxsPSIjNjM3MzgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+SW1hZ2UgTm90IEZvdW5kPC90ZXh0Pgo8L3N2Zz4=';
+
   return (
     <div className={`relative overflow-hidden ${className}`} ref={imgRef}>
       {!isLoaded && !hasError && (
@@ -59,7 +62,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
 
       {isInView && (
         <img
-          src={hasError ? placeholder : src}
+          src={hasError ? fallbackImage : src}
           alt={alt}
           width={width}
           height={height}
@@ -69,6 +72,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
           onLoad={handleLoad}
           onError={handleError}
           loading="lazy"
+          crossOrigin="anonymous"
         />
       )}
     </div>

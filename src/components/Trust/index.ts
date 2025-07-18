@@ -22,3 +22,10 @@ export {
   HomepageTrustSection,
   MiniTrustIndicators
 } from './TrustSignals';
+
+// Product Page Trust Signals
+export {
+  ProductPageTrustSignals,
+  RecentPurchaseNotification,
+  UrgencyIndicator
+} from './ProductPageTrustSignals';

@@ -12,6 +12,7 @@ import { useError } from '../contexts/ErrorContext';
 import { EnhancedLoadingSpinner, ProgressiveLoading } from '../components/Common/EnhancedLoadingSpinner';
 import { ProductGridError, NetworkStatus } from '../components/Common/ErrorFallback';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { ProductPageTrustSignals, RecentPurchaseNotification } from '../components/Trust';
 
 // Legacy FiltersSidebar component removed - now using enhanced ProductFilters component
 
@@ -177,50 +178,75 @@ export const ProductsPage: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-neutral-900">Products</h1>
-              <p className="text-neutral-600 mt-2">
-                {loading ? 'Loading...' : `${filteredProducts.length} products found`}
+    <div className="min-h-screen bg-background-primary">
+      {/* Luxury Header Section */}
+      <div className="bg-white shadow-subtle border-b border-neutral-200">
+        <div className="container-luxury py-8 lg:py-12">
+          {/* Enhanced Header with Luxury Typography */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+            <div className="space-y-3">
+              <h1 className="heading-luxury text-4xl lg:text-5xl font-light tracking-tight text-text-primary">
+                Products
+              </h1>
+              <p className="text-luxury-muted text-lg">
+                {loading ? 'Curating our collection...' : `${filteredProducts.length} exceptional products`}
               </p>
             </div>
-            <div className="flex items-center space-x-4">
-              <select
-                value={filters.sortBy}
-                onChange={(e) => handleFiltersChange({ ...filters, sortBy: e.target.value })}
-                className="px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              >
-                <option value="featured">Featured</option>
-                <option value="newest">Newest</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-                <option value="rating">Highest Rated</option>
-                <option value="name">Name A-Z</option>
-              </select>
-              <div className="hidden sm:flex border border-neutral-300 rounded-lg overflow-hidden">
+
+            {/* Luxury Controls */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              {/* Sort Dropdown */}
+              <div className="relative">
+                <select
+                  value={filters.sortBy}
+                  onChange={(e) => handleFiltersChange({ ...filters, sortBy: e.target.value })}
+                  className="form-input-luxury min-w-[200px] appearance-none bg-white border border-neutral-300 rounded-luxury px-4 py-3 pr-10 text-sm font-medium text-text-primary focus:ring-2 focus:ring-neutral-200 focus:border-neutral-400 transition-all duration-200"
+                >
+                  <option value="featured">Featured Selection</option>
+                  <option value="newest">Latest Arrivals</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                  <option value="rating">Highest Rated</option>
+                  <option value="name">Alphabetical</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <svg className="h-4 w-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* View Mode Toggle */}
+              <div className="hidden sm:flex bg-neutral-100 rounded-luxury p-1 border border-neutral-200">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 transition-colors ${viewMode === 'grid' ? 'bg-primary-600 text-white' : 'bg-white text-neutral-600 hover:bg-neutral-50'}`}
+                  className={`flex items-center justify-center w-10 h-10 rounded-md transition-all duration-200 ${
+                    viewMode === 'grid'
+                      ? 'bg-white text-neutral-900 shadow-sm'
+                      : 'text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50'
+                  }`}
                 >
-                  <Grid className="h-5 w-5" />
+                  <Grid className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 transition-colors ${viewMode === 'list' ? 'bg-primary-600 text-white' : 'bg-white text-neutral-600 hover:bg-neutral-50'}`}
+                  className={`flex items-center justify-center w-10 h-10 rounded-md transition-all duration-200 ${
+                    viewMode === 'list'
+                      ? 'bg-white text-neutral-900 shadow-sm'
+                      : 'text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50'
+                  }`}
                 >
-                  <List className="h-5 w-5" />
+                  <List className="h-4 w-4" />
                 </button>
               </div>
+
+              {/* Mobile Filter Button */}
               <button
                 onClick={() => setIsFilterOpen(true)}
-                className="lg:hidden flex items-center space-x-2 px-4 py-2 border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors"
+                className="lg:hidden btn-secondary flex items-center space-x-2 px-6 py-3 bg-white border border-neutral-300 rounded-luxury hover:bg-neutral-50 transition-all duration-200"
               >
-                <SlidersHorizontal className="h-5 w-5" />
-                <span>Filters</span>
+                <SlidersHorizontal className="h-4 w-4" />
+                <span className="font-medium">Filters</span>
               </button>
             </div>
           </div>
@@ -264,12 +290,19 @@ export const ProductsPage: React.FC = () => {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex gap-8">
+      {/* Luxury Main Content Layout */}
+      <div className="container-luxury py-8 lg:py-12">
+        <div className="flex gap-6 lg:gap-8 xl:gap-12">
           {/* Mobile Filter Sidebar */}
           <AnimatePresence>
             {isFilterOpen && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 z-50 lg:hidden" onClick={() => setIsFilterOpen(false)} />
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 lg:hidden"
+                onClick={() => setIsFilterOpen(false)}
+              />
             )}
           </AnimatePresence>
           <AnimatePresence>
@@ -279,7 +312,7 @@ export const ProductsPage: React.FC = () => {
                 animate={{ x: 0 }}
                 exit={{ x: '-100%' }}
                 transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                className="fixed top-0 left-0 w-80 h-full bg-white shadow-xl z-50 lg:hidden overflow-y-auto"
+                className="fixed top-0 left-0 w-80 h-full bg-white shadow-luxury z-50 lg:hidden overflow-y-auto"
               >
                 <ProductFilters
                   filters={filters}
@@ -297,8 +330,8 @@ export const ProductsPage: React.FC = () => {
             )}
           </AnimatePresence>
 
-          {/* Desktop Filter Sidebar */}
-          <aside className="hidden lg:block w-80 flex-shrink-0">
+          {/* Desktop Filter Sidebar - Responsive Width */}
+          <aside className="hidden lg:block w-72 xl:w-80 flex-shrink-0">
             <div className="sticky top-28">
               <ProductFilters
                 filters={filters}
@@ -314,14 +347,15 @@ export const ProductsPage: React.FC = () => {
             </div>
           </aside>
 
-          <div className="flex-1">
+          {/* Luxury Product Grid - Optimized for All Screen Sizes */}
+          <div className="flex-1 min-w-0">
             {error && !products.length ? (
               <ProductGridError error={error} onRetry={handleRetry} />
             ) : basicLoading ? (
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <EnhancedLoadingSpinner
-                  text="Loading products..."
-                  subText="Fetching the latest products from our catalog"
+                  text="Curating products..."
+                  subText="Discovering exceptional pieces for you"
                   stage={!isOnline ? 'offline' : 'loading'}
                   showProgress={true}
                   progress={products.length > 0 ? 50 : 25}
@@ -332,43 +366,106 @@ export const ProductsPage: React.FC = () => {
               <>
                 {detailsLoading && (
                   <ProgressiveLoading
-                    className="mb-4"
+                    className="mb-6"
                     stages={[
-                      { name: 'Basic product info', completed: true, loading: false },
+                      { name: 'Product catalog', completed: true, loading: false },
                       { name: 'Product details', completed: false, loading: true, description: 'Loading descriptions, reviews, and specifications' },
                       { name: 'Category information', completed: false, loading: false }
                     ]}
                   />
                 )}
 
-                {isMobile ? (
+                {/* Luxury Responsive Product Grid */}
+                <div className="block sm:hidden">
+                  {/* Mobile-Optimized Grid */}
                   <MobileProductGrid
                     products={filteredProducts}
                     columns={viewMode === 'list' ? 1 : 2}
-                    variant="default"
+                    variant="luxury"
                   />
-                ) : (
-                  <div className={`grid gap-6 ${ viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1' }`}>
-                    {filteredProducts.map((product) => (
-                      <div key={product.id}>
+                </div>
+
+                <div className="hidden sm:block">
+                  {/* Desktop/Tablet Grid */}
+                  <div className={`
+                    ${viewMode === 'grid'
+                      ? `grid gap-6 lg:gap-8 xl:gap-10
+                         grid-cols-2
+                         md:grid-cols-2
+                         lg:grid-cols-2
+                         xl:grid-cols-3
+                         2xl:grid-cols-4
+                         auto-rows-fr`
+                      : 'space-y-8'
+                    }
+                  `}>
+                    {filteredProducts.map((product, index) => (
+                      <motion.div
+                        key={product.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{
+                          delay: index * 0.05,
+                          duration: 0.4,
+                          ease: "easeOut"
+                        }}
+                        className={viewMode === 'list' ? 'w-full' : ''}
+                      >
                         <ProductCard product={product} />
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
-                )}
+                </div>
 
+                {/* Luxury Empty State */}
                 {filteredProducts.length === 0 && !loading && (
-                  <div className="text-center py-12">
-                    <div className="text-gray-400 text-6xl mb-4">🔍</div>
-                    <h3 className="text-xl font-medium text-gray-900 mb-2">No products found</h3>
-                    <p className="text-gray-600">Try adjusting your filters or search terms.</p>
-                  </div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center py-16 lg:py-24"
+                  >
+                    <div className="text-neutral-300 text-8xl mb-6">🔍</div>
+                    <h3 className="heading-luxury text-2xl lg:text-3xl font-light text-text-primary mb-4">
+                      No products found
+                    </h3>
+                    <p className="text-luxury-muted text-lg max-w-md mx-auto leading-relaxed">
+                      We couldn't find any products matching your criteria. Try adjusting your filters or search terms.
+                    </p>
+                    <button
+                      onClick={() => handleFiltersChange({
+                        category: 'all',
+                        priceRange: [0, 1000],
+                        rating: 0,
+                        inStock: false,
+                        brands: [],
+                        tags: [],
+                        features: [],
+                        sortBy: 'featured',
+                        search: ''
+                      })}
+                      className="btn-primary mt-8"
+                    >
+                      Clear All Filters
+                    </button>
+                  </motion.div>
                 )}
               </>
             )}
           </div>
         </div>
+
+        {/* Trust Signals Section */}
+        <div className="mt-16 lg:mt-20">
+          <ProductPageTrustSignals />
+        </div>
       </div>
+
+      {/* Social Proof Notifications */}
+      <RecentPurchaseNotification
+        productName="Premium Wireless Headphones"
+        customerLocation="New York"
+        timeAgo="2 minutes ago"
+      />
     </div>
   );
 };

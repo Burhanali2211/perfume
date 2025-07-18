@@ -35,20 +35,39 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
-    
+    // Filter out common browser extension and cross-origin errors
+    const ignoredErrors = [
+      'XrayWrapper',
+      'cross-origin',
+      'webkit-text-size-adjust',
+      'content-script',
+      '__cf_bm',
+      'Invalid URI',
+      'Load of media resource'
+    ];
+
+    const shouldIgnore = ignoredErrors.some(ignored =>
+      error.message?.includes(ignored) || error.stack?.includes(ignored)
+    );
+
+    if (!shouldIgnore) {
+      console.error('Error caught by boundary:', error, errorInfo);
+    }
+
     this.setState({
       error,
       errorInfo
     });
 
     // Call the onError callback if provided
-    if (this.props.onError) {
+    if (this.props.onError && !shouldIgnore) {
       this.props.onError(error, errorInfo);
     }
 
     // In a real app, you might want to log this to an error reporting service
-    // logErrorToService(error, errorInfo);
+    if (!shouldIgnore && import.meta.env.PROD) {
+      // logErrorToService(error, errorInfo);
+    }
   }
 
   handleRetry = () => {

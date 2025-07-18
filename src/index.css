@@ -12,11 +12,8 @@
 
   html {
     scroll-behavior: smooth;
-    /* Prevent layout shifts */
     overflow-x: hidden;
-    /* Hardware acceleration for smooth scrolling */
     -webkit-overflow-scrolling: touch;
-    /* Theme transition support removed for performance */
   }
 
   html {
@@ -28,14 +25,10 @@
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     font-optical-sizing: auto;
-    /* Prevent visual glitches during loading */
     opacity: 1;
-    /* Smooth font rendering */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Prevent layout shifts */
     overflow-x: hidden;
-    /* Optimize rendering performance - animations removed */
   }
 
   /* Sophisticated typography hierarchy */
@@ -43,7 +36,6 @@
     @apply font-display text-text-primary;
     letter-spacing: -0.025em;
     font-weight: 600;
-    /* Prevent text rendering glitches */
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
   }
@@ -219,21 +211,78 @@
     @apply hover:shadow-xl;
   }
 
-  /* Product Card Specific */
+  /* Enhanced Product Card System */
   .product-card {
-    @apply card-luxury overflow-hidden;
-    @apply hover:shadow-xl hover:-translate-y-2;
-    @apply transition-all duration-300 ease-out;
+    @apply bg-white rounded-luxury-lg overflow-hidden;
+    @apply shadow-subtle hover:shadow-luxury;
+    @apply transition-all duration-500 ease-out;
+    @apply hover:-translate-y-2 hover:scale-[1.02];
+    @apply border border-neutral-100 hover:border-neutral-200;
   }
 
   .product-card-image {
     @apply aspect-square overflow-hidden bg-neutral-50;
-    @apply group-hover:bg-neutral-100 transition-colors duration-200;
+    @apply relative;
   }
 
   .product-card-image img {
     @apply w-full h-full object-cover;
-    @apply group-hover:scale-105 transition-transform duration-300;
+    @apply transition-all duration-700 ease-out;
+  }
+
+  /* Enhanced Shadow System */
+  .shadow-luxury {
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .shadow-subtle {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Performance Optimizations */
+  .will-change-transform {
+    will-change: transform;
+  }
+
+  .will-change-opacity {
+    will-change: opacity;
+  }
+
+  /* Responsive Container System */
+  .container-luxury {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12;
+  }
+
+  .container-luxury-wide {
+    @apply max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-16;
+  }
+
+  /* Grid System Enhancements */
+  .grid-luxury-products {
+    @apply grid gap-6 lg:gap-8 xl:gap-10;
+    @apply grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4;
+    @apply auto-rows-fr;
+  }
+
+  /* Mobile-First Responsive Utilities */
+  @media (max-width: 640px) {
+    .container-luxury {
+      @apply px-4;
+    }
+
+    .grid-luxury-products {
+      @apply grid-cols-1 gap-4;
+    }
+  }
+
+  @media (min-width: 1920px) {
+    .container-luxury {
+      @apply max-w-screen-2xl px-16;
+    }
+
+    .grid-luxury-products {
+      @apply grid-cols-5 gap-12;
+    }
   }
 
   /* Elegant Navigation System */
@@ -248,17 +297,47 @@
     @apply shadow-inner;
   }
 
-  /* Refined Typography Classes */
+  /* Enhanced Typography System - Luxury E-commerce */
   .text-luxury {
-    @apply text-text-primary font-medium tracking-wide;
+    @apply text-neutral-900 font-medium tracking-wide;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   .text-luxury-muted {
-    @apply text-text-tertiary tracking-wide;
+    @apply text-neutral-600 tracking-wide;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   .heading-luxury {
-    @apply font-luxury text-text-primary tracking-tight;
+    @apply text-neutral-900 tracking-tight;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 300;
+    letter-spacing: -0.025em;
+  }
+
+  .heading-luxury-display {
+    @apply text-neutral-900 tracking-tight;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+
+  /* Product Typography */
+  .product-title {
+    @apply text-neutral-900 font-medium tracking-tight leading-tight;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .product-price {
+    @apply text-neutral-900 font-semibold tracking-tight;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .product-category {
+    @apply text-neutral-500 font-medium tracking-widest uppercase;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
   }
 
   /* Luxury Form Elements */

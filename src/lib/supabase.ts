@@ -21,25 +21,27 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Supabase URL and Anon Key must be provided in .env file');
 }
 
-// Configure Supabase client with performance optimizations
+// Configure Supabase client with performance optimizations and security settings
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
-  },
-  global: {
-    headers: {
-      'x-client-info': 'aura-ecommerce@2.0.0'
-    }
-  },
-  db: {
-    schema: 'public'
+    detectSessionInUrl: true,
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    storageKey: 'supabase.auth.token'
   },
   realtime: {
     params: {
       eventsPerSecond: 10
     }
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'luxury-ecommerce@1.0.0'
+    }
+  },
+  db: {
+    schema: 'public'
   }
 });
 
