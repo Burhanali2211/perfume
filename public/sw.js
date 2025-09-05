@@ -1,12 +1,13 @@
-const CACHE_NAME = 'ecommerce-v2';
-const RUNTIME_CACHE = 'runtime-cache-v2';
-const IMAGE_CACHE = 'image-cache-v2';
-const API_CACHE = 'api-cache-v2';
+const CACHE_NAME = 'ecommerce-v3';
+const RUNTIME_CACHE = 'runtime-cache-v3';
+const IMAGE_CACHE = 'image-cache-v3';
+const API_CACHE = 'api-cache-v3';
+const FONT_CACHE = 'font-cache-v3';
 
 // Check if we're in development mode
 const isDevelopment = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 
-// Assets to cache on install - reduced for faster installation
+// Assets to cache on install - optimized for faster installation
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -38,6 +39,11 @@ const STALE_WHILE_REVALIDATE_PATTERNS = [
 // Image patterns
 const IMAGE_PATTERNS = [
   /\.(png|jpg|jpeg|svg|gif|webp|avif)$/i
+];
+
+// Font patterns
+const FONT_PATTERNS = [
+  /\.(woff2|woff|ttf|eot)$/i
 ];
 
 // Install event - cache static assets
@@ -86,7 +92,8 @@ self.addEventListener('activate', (event) => {
               return cacheName !== CACHE_NAME && 
                      cacheName !== RUNTIME_CACHE && 
                      cacheName !== IMAGE_CACHE &&
-                     cacheName !== API_CACHE;
+                     cacheName !== API_CACHE &&
+                     cacheName !== FONT_CACHE;
             })
             .map((cacheName) => {
               console.log('[SW] Deleting old cache:', cacheName);
@@ -174,6 +181,11 @@ async function handleRequest(request) {
   }
   
   try {
+    // Font caching strategy - cache-first with long TTL
+    if (isFontRequest(pathname)) {
+      return await handleFontRequest(request);
+    }
+    
     // Image caching strategy
     if (isImageRequest(pathname)) {
       return await handleImageRequest(request);
@@ -232,6 +244,32 @@ async function handleRequest(request) {
     
     // For other requests, try to return a basic response
     return new Response('Service Unavailable', { status: 503 });
+  }
+}
+
+// Font caching with long TTL
+async function handleFontRequest(request) {
+  const cache = await caches.open(FONT_CACHE);
+  const cachedResponse = await cache.match(request);
+  
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+  
+  try {
+    const networkResponse = await fetch(request);
+    
+    if (networkResponse.ok) {
+      // Cache fonts for 1 year
+      const responseToCache = networkResponse.clone();
+      responseToCache.headers.append('Cache-Control', 'public, max-age=31536000, immutable');
+      cache.put(request, responseToCache);
+    }
+    
+    return networkResponse;
+  } catch (error) {
+    console.error('[SW] Font fetch failed:', error);
+    throw error;
   }
 }
 
@@ -428,6 +466,10 @@ async function handleCacheFirst(request) {
 }
 
 // Utility functions
+function isFontRequest(pathname) {
+  return FONT_PATTERNS.some(pattern => pattern.test(pathname));
+}
+
 function isImageRequest(pathname) {
   return IMAGE_PATTERNS.some(pattern => pattern.test(pathname));
 }
@@ -517,7 +559,7 @@ async function clearAllCaches() {
 }
 
 async function getCacheStats() {
-  const cacheNames = [CACHE_NAME, RUNTIME_CACHE, IMAGE_CACHE, API_CACHE];
+  const cacheNames = [CACHE_NAME, RUNTIME_CACHE, IMAGE_CACHE, API_CACHE, FONT_CACHE];
   const stats = {};
   
   for (const cacheName of cacheNames) {

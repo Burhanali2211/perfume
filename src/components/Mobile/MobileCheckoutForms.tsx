@@ -121,10 +121,11 @@ export const MobileShippingForm: React.FC<MobileShippingFormProps> = ({
             error={errors.zipCode}
           />
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-neutral-900">
+            <label htmlFor="mobile-country-select" className="block text-sm font-medium text-neutral-900">
               Country <span className="text-red-500">*</span>
             </label>
             <select
+              id="mobile-country-select"
               name="country"
               value={formData.country}
               onChange={onChange}
@@ -227,7 +228,7 @@ export const MobilePaymentForm: React.FC<MobilePaymentFormProps> = ({
           />
           
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-neutral-900">
+            <label htmlFor="mobile-cvv-input" className="block text-sm font-medium text-neutral-900">
               CVV <span className="text-red-500">*</span>
             </label>
             <div className="relative">
@@ -235,6 +236,7 @@ export const MobilePaymentForm: React.FC<MobilePaymentFormProps> = ({
                 <Lock className="h-5 w-5 text-neutral-400" />
               </div>
               <input
+                id="mobile-cvv-input"
                 type={showCVV ? 'text' : 'password'}
                 name="cvv"
                 value={formData.cvv}
@@ -252,16 +254,17 @@ export const MobilePaymentForm: React.FC<MobilePaymentFormProps> = ({
                 type="button"
                 onClick={() => setShowCVV(!showCVV)}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                aria-label={showCVV ? "Hide CVV" : "Show CVV"}
               >
                 {showCVV ? (
-                  <EyeOff className="h-5 w-5 text-neutral-400" />
+                  <EyeOff className="h-5 w-5 text-neutral-500" />
                 ) : (
-                  <Eye className="h-5 w-5 text-neutral-400" />
+                  <Eye className="h-5 w-5 text-neutral-500" />
                 )}
               </button>
             </div>
             {errors.cvv && (
-              <p className="text-sm text-red-600">{errors.cvv}</p>
+              <p className="text-sm text-red-600" role="alert">{errors.cvv}</p>
             )}
           </div>
         </div>

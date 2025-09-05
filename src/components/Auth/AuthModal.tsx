@@ -179,12 +179,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {!isLogin && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="auth-fullname" className="block text-sm font-medium text-gray-700 mb-2">
                         Full Name
                       </label>
                       <div className="relative">
                         <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                         <input
+                          id="auth-fullname"
                           type="text"
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -193,17 +194,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                           required={!isLogin}
                         />
                       </div>
-                      {errors.name && <p className="text-red-600 text-sm mt-1">{errors.name}</p>}
+                      {errors.name && <p className="text-red-600 text-sm mt-1" role="alert">{errors.name}</p>}
                     </div>
                   )}
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="auth-email" className="block text-sm font-medium text-gray-700 mb-2">
                       Email Address
                     </label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                       <input
+                        id="auth-email"
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -212,16 +214,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                         required
                       />
                     </div>
-                    {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
+                    {errors.email && <p className="text-red-600 text-sm mt-1" role="alert">{errors.email}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="auth-password" className="block text-sm font-medium text-gray-700 mb-2">
                       Password
                     </label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                       <input
+                        id="auth-password"
                         type={showPassword ? 'text' : 'password'}
                         value={formData.password}
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -238,15 +241,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                         {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
                     </div>
-                    {errors.password && <p className="text-red-600 text-sm mt-1">{errors.password}</p>}
+                    {errors.password && <p className="text-red-600 text-sm mt-1" role="alert">{errors.password}</p>}
                   </div>
 
                   {!isLogin && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label htmlFor="auth-role" className="block text-sm font-medium text-gray-700 mb-2">
                         Account Type
                       </label>
                       <select
+                        id="auth-role"
                         value={formData.role}
                         onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'seller' | 'customer' })}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -259,7 +263,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   )}
 
                   {errors.general && (
-                    <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg">
+                    <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg" role="alert">
                       {errors.general}
                     </div>
                   )}

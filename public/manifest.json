@@ -1,0 +1,30 @@
+{
+  "short_name": "Attars",
+  "name": "Attars E-Commerce Platform",
+  "description": "Premium attars and fragrances online store",
+  "icons": [
+    {
+      "src": "src/assets/images/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "src/assets/images/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "src/assets/images/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#667eea",
+  "background_color": "#ffffff",
+  "lang": "en",
+  "orientation": "portrait-primary",
+  "categories": ["shopping", "ecommerce", "luxury"]
+}

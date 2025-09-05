@@ -4,10 +4,36 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/src/assets/images/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#667eea" />
+    <meta name="description" content="Premium attars and fragrances online store" />
+    
+    <!-- Monitoring and Performance -->
+    <meta name="application-name" content="S.Essences" />
+    <meta name="generator" content="Vite + React" />
+    
+    <!-- Preconnect to critical third-party origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/src/assets/images/logo.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Attars" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    
+    <!-- Security Headers (to be set by server) -->
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    
     <title>E-Commerce Platform</title>
   </head>
   <body>
+    <!-- Skip link for accessibility -->
+    <a href="#main-content" class="skip-link sr-only focus:not-sr-only">Skip to main content</a>
+    
     <div id="root"></div>
+    
+    <!-- Monitoring scripts (to be added by build process) -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

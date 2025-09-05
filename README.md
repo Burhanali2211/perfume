@@ -125,6 +125,21 @@ The database schema has been organized into modular SQL scripts in the [supabase
 15. **[15-remove-mock-data.sql](supabase-scripts/15-remove-mock-data.sql)** - Script to clean up mock data
 16. **[17-user-management-functions.sql](supabase-scripts/17-user-management-functions.sql)** - Enhanced user management functions
 
+### Security Hardening
+
+For production deployment, run the **[SECURITY-FIXES.sql](supabase-scripts/SECURITY-FIXES.sql)** script to:
+
+1. Disable development mode and direct login
+2. Fix RLS recursion issues that can cause infinite loops
+3. Apply hardened security policies without recursion
+4. Verify the security configuration
+
+```
+-- Run this in your Supabase SQL Editor
+-- This script should be run AFTER all other setup scripts
+\ir supabase-scripts/SECURITY-FIXES.sql
+```
+
 ### Database Tables
 
 #### Core Tables
@@ -239,3 +254,36 @@ The platform now includes a comprehensive user management system with the follow
 - **Lazy Loading**: Images and components loaded on demand
 - **Caching**: API responses cached for improved performance
 - **Code Splitting**: Dynamic imports for route-based code splitting
+
+## 📊 Monitoring and Observability
+
+The application includes comprehensive monitoring and observability features to ensure optimal performance and quick issue resolution:
+
+### Error Tracking
+- **Sentry**: Full-stack error tracking with detailed stack traces
+- **LogRocket**: Session replay and user behavior tracking
+- **Custom Error Boundaries**: Graceful error handling throughout the application
+
+### Performance Monitoring
+- **Web Vitals**: Automatic tracking of LCP, FID, and CLS metrics
+- **Custom Metrics**: Application-specific performance tracking
+- **Bundle Analysis**: Monitoring of JavaScript bundle sizes
+
+### Health Checks
+- **System Health Dashboard**: Real-time monitoring of application components
+- **External Health Endpoint**: API endpoint for uptime monitoring services
+- **Database Connection Monitoring**: Continuous database health checks
+
+### Setup
+To enable monitoring, add the following environment variables to your `.env` file:
+```bash
+VITE_SENTRY_DSN=your_sentry_dsn_here
+VITE_LOGROCKET_APP_ID=your_logrocket_app_id_here
+```
+
+### On-Call Support
+- **Runbook**: Comprehensive [RUNBOOK.md](RUNBOOK.md) with troubleshooting procedures
+- **Alerting**: Configurable alert thresholds for critical metrics
+- **Contact Information**: Clear escalation paths for different issue types
+
+## Deployment

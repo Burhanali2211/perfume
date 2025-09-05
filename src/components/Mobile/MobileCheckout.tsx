@@ -115,9 +115,15 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
   error,
   icon: Icon
 }) => {
+  // Generate a unique ID for the input if name is provided
+  const inputId = name ? `mobile-input-${name}` : undefined;
+
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-neutral-900">
+      <label 
+        htmlFor={inputId}
+        className="block text-sm font-medium text-neutral-900"
+      >
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       <div className="relative">
@@ -127,6 +133,7 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
           </div>
         )}
         <input
+          id={inputId}
           type={type}
           name={name}
           value={value}
@@ -144,7 +151,7 @@ export const MobileFormInput: React.FC<MobileFormInputProps> = ({
         />
       </div>
       {error && (
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-red-600" role="alert">{error}</p>
       )}
     </div>
   );

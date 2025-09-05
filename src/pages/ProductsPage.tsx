@@ -1,13 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
+import { useSearchParams, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Grid, List, SlidersHorizontal, X, AlertCircle, RefreshCw, Search } from 'lucide-react';
+import { Grid, List, X, AlertCircle, RefreshCw } from 'lucide-react';
 import { ProductCard } from '../components/Product/ProductCard';
 import { ProductListCard } from '../components/Product/ProductListCard';
 import { AttrFilters, AttrFilterState } from '../components/Product/AttrFilters';
-import { EnhancedSearch } from '../components/Product/EnhancedSearch';
 import { MobileProductGrid } from '../components/Mobile/MobileProductCarousel';
-import { useMobileDetection } from '../hooks/useMobileGestures';
 import { useProducts } from '../contexts/ProductContext';
 import { useError } from '../contexts/ErrorContext';
 import { LoadingSpinner, ProgressiveLoading } from '../components/Common/LoadingSpinner';
@@ -19,14 +17,11 @@ import { ProductPageTrustSignals, RecentPurchaseNotification } from '../componen
 
 export const ProductsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
   const { slug } = useParams<{ slug?: string }>();
   const { products, categories, loading, basicLoading, detailsLoading, fetchProducts } = useProducts();
   const { error, clearError } = useError();
-  const { isMobile } = useMobileDetection();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
 
   // Debug: Log when component mounts and when products/categories change
   useEffect(() => {
@@ -91,7 +86,7 @@ export const ProductsPage: React.FC = () => {
       }
       return prev;
     });
-  }, [slug, searchParams, categories]);
+  }, [slug, searchParams, categories, getInitialCategory]);
   
   // Debug: Log products and filters to see what's happening
   useEffect(() => {
@@ -108,6 +103,8 @@ export const ProductsPage: React.FC = () => {
   };
 
   // Attar-specific filter options extracted from products
+  // Remove these unused variables
+  /*
   const availableOrigins = useMemo(() => {
     return [...new Set(products.map(p => {
       const origin = p.specifications?.Origin;
@@ -148,19 +145,7 @@ export const ProductsPage: React.FC = () => {
       return 'diluted';
     }).filter(Boolean))];
   }, [products]);
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setFilters(prev => ({ ...prev, search: query }));
-    setSearchParams(prev => {
-      if (query) {
-        prev.set('q', query);
-      } else {
-        prev.delete('q');
-      }
-      return prev;
-    });
-  };
+  */
 
   const handleFiltersChange = (newFilters: AttrFilterState) => {
     setFilters(newFilters);
@@ -377,7 +362,6 @@ export const ProductsPage: React.FC = () => {
   ].reduce((sum, count) => sum + count, 0);
 
   // Legacy filter functions for backward compatibility
-  const updateFilter = (key: string, value: unknown) => setFilters(prev => ({ ...prev, [key]: value }));
   const clearFilters = () => {
     const resetFilters: AttrFilterState = {
       category: '',
