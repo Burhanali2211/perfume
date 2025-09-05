@@ -58,6 +58,60 @@ export interface Category {
   updatedAt?: Date; // Maps to updated_at in DB
 }
 
+export interface Collection {
+  id: string;
+  name: string;
+  slug?: string;
+  description?: string;
+  shortDescription?: string;
+  image: string;
+  bannerImage?: string;
+  type: 'seasonal' | 'limited' | 'signature' | 'exclusive' | 'heritage' | 'modern';
+  status: 'active' | 'inactive' | 'coming_soon' | 'sold_out';
+  price?: number;
+  originalPrice?: number;
+  discount?: number;
+  productIds: string[]; // Array of product IDs in this collection
+  productCount: number;
+  featured: boolean;
+  isExclusive: boolean;
+  launchDate?: Date;
+  endDate?: Date;
+  sortOrder?: number;
+  tags: string[];
+  metaTitle?: string;
+  metaDescription?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface Collection {
+  id: string;
+  name: string;
+  slug?: string;
+  description?: string;
+  shortDescription?: string;
+  image: string;
+  bannerImage?: string;
+  type: 'seasonal' | 'limited' | 'signature' | 'exclusive' | 'heritage' | 'modern';
+  status: 'active' | 'inactive' | 'coming_soon' | 'sold_out';
+  price?: number;
+  originalPrice?: number;
+  discount?: number;
+  productIds: string[]; // Array of product IDs in this collection
+  productCount: number;
+  featured: boolean;
+  isExclusive: boolean;
+  launchDate?: Date;
+  endDate?: Date;
+  sortOrder?: number;
+  tags: string[];
+  metaTitle?: string;
+  metaDescription?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export interface CartItem {
   id?: string; // New field from DB
   product: Product;
@@ -251,6 +305,12 @@ export interface AuthContextType {
   resendVerification: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
   loading: boolean;
+
+  // Mobile authentication functionality
+  openMobileAuth: (mode?: 'login' | 'signup' | 'profile') => void;
+  closeMobileAuth: () => void;
+  isMobileAuthOpen: boolean;
+  mobileAuthMode: 'login' | 'signup' | 'profile';
 }
 
 export interface CartContextType {
@@ -281,6 +341,10 @@ export interface ProductContextType {
   detailsLoading?: boolean;
   featuredLoading?: boolean;
   isUsingMockData: boolean;
+  // Category management functions
+  addCategory: (category: Omit<Category, 'id' | 'productCount' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateCategory: (category: Category) => Promise<void>;
+  deleteCategory: (categoryId: string) => Promise<void>;
 }
 
 export interface WishlistContextType {
@@ -385,15 +449,4 @@ export interface PaymentMethod {
   encryptedData?: string;
   createdAt?: Date;
   updatedAt?: Date;
-}
-
-export interface NotificationContextType {
-  showNotification: (notification: NotificationData) => void;
-}
-
-export interface NotificationData {
-  type: 'success' | 'error' | 'warning' | 'info';
-  title: string;
-  message: string;
-  duration?: number;
 }

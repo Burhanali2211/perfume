@@ -40,3 +40,5 @@ export const NewArrivalsPage: React.FC = () => {
     </div>
   );
 };
+
+export default NewArrivalsPage;

@@ -1,87 +1,142 @@
-import React from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import { WishlistProvider } from './contexts/WishlistContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { ProductProvider } from './contexts/ProductContext';
+import { CollectionProvider } from './contexts/CollectionContext';
 import { CompareProvider } from './contexts/CompareContext';
 import { ErrorProvider } from './contexts/ErrorContext';
 import { OrderProvider } from './contexts/OrderContext';
 import { AddressProvider } from './contexts/AddressContext';
 import { RecommendationsProvider } from './contexts/RecommendationsContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthModalProvider } from './contexts/AuthModalContext';
 import { Layout } from './components/Layout/Layout';
-import { HomePage } from './pages/HomePage';
-import { ProductsPage } from './pages/ProductsPage';
-import { ProductDetailPage } from './pages/ProductDetailPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { ProfilePage } from './pages/ProfilePage';
-import { CheckoutPage } from './pages/CheckoutPage';
-import { SearchPage } from './pages/SearchPage';
-import { WishlistPage } from './pages/WishlistPage';
-import { OrdersPage } from './pages/OrdersPage';
-import { ComparePage } from './pages/ComparePage';
-import { NewArrivalsPage } from './pages/NewArrivalsPage';
-import { DealsPage } from './pages/DealsPage';
-import { CategoriesPage } from './pages/CategoriesPage';
-import { SettingsPage } from './pages/SettingsPage';
 import { DatabaseErrorOverlay } from './components/Common/DatabaseErrorOverlay';
 import { ErrorBoundary } from './components/Common/ErrorBoundary';
 import { ScrollToTop } from './components/Common/ScrollToTop';
-import { HeaderTest } from './components/Testing/HeaderTest';
-import { DatabaseTest } from './components/Testing/DatabaseTest';
-import './utils/performanceTest'; // Load performance testing utilities
+import { LoadingSpinner } from './components/Common/LoadingSpinner';
+import { PerformanceOptimizer } from './components/Performance/LCPOptimizer';
+import { GlobalMediaErrorHandler } from './components/Common/MediaErrorHandler';
+
+// Lazy-loaded pages for code splitting
+const HomePage = React.lazy(() => import('./pages/HomePage.tsx'));
+const ProductsPage = React.lazy(() => import('./pages/ProductsPage.tsx'));
+const ProductDetailPage = React.lazy(() => import('./pages/ProductDetailPage.tsx'));
+const DashboardPage = React.lazy(() => import('./pages/DashboardPage.tsx'));
+const ProfilePage = React.lazy(() => import('./pages/ProfilePage.tsx'));
+const CheckoutPage = React.lazy(() => import('./pages/CheckoutPage.tsx'));
+const SearchPage = React.lazy(() => import('./pages/SearchPage.tsx'));
+const WishlistPage = React.lazy(() => import('./pages/WishlistPage.tsx'));
+const OrdersPage = React.lazy(() => import('./pages/OrdersPage.tsx'));
+const ComparePage = React.lazy(() => import('./pages/ComparePage.tsx'));
+const NewArrivalsPage = React.lazy(() => import('./pages/NewArrivalsPage.tsx'));
+const DealsPage = React.lazy(() => import('./pages/DealsPage.tsx'));
+const CategoriesPage = React.lazy(() => import('./pages/CategoriesPage.tsx'));
+const CollectionsPage = React.lazy(() => import('./pages/CollectionsPage.tsx'));
+const SettingsPage = React.lazy(() => import('./pages/SettingsPage.tsx'));
+const AuthPage = React.lazy(() => import('./pages/AuthPage.tsx'));
+const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage.tsx'));
+
+// Loading fallback component
+const PageLoadingFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background-primary">
+    <div className="text-center">
+      <LoadingSpinner size="large" />
+      <p className="mt-4 text-text-secondary">Loading page...</p>
+    </div>
+  </div>
+);
 
 function App() {
+  // Handle media errors globally
+  useEffect(() => {
+    const handleMediaError = (e: Event) => {
+      const target = e.target as HTMLMediaElement;
+      console.warn('Media error caught:', {
+        src: target.src,
+        tagName: target.tagName,
+        error: target.error
+      });
+      
+      // Prevent the error from propagating
+      e.stopImmediatePropagation();
+    };
+
+    // Add event listeners for media elements
+    document.addEventListener('error', handleMediaError, true);
+    
+    return () => {
+      document.removeEventListener('error', handleMediaError, true);
+    };
+  }, []);
+
   return (
     <ErrorBoundary>
-      <ErrorProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <NotificationProvider>
-              <ProductProvider>
-                <RecommendationsProvider>
-                  <CartProvider>
-                    <WishlistProvider>
-                      <CompareProvider>
-                        <OrderProvider>
-                          <AddressProvider>
-                      <Router>
-                        <ScrollToTop />
-                        <Layout>
-                          <Routes>
-                            <Route path="/" element={<HomePage />} />
-                            <Route path="/products" element={<ProductsPage />} />
-                            <Route path="/products/:id" element={<ProductDetailPage />} />
-                            <Route path="/search" element={<SearchPage />} />
-                            <Route path="/compare" element={<ComparePage />} />
-                            <Route path="/dashboard" element={<DashboardPage />} />
-                            <Route path="/profile" element={<ProfilePage />} />
-                            <Route path="/wishlist" element={<WishlistPage />} />
-                            <Route path="/orders" element={<OrdersPage />} />
-                            <Route path="/checkout" element={<CheckoutPage />} />
-                            <Route path="/settings" element={<SettingsPage />} />
-                            <Route path="/new-arrivals" element={<NewArrivalsPage />} />
-                            <Route path="/deals" element={<DealsPage />} />
-                            <Route path="/categories" element={<CategoriesPage />} />
-                            <Route path="/test-header" element={<HeaderTest />} />
-                            <Route path="/test-database" element={<DatabaseTest />} />
-                          </Routes>
-                        </Layout>
-                        <DatabaseErrorOverlay />
-                      </Router>
-                          </AddressProvider>
-                        </OrderProvider>
-                      </CompareProvider>
-                    </WishlistProvider>
-                  </CartProvider>
-                </RecommendationsProvider>
-              </ProductProvider>
-            </NotificationProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </ErrorProvider>
+      <PerformanceOptimizer
+        enableLCPMonitoring={true}
+        preloadResources={[]}
+        criticalImages={[]}
+      >
+        <ErrorProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <NotificationProvider>
+                <AuthModalProvider>
+                  <ProductProvider>
+                    <CollectionProvider>
+                      <RecommendationsProvider>
+                        <CartProvider>
+                        <WishlistProvider>
+                          <CompareProvider>
+                            <OrderProvider>
+                              <AddressProvider>
+                                <Router>
+                                  <GlobalMediaErrorHandler />
+                                  <ScrollToTop />
+                                  <Layout>
+                                    <Suspense fallback={<PageLoadingFallback />}>
+                                      <Routes>
+                                        <Route path="/" element={<HomePage />} />
+                                        <Route path="/products" element={<ProductsPage />} />
+                                        <Route path="/products/:id" element={<ProductDetailPage />} />
+                                        <Route path="/search" element={<SearchPage />} />
+                                        <Route path="/compare" element={<ComparePage />} />
+                                        <Route path="/dashboard" element={<DashboardPage />} />
+                                        <Route path="/profile" element={<ProfilePage />} />
+                                        <Route path="/wishlist" element={<WishlistPage />} />
+                                        <Route path="/orders" element={<OrdersPage />} />
+                                        <Route path="/checkout" element={<CheckoutPage />} />
+                                        <Route path="/settings" element={<SettingsPage />} />
+                                        <Route path="/new-arrivals" element={<NewArrivalsPage />} />
+                                        <Route path="/deals" element={<DealsPage />} />
+                                        <Route path="/categories" element={<CategoriesPage />} />
+                                        <Route path="/categories/:slug" element={<ProductsPage />} />
+                                        <Route path="/collections" element={<CollectionsPage />} />
+                                        <Route path="/collections/:slug" element={<ProductsPage />} />
+                                        <Route path="/auth" element={<AuthPage />} />
+                                        <Route path="*" element={<NotFoundPage />} />
+                                      </Routes>
+                                    </Suspense>
+                                  </Layout>
+                                  <DatabaseErrorOverlay />
+                                </Router>
+                              </AddressProvider>
+                            </OrderProvider>
+                          </CompareProvider>
+                        </WishlistProvider>
+                      </CartProvider>
+                    </RecommendationsProvider>
+                  </CollectionProvider>
+                </ProductProvider>
+                </AuthModalProvider>
+              </NotificationProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </ErrorProvider>
+      </PerformanceOptimizer>
     </ErrorBoundary>
   );
 }

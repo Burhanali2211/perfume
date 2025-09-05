@@ -14,13 +14,13 @@ interface NavDropdownProps {
 
 export const NavDropdown: React.FC<NavDropdownProps> = ({ items }) => {
   return (
-    <div className="absolute top-full left-0 mt-3 w-64 bg-white border border-gray-200 rounded-lg shadow-lg">
+    <div className="absolute top-full left-0 mt-3 w-64 glass-effect-medium rounded-xl shadow-2xl animate-fade-in-down">
       <div className="p-2">
         {items.map((item) => (
           <Link
             key={item.name}
             to={item.href}
-            className="group block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md"
+            className="group block px-4 py-3 text-gray-700 hover:bg-gray-100/80 rounded-lg transition-all duration-200"
           >
             <div className="flex items-center justify-between">
               <div>

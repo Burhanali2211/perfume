@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { X, Star, Heart, ShoppingCart, Minus, Plus, Share2, Shield, Truck, RotateCcw } from 'lucide-react';
 import { Product } from '../../types';
 import { useCart } from '../../contexts/CartContext';
+import { useAddToCartWithAuth } from '../../hooks/useAddToCartWithAuth';
+import { useAddToWishlistWithAuth } from '../../hooks/useAddToWishlistWithAuth';
 
 interface ProductDetailsProps {
   product: Product;
@@ -11,13 +13,18 @@ interface ProductDetailsProps {
 }
 
 export const ProductDetails: React.FC<ProductDetailsProps> = ({ product, isOpen, onClose }) => {
-  const { addItem } = useCart();
+  const { handleAddToCart } = useAddToCartWithAuth();
+  const { handleAddToWishlist } = useAddToWishlistWithAuth();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
 
-  const handleAddToCart = () => {
-    addItem(product, quantity);
+  const handleAddToCartClick = () => {
+    handleAddToCart(product, quantity);
     onClose();
+  };
+
+  const handleAddToWishlistClick = () => {
+    handleAddToWishlist(product);
   };
 
   const features = [
@@ -137,7 +144,7 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({ product, isOpen,
                   {/* Action Buttons */}
                   <div className="flex space-x-4 mb-8">
                     <motion.button
-                      onClick={handleAddToCart}
+                      onClick={handleAddToCartClick}
                       disabled={product.stock === 0}
                       className={`flex-1 btn-primary btn-lg flex items-center justify-center space-x-2 ${
                         product.stock === 0 ? 'opacity-50 cursor-not-allowed' : ''
@@ -150,6 +157,7 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({ product, isOpen,
                     </motion.button>
 
                     <motion.button
+                      onClick={handleAddToWishlistClick}
                       className="btn-secondary p-4 hover:text-red-500"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}

@@ -103,7 +103,7 @@ export const EnhancedSearch: React.FC<EnhancedSearchProps> = ({
         type: 'product' as const,
         id: product.id,
         title: product.name,
-        subtitle: `$${product.price}`,
+        subtitle: `₹${product.price.toLocaleString('en-IN')}`,
         image: product.images[0],
         price: product.price,
         rating: product.rating,

@@ -32,31 +32,31 @@ export const RecentlyViewed: React.FC<RecentlyViewedProps> = ({
   }
 
   return (
-    <section className={`py-12 ${className}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className={`py-6 sm:py-8 ${className}`}>
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-neutral-100 rounded-lg">
-              <Eye className="h-5 w-5 text-neutral-600" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <div className="p-1.5 sm:p-2 bg-neutral-100 rounded-lg">
+              <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-neutral-600" />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold text-neutral-900">
+              <h2 className="text-lg sm:text-xl font-semibold text-neutral-900">
                 Recently Viewed
               </h2>
-              <p className="text-neutral-600 text-sm mt-1">
+              <p className="text-neutral-600 text-[10px] sm:text-xs mt-0.5">
                 Continue where you left off
               </p>
             </div>
           </div>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-3">
             {showClearButton && (
               <button
                 onClick={clearRecentlyViewed}
-                className="flex items-center space-x-2 text-neutral-500 hover:text-neutral-700 transition-colors text-sm"
+                className="flex items-center space-x-1 sm:space-x-1.5 text-neutral-500 hover:text-neutral-700 transition-colors text-[10px] sm:text-xs touch-manipulation"
               >
-                <X className="h-4 w-4" />
+                <X className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 <span>Clear All</span>
               </button>
             )}
@@ -64,10 +64,10 @@ export const RecentlyViewed: React.FC<RecentlyViewedProps> = ({
             {recentlyViewedProducts.length > maxItems && (
               <Link 
                 to="/products" 
-                className="flex items-center space-x-2 text-primary-600 hover:text-primary-700 transition-colors"
+                className="flex items-center space-x-1 sm:space-x-1.5 text-primary-600 hover:text-primary-700 transition-colors text-[10px] sm:text-xs touch-manipulation"
               >
-                <span className="text-sm font-medium">View All</span>
-                <ArrowRight className="h-4 w-4" />
+                <span className="font-medium">View All</span>
+                <ArrowRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               </Link>
             )}
           </div>
@@ -149,7 +149,7 @@ export const RecentlyViewedCompact: React.FC<{
                   {product.name}
                 </h4>
                 <p className="text-primary-600 font-semibold text-sm">
-                  ${product.price}
+                  ₹{product.price.toLocaleString('en-IN')}
                 </p>
               </div>
               <button
@@ -239,7 +239,7 @@ export const RecentlyViewedWidget: React.FC<{
                   {product.name}
                 </p>
                 <p className="text-primary-600 font-semibold text-xs">
-                  ${product.price}
+                  ₹{product.price.toLocaleString('en-IN')}
                 </p>
               </div>
             </Link>

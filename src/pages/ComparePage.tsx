@@ -144,3 +144,5 @@ export const ComparePage: React.FC = () => {
     </div>
   );
 };
+
+export default ComparePage;

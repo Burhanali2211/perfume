@@ -56,15 +56,15 @@ export const MobileTouchButton: React.FC<MobileTouchButtonProps> = ({
   };
 
   const sizeClasses = {
-    minimum: `min-h-[${TOUCH_TARGETS.minimum}] min-w-[${TOUCH_TARGETS.minimum}] px-4 py-2 text-sm rounded-lg`,
-    comfortable: `min-h-[${TOUCH_TARGETS.comfortable}] min-w-[${TOUCH_TARGETS.comfortable}] px-5 py-3 text-sm rounded-lg`,
-    optimal: `min-h-[${TOUCH_TARGETS.optimal}] min-w-[${TOUCH_TARGETS.optimal}] px-6 py-4 text-base rounded-xl`,
+    minimum: `min-h-[44px] min-w-[44px] px-2.5 sm:px-3 py-1.5 text-xs rounded-md`,
+    comfortable: `min-h-[48px] min-w-[48px] px-3 sm:px-4 py-2 text-sm rounded-md`,
+    optimal: `min-h-[56px] min-w-[56px] px-4 sm:px-5 py-2.5 text-base rounded-lg`,
   };
 
   const iconSizeClasses = {
-    minimum: 'h-4 w-4',
-    comfortable: 'h-5 w-5',
-    optimal: 'h-6 w-6',
+    minimum: 'h-3.5 w-3.5',
+    comfortable: 'h-4 w-4',
+    optimal: 'h-5 w-5',
   };
 
   const handleClick = (e: React.MouseEvent) => {
@@ -95,7 +95,7 @@ export const MobileTouchButton: React.FC<MobileTouchButtonProps> = ({
       ) : (
         <>
           {Icon && (
-            <Icon className={`${iconSizeClasses[size]} ${children ? 'mr-2' : ''}`} />
+            <Icon className={`${iconSizeClasses[size]} ${children ? 'mr-1.5' : ''}`} />
           )}
           {children}
         </>
@@ -148,9 +148,9 @@ export const MobileIconButton: React.FC<MobileIconButtonProps> = ({
   };
 
   const sizeClasses = {
-    minimum: `h-[${TOUCH_TARGETS.minimum}] w-[${TOUCH_TARGETS.minimum}]`,
-    comfortable: `h-[${TOUCH_TARGETS.comfortable}] w-[${TOUCH_TARGETS.comfortable}]`,
-    optimal: `h-[${TOUCH_TARGETS.optimal}] w-[${TOUCH_TARGETS.optimal}]`,
+    minimum: `h-[44px] w-[44px]`,
+    comfortable: `h-[48px] w-[48px]`,
+    optimal: `h-[56px] w-[56px]`,
   };
 
   const iconSizeClasses = {
@@ -198,9 +198,9 @@ export const MobileFAB: React.FC<MobileFABProps> = ({
   ariaLabel,
 }) => {
   const positionClasses = {
-    'bottom-right': 'fixed bottom-6 right-6 z-50',
-    'bottom-left': 'fixed bottom-6 left-6 z-50',
-    'bottom-center': 'fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50',
+    'bottom-right': 'fixed bottom-4 right-4 z-50',
+    'bottom-left': 'fixed bottom-4 left-4 z-50',
+    'bottom-center': 'fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50',
   };
 
   const variantClasses = {
@@ -214,7 +214,7 @@ export const MobileFAB: React.FC<MobileFABProps> = ({
       className={`
         ${positionClasses[position]}
         ${variantClasses[variant]}
-        h-14 w-14 rounded-full
+        h-12 w-12 rounded-full
         touch-manipulation select-none
         transition-all duration-200 ease-out
         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500
@@ -226,7 +226,7 @@ export const MobileFAB: React.FC<MobileFABProps> = ({
       whileHover={{ scale: 1.05 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     >
-      <Icon className="h-6 w-6" />
+      <Icon className="h-5 w-5" />
     </motion.button>
   );
 };

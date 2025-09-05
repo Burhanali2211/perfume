@@ -67,8 +67,8 @@ export const RecommendationsProvider: React.FC<RecommendationsProviderProps> = (
     const priceDiff = Math.abs(product1.price - product2.price) / Math.max(product1.price, product2.price);
     if (priceDiff <= 0.3) score += 25;
     
-    // Brand similarity (20% weight)
-    if (product1.brand && product2.brand && product1.brand === product2.brand) score += 20;
+    // Brand similarity (20% weight) - using seller name
+    if (product1.sellerName && product2.sellerName && product1.sellerName === product2.sellerName) score += 20;
     
     // Rating similarity (10% weight)
     const ratingDiff = Math.abs(product1.rating - product2.rating);
@@ -104,11 +104,16 @@ export const RecommendationsProvider: React.FC<RecommendationsProviderProps> = (
 
     // Simulate frequently bought together logic
     const complementaryCategories: Record<string, string[]> = {
-      'Electronics': ['Accessories', 'Cases & Covers', 'Cables'],
-      'Clothing': ['Shoes', 'Accessories', 'Bags'],
-      'Home & Garden': ['Furniture', 'Decor', 'Storage'],
-      'Sports': ['Fitness', 'Outdoor', 'Accessories'],
-      'Books': ['Stationery', 'Bookmarks', 'Reading Accessories']
+      'Oudh Attars': ['Amber Attars', 'Sandalwood Attars', 'Musk Attars'],
+      'Floral Attars': ['Jasmine Attars', 'Rose Attars', 'Attar Blends'],
+      'Musk Attars': ['Oudh Attars', 'Amber Attars', 'Heritage Attars'],
+      'Amber Attars': ['Oudh Attars', 'Saffron Attars', 'Musk Attars'],
+      'Saffron Attars': ['Amber Attars', 'Heritage Attars', 'Attar Blends'],
+      'Sandalwood Attars': ['Oudh Attars', 'Musk Attars', 'Floral Attars'],
+      'Jasmine Attars': ['Floral Attars', 'Attar Blends', 'Seasonal Attars'],
+      'Attar Blends': ['Heritage Attars', 'Saffron Attars', 'Seasonal Attars'],
+      'Seasonal Attars': ['Attar Blends', 'Floral Attars', 'Jasmine Attars'],
+      'Heritage Attars': ['Oudh Attars', 'Saffron Attars', 'Attar Blends']
     };
 
     return products
@@ -117,7 +122,7 @@ export const RecommendationsProvider: React.FC<RecommendationsProviderProps> = (
         let score = 0;
         
         // Complementary categories get higher scores
-        if (complementaryCategories[currentProduct.category]?.includes(product.category)) {
+        if (currentProduct.category && product.category && complementaryCategories[currentProduct.category]?.includes(product.category)) {
           score += 50;
         } else if (currentProduct.category === product.category) {
           score += 30;
@@ -158,7 +163,7 @@ export const RecommendationsProvider: React.FC<RecommendationsProviderProps> = (
 
     // Get user preferences from viewing history
     const viewedCategories = [...new Set(recentlyViewedProducts.map(p => p.category))];
-    const viewedBrands = [...new Set(recentlyViewedProducts.map(p => p.brand).filter(Boolean))];
+    const viewedBrands = [...new Set(recentlyViewedProducts.map(p => p.sellerName).filter(Boolean))];
     const avgViewedPrice = recentlyViewedProducts.reduce((sum, p) => sum + p.price, 0) / recentlyViewedProducts.length;
     const viewedIds = new Set(recentlyViewedProducts.map(p => p.id));
 
@@ -170,8 +175,8 @@ export const RecommendationsProvider: React.FC<RecommendationsProviderProps> = (
         // Category preference (30% weight)
         if (viewedCategories.includes(product.category)) score += 30;
         
-        // Brand preference (20% weight)
-        if (product.brand && viewedBrands.includes(product.brand)) score += 20;
+        // Brand preference (20% weight) - using seller name
+        if (product.sellerName && viewedBrands.includes(product.sellerName)) score += 20;
         
         // Rating boost (25% weight)
         score += product.rating * 5;

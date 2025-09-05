@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -8,51 +8,94 @@ import {
   TrendingUp, TrendingDown, Users, Package, DollarSign, ShoppingCart,
   AlertTriangle, Clock, Filter
 } from 'lucide-react';
-import { getDashboardAnalytics } from '../../../lib/supabase';
+import { supabase } from '../../../lib/supabase';
 
-// Enhanced mock data for better visualization
-const salesTrendData = [
-  { month: 'Jan', sales: 45000, orders: 120, customers: 89 },
-  { month: 'Feb', sales: 52000, orders: 145, customers: 102 },
-  { month: 'Mar', sales: 48000, orders: 132, customers: 95 },
-  { month: 'Apr', sales: 61000, orders: 167, customers: 118 },
-  { month: 'May', sales: 55000, orders: 154, customers: 108 },
-  { month: 'Jun', sales: 67000, orders: 189, customers: 134 },
-];
+// Define types for our data
+interface SalesTrendData {
+  month: string;
+  sales: number;
+  orders: number;
+  customers: number;
+}
 
-const categoryData = [
-  { name: 'Electronics', value: 35, sales: 125000 },
-  { name: 'Clothing', value: 25, sales: 89000 },
-  { name: 'Home & Garden', value: 20, sales: 67000 },
-  { name: 'Sports', value: 12, sales: 45000 },
-  { name: 'Books', value: 8, sales: 23000 },
-];
+interface CategoryData {
+  name: string;
+  value: number;
+  sales: number;
+}
+
+interface CustomerGrowthData {
+  month: string;
+  new: number;
+  returning: number;
+  total: number;
+}
+
+interface AnalyticsData {
+  total_revenue: number;
+  total_orders: number;
+  total_users: number;
+  total_products: number;
+  pending_orders: number;
+  low_stock_products: number;
+  sales_trend: SalesTrendData[];
+  category_performance: CategoryData[];
+  customer_growth: CustomerGrowthData[];
+}
 
 const COLORS = ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
 
-const customerGrowthData = [
-  { month: 'Jan', new: 45, returning: 78, total: 123 },
-  { month: 'Feb', new: 52, returning: 89, total: 141 },
-  { month: 'Mar', new: 48, returning: 95, total: 143 },
-  { month: 'Apr', new: 61, returning: 102, total: 163 },
-  { month: 'May', new: 55, returning: 108, total: 163 },
-  { month: 'Jun', new: 67, returning: 118, total: 185 },
-];
-
 export const EnhancedAnalytics: React.FC = () => {
-  const [analytics, setAnalytics] = useState<Record<string, unknown> | null>(null);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState('30d');
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isVisibleRef = useRef(true);
+  const lastFetchTimeRef = useRef<number>(0);
+
+  // Track component visibility
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      isVisibleRef.current = !document.hidden;
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
+      // Skip fetching if component is not visible
+      if (!isVisibleRef.current) {
+        return;
+      }
+
+      // Prevent too frequent fetches (at most once every 5 seconds)
+      const now = Date.now();
+      if (now - lastFetchTimeRef.current < 5000) {
+        return;
+      }
+      
+      lastFetchTimeRef.current = now;
+
       setLoading(true);
       setError(null);
 
       try {
-        const data = await getDashboardAnalytics();
+        // Fetch analytics data from Supabase
+        const { data, error } = await supabase.rpc('get_dashboard_analytics');
+        
+        if (error) {
+          throw new Error(error.message);
+        }
+        
         setAnalytics(data);
-      } catch (err: unknown) {
+      } catch (err: any) {
         console.error('Error fetching analytics:', err);
         setError('Failed to load analytics data. Please try again later.');
       } finally {
@@ -61,15 +104,45 @@ export const EnhancedAnalytics: React.FC = () => {
     };
 
     const handleDataModeChange = () => {
-      fetchAnalytics();
+      // Clear any existing timeout to prevent multiple rapid refreshes
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+      
+      // Only refresh if component is visible
+      if (isVisibleRef.current) {
+        // Debounce the refresh to prevent excessive calls (increased to 2 seconds)
+        refreshTimeoutRef.current = setTimeout(() => {
+          fetchAnalytics();
+        }, 2000);
+      }
     };
 
     const handleRefreshData = () => {
-      fetchAnalytics();
+      // Clear any existing timeout to prevent multiple rapid refreshes
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+      
+      // Only refresh if component is visible
+      if (isVisibleRef.current) {
+        // Debounce the refresh to prevent excessive calls (increased to 2 seconds)
+        refreshTimeoutRef.current = setTimeout(() => {
+          fetchAnalytics();
+        }, 2000);
+      }
     };
 
     // Initial fetch
     fetchAnalytics();
+
+    // Set up periodic refresh (every 5 minutes instead of more frequent)
+    refreshIntervalRef.current = setInterval(() => {
+      // Only refresh if component is visible
+      if (isVisibleRef.current) {
+        fetchAnalytics();
+      }
+    }, 300000); // 5 minutes
 
     // Listen for data mode changes
     window.addEventListener('dataModeChanged', handleDataModeChange);
@@ -78,6 +151,14 @@ export const EnhancedAnalytics: React.FC = () => {
     return () => {
       window.removeEventListener('dataModeChanged', handleDataModeChange);
       window.removeEventListener('refreshAllData', handleRefreshData);
+      
+      // Clear timeout and interval on unmount
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
     };
   }, [timeRange]);
 
@@ -159,6 +240,24 @@ export const EnhancedAnalytics: React.FC = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+        <div className="flex items-center">
+          <AlertTriangle className="h-6 w-6 text-red-600 mr-2" />
+          <h3 className="text-red-800 font-medium">Error Loading Data</h3>
+        </div>
+        <p className="text-red-600 mt-2">{error}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header with Time Range Filter */}
@@ -167,9 +266,6 @@ export const EnhancedAnalytics: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-900">Enhanced Analytics</h2>
           <p className="text-gray-600 mt-1">
             Comprehensive insights into your e-commerce performance
-            {isUsingMockData && (
-              <span className="text-yellow-600 font-medium"> - Demo Mode</span>
-            )}
           </p>
         </div>
         <div className="flex items-center space-x-2 mt-4 lg:mt-0">
@@ -272,7 +368,7 @@ export const EnhancedAnalytics: React.FC = () => {
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Sales Trend</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={salesTrendData}>
+            <AreaChart data={analytics?.sales_trend || []}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
@@ -297,16 +393,16 @@ export const EnhancedAnalytics: React.FC = () => {
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
-                data={categoryData}
+                data={analytics?.category_performance || []}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
               >
-                {categoryData.map((entry, index) => (
+                {analytics?.category_performance?.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
@@ -324,7 +420,7 @@ export const EnhancedAnalytics: React.FC = () => {
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Customer Growth</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={customerGrowthData}>
+            <BarChart data={analytics?.customer_growth || []}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
@@ -345,7 +441,7 @@ export const EnhancedAnalytics: React.FC = () => {
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Trends</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={salesTrendData}>
+            <LineChart data={analytics?.sales_trend || []}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />

@@ -1,6 +1,8 @@
 import React from 'react';
-import { EnhancedProfilePage } from '../components/Profile/EnhancedProfilePage';
+import { SimpleProfilePage } from '../components/Profile/SimpleProfilePage';
 
 export const ProfilePage: React.FC = () => {
-  return <EnhancedProfilePage />;
+  return <SimpleProfilePage />;
 };
+
+export default ProfilePage;

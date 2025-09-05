@@ -53,7 +53,11 @@ export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const addItem = async (product: Product) => {
     if (!user) {
-      showNotification({ type: 'error', title: 'Not Logged In', message: 'Please log in to add items to your wishlist.' });
+      showNotification({ 
+        type: 'info', 
+        title: 'Authentication Required', 
+        message: 'Please log in or create an account to add items to your wishlist.' 
+      });
       return;
     }
 

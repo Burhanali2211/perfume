@@ -16,105 +16,8 @@ export const OrdersPage: React.FC = () => {
     fetchUserOrders();
   }, [fetchUserOrders]);
 
-  // Fallback to mock data if no real orders
-  const mockOrders: Order[] = [
-    {
-      id: 'ORD-2025-001',
-      date: new Date('2025-01-15'),
-      status: 'delivered',
-      total: 234.50,
-      items: [{
-        id: '1',
-        product: {
-          id: '1',
-          name: 'Mock Product 1',
-          price: 117.25,
-          images: [],
-          description: '',
-          category: '',
-          stock: 0,
-          rating: 0,
-          reviewCount: 0
-        },
-        quantity: 2
-      }],
-      shippingAddress: {
-        id: '1',
-        street: 'Mock Street',
-        city: 'Mock City',
-        state: 'Mock State',
-        zipCode: '12345',
-        country: 'Mock Country'
-      },
-      updatedAt: new Date(),
-      trackingHistory: generateTrackingHistory('delivered')
-    },
-    {
-      id: 'ORD-2025-002',
-      date: new Date('2025-01-12'),
-      status: 'shipped',
-      total: 299.99,
-      items: [{
-        id: '2',
-        product: {
-          id: '2',
-          name: 'Mock Product 2',
-          price: 299.99,
-          images: [],
-          description: '',
-          category: '',
-          stock: 0,
-          rating: 0,
-          reviewCount: 0
-        },
-        quantity: 1
-      }],
-      shippingAddress: {
-        id: '2',
-        street: 'Mock Street',
-        city: 'Mock City',
-        state: 'Mock State',
-        zipCode: '12345',
-        country: 'Mock Country'
-      },
-      updatedAt: new Date(),
-      trackingHistory: generateTrackingHistory('shipped')
-    },
-    {
-      id: 'ORD-2025-003',
-      date: new Date('2025-01-10'),
-      status: 'processing',
-      total: 89.99,
-      items: [{
-        id: '3',
-        product: {
-          id: '3',
-          name: 'Mock Product 3',
-          price: 89.99,
-          images: [],
-          description: '',
-          category: '',
-          stock: 0,
-          rating: 0,
-          reviewCount: 0
-        },
-        quantity: 1
-      }],
-      shippingAddress: {
-        id: '3',
-        street: 'Mock Street',
-        city: 'Mock City',
-        state: 'Mock State',
-        zipCode: '12345',
-        country: 'Mock Country'
-      },
-      updatedAt: new Date(),
-      trackingHistory: generateTrackingHistory('processing')
-    },
-  ];
-
-  // Use real orders if available, otherwise fall back to mock data
-  const displayOrders = orders.length > 0 ? orders : mockOrders;
+  // Use orders from context
+  const displayOrders = orders;
 
   const tabs = [
     { id: 'all', name: 'All Orders', count: displayOrders.length },
@@ -218,3 +121,5 @@ export const OrdersPage: React.FC = () => {
     </div>
   );
 };
+
+export default OrdersPage;

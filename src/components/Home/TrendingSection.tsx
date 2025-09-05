@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+// Removed framer-motion import
 import { TrendingUp, ArrowRight } from 'lucide-react';
 import { Product } from '../../types';
 import { ProductCard } from '../Product/ProductCard';
@@ -16,36 +16,20 @@ export const TrendingSection: React.FC = () => {
   const trendingProducts = products.filter(p => p.tags.includes('trending')).slice(0, 6);
 
   return (
-    <section className="py-20 bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="flex items-center justify-center space-x-2 mb-4"
-          >
-            <TrendingUp className="h-6 w-6 text-yellow-400" />
-            <span className="text-yellow-400 font-medium">TRENDING NOW</span>
-          </motion.div>
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-4xl md:text-5xl font-bold mb-4"
-          >
+    <section className="py-8 sm:py-12 md:py-16 bg-gradient-to-br from-blue-600 via-purple-700 to-indigo-800 text-white">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+        <div className="text-center mb-6 sm:mb-8 md:mb-10">
+          {/* Removed motion animations */}
+          <div className="flex items-center justify-center space-x-1.5 sm:space-x-2 mb-2 sm:mb-3">
+            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-blue-200" />
+            <span className="text-blue-200 font-medium text-xs sm:text-sm">TRENDING NOW</span>
+          </div>
+          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3 leading-tight">
             What's Hot Right Now
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="text-xl text-gray-300 max-w-2xl mx-auto"
-          >
+          </h2>
+          <p className="text-sm sm:text-base md:text-lg text-blue-200 max-w-2xl mx-auto px-3 sm:px-0 leading-relaxed">
             Don't miss out on the most popular products that everyone's talking about
-          </motion.p>
+          </p>
         </div>
 
         {isMobile ? (
@@ -54,10 +38,10 @@ export const TrendingSection: React.FC = () => {
             title="Trending Products"
           />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
             {trendingProducts.map((product) => (
-              <div key={product.id}>
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-1">
+              <div key={product.id} className="touch-manipulation">
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg sm:rounded-xl p-0.5">
                   <ProductCard
                     product={product}
                   />
@@ -67,22 +51,13 @@ export const TrendingSection: React.FC = () => {
           </div>
         )}
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.5 }}
-          className="text-center mt-12"
-        >
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="btn-accent-darkbg !text-lg"
-          >
+        {/* Removed motion animations */}
+        <div className="text-center mt-6 sm:mt-8 md:mt-10">
+          <button className="btn-accent-darkbg !text-sm sm:!text-base active:bg-white/20 touch-manipulation">
             <span>View All Trending</span>
-            <ArrowRight className="h-5 w-5 ml-2" />
-          </motion.button>
-        </motion.div>
+            <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-1.5" />
+          </button>
+        </div>
       </div>
 
       {selectedProduct && (

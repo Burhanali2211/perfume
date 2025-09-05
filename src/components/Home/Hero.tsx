@@ -1,231 +1,195 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Star, Shield, Truck, Users, CheckCircle } from 'lucide-react';
+import { Truck, ShieldCheck, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
+import heroBackground from '../../assets/images/homepage/hero-background.jpg';
 
 export const Hero: React.FC = () => {
-  const [currentOffer, setCurrentOffer] = useState(0);
-  // Rotating offers for scarcity/urgency
-  const offers = [
-    { text: "Free shipping on orders over $50", icon: Truck },
-    { text: "30-day money-back guarantee", icon: Shield },
-    { text: "24/7 customer support", icon: Users }
-  ];
+  const [isLoaded, setIsLoaded] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Rotate offers every 4 seconds
+  // Initialize after component loads
   useEffect(() => {
-    const offerTimer = setInterval(() => {
-      setCurrentOffer(prev => (prev + 1) % offers.length);
-    }, 4000);
+    const timer = setTimeout(() => {
+      setIsLoaded(true);
+    }, 300);
 
-    return () => clearInterval(offerTimer);
-  }, [offers.length]);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <section className="relative min-h-screen bg-background-primary overflow-hidden">
-      {/* Sophisticated Luxury Background - Minimal and Elegant */}
+    <section 
+      ref={containerRef}
+      className="luxury-hero-section relative min-h-[80vh] sm:min-h-screen overflow-hidden flex items-center justify-center"
+      role="banner"
+      aria-label="Luxury Perfume Collection Hero"
+    >
+      {/* Sophisticated Full-Screen Background */}
       <div className="absolute inset-0">
-        {/* Subtle gradient overlay for depth */}
-        <div className="absolute inset-0 bg-gradient-to-br from-background-primary via-background-secondary/30 to-background-primary"></div>
-
-        {/* Minimal geometric pattern - extremely subtle */}
-        <div className="absolute inset-0 opacity-[0.015]">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23292524' fill-opacity='0.3'%3E%3Cpath d='M60 60c0-16.569-13.431-30-30-30s-30 13.431-30 30 13.431 30 30 30 30-13.431 30-30z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }} />
-        </div>
+        {/* Premium Perfume Bottle Composition Background */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105"
+          style={{
+            backgroundImage: `url('${heroBackground}')`
+          }}
+        />
+        
+        {/* Sophisticated Dark Gradient Overlay (25% opacity) */}
+        <div className="absolute inset-0 luxury-hero-overlay" />
+        
+        {/* Premium Vignette Effect for Focus */}
+        <div className="absolute inset-0 luxury-hero-vignette" />
+        
+        {/* Light Ray Effects */}
+        <div className="absolute inset-0 luxury-light-rays" />
       </div>
 
-      {/* Refined Trust Bar - Sophisticated and Minimal */}
-      <div className="relative z-10 bg-gradient-to-r from-neutral-50 via-background-tertiary to-neutral-50 border-b border-neutral-200/40 py-4 shadow-subtle">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center space-x-12 text-sm">
-            <div className="flex items-center space-x-3">
-                <div className="p-1.5 bg-neutral-100 rounded-full border border-neutral-200">
-                  {React.createElement(offers[currentOffer].icon, { className: "h-4 w-4 text-neutral-600" })}
-                </div>
-                <span className="font-medium tracking-wide text-neutral-700">{offers[currentOffer].text}</span>
-              </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-16 lg:py-24">
-        <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
-          {/* Left Column - Refined Content */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="lg:col-span-7 space-y-8"
-          >
-            {/* Social Proof Badge */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-              className="inline-flex items-center space-x-3 bg-neutral-50 text-neutral-700 px-4 py-2 rounded-full border border-neutral-200"
-            >
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-medium">Trusted by 50,000+ customers worldwide</span>
-            </motion.div>
-
-            {/* Main Headline */}
-            <div className="space-y-6">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-light text-neutral-900 leading-tight tracking-tight">
-                <span className="block">Sophisticated</span>
-                <span className="block text-neutral-600">Commerce</span>
-                <span className="block font-medium">Redefined</span>
-              </h1>
-
-              <p className="text-lg md:text-xl text-neutral-600 leading-relaxed max-w-2xl">
-                Experience the pinnacle of craftsmanship and design. Each piece in our collection is
-                meticulously curated to exceed your highest expectations.
-              </p>
-            </div>
-
-            {/* Trust Indicators */}
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-                ))}
-              </div>
-              <span className="text-sm text-neutral-600">4.9 from 12,000+ reviews</span>
-            </div>
-
-            {/* Call-to-Action Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
+      {/* Luxury Content Container */}
+      <div className="relative z-10 luxury-hero-container w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <motion.div
+          className="hero-content"
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1.2, ease: "easeOut" }}
+          aria-live="polite"
+        >
+          {/* Elegant Typography Section */}
+          <h1 className="primary-headline mb-4 sm:mb-6 md:mb-8">
+            <motion.span 
+              className="headline-line-1 block text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3"
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                letterSpacing: '-0.02em',
+                lineHeight: '1.1',
+                textShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
+              }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-              className="flex flex-col sm:flex-row gap-4"
+              transition={{ duration: 1, delay: 0.3 }}
             >
-              <Link to="/products">
-                <button className="btn-primary btn-lg flex items-center space-x-2 shadow-xl hover:shadow-2xl">
-                  <span>Explore Collection</span>
-                  <ArrowRight className="h-5 w-5" />
-                </button>
-              </Link>
+              Discover Your Signature
+            </motion.span>
+            <motion.span 
+              className="headline-line-2 block text-xl sm:text-2xl md:text-3xl lg:text-4xl font-light text-white/95"
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                letterSpacing: '-0.01em',
+                lineHeight: '1.2',
+                textShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
+              }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.5 }}
+            >
+              Fragrance Journey
+            </motion.span>
+          </h1>
 
-              <Link to="/deals">
-                <button className="btn-secondary btn-lg">
-                  View Deals
-                </button>
-              </Link>
-            </motion.div>
-
-            {/* Security Badges */}
-            <div className="flex items-center space-x-8 pt-4">
-              <div className="flex items-center space-x-2 text-neutral-600">
-                <Shield className="h-4 w-4" />
-                <span className="text-sm">Secure Checkout</span>
-              </div>
-              <div className="flex items-center space-x-2 text-neutral-600">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span className="text-sm">Lifetime Guarantee</span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Right Column - Product Showcase */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="lg:col-span-5 relative"
+          <motion.p 
+            className="hero-tagline text-sm sm:text-base md:text-lg text-white/90 font-light mb-6 sm:mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed px-3 sm:px-0"
+            style={{
+              fontFamily: 'Inter, sans-serif',
+              letterSpacing: '0.02em',
+              textShadow: '0 2px 10px rgba(0, 0, 0, 0.4)'
+            }}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.7 }}
           >
-            <div className="relative">
-              <img
-                src="https://images.unsplash.com/photo-1523381294911-8d3cead13475?w=600&h=600&fit=crop&auto=format&q=90"
-                alt="Premium Featured Product"
-                className="w-full max-w-lg mx-auto rounded-xl shadow-lg"
-              />
+            Curated luxury fragrances from world's finest perfume houses
+          </motion.p>
 
-              {/* Floating Badge */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.6, duration: 0.6 }}
-                className="absolute -top-4 -right-4 bg-neutral-900 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg"
+          {/* Sophisticated CTA Buttons */}
+          <motion.nav 
+            className="hero-actions flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 justify-center items-center mb-8 sm:mb-10 md:mb-12"
+            aria-label="Primary Actions"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.9 }}
+          >
+            <Link to="/products" className="w-full sm:w-auto">
+              <motion.button 
+                className="primary-cta w-full sm:w-auto px-4 sm:px-5 py-2 sm:py-2.5 md:py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold text-sm sm:text-base rounded-full shadow-lg hover:shadow-xl active:from-purple-700 active:to-purple-800 touch-manipulation"
+                style={{
+                  fontFamily: 'Inter, sans-serif',
+                  letterSpacing: '0.01em',
+                  minWidth: '120px'
+                }}
+                whileHover={{ 
+                  scale: 1.02,
+                  boxShadow: '0 0 25px rgba(147, 51, 234, 0.5)',
+                  transition: { duration: 0.2 }
+                }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
               >
-                30% OFF
-              </motion.div>
-
-              {/* Stock Indicator */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.8, duration: 0.6 }}
-                className="absolute -left-4 top-1/2 transform -translate-y-1/2 bg-white rounded-lg shadow-lg p-4 border border-neutral-200"
+                Shop Collection
+              </motion.button>
+            </Link>
+            
+            <Link to="/products?category=fragrance-finder" className="w-full sm:w-auto">
+              <motion.button 
+                className="secondary-cta w-full sm:w-auto px-4 sm:px-5 py-2 sm:py-2.5 md:py-3 bg-white border-2 border-white text-white-700 font-semibold text-sm sm:text-base rounded-full shadow-lg hover:shadow-xl active:bg-gray-50 touch-manipulation"
+                style={{
+                  fontFamily: 'Inter, sans-serif',
+                  letterSpacing: '0.01em',
+                  minWidth: '120px'
+                }}
+                whileHover={{ 
+                  scale: 1.02,
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  boxShadow: '0 0 25px rgba(255, 255, 255, 0.4)',
+                  transition: { duration: 0.2 }
+                }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
               >
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <div>
-                    <div className="text-sm font-medium text-neutral-900">In Stock</div>
-                    <div className="text-xs text-neutral-600">Limited Edition</div>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
-        </div>
+                Find Your Scent
+              </motion.button>
+            </Link>
+          </motion.nav>
+        </motion.div>
       </div>
 
-      {/* Customer Testimonial */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
+      {/* Premium Trust Indicators */}
+      <motion.div 
+        className="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-2xl px-3 sm:px-4"
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8, duration: 0.6 }}
-        className="max-w-7xl mx-auto px-6 lg:px-8 pb-16"
+        transition={{ duration: 1, delay: 1.1 }}
       >
-        <div className="bg-neutral-50 rounded-xl p-8 max-w-2xl mx-auto">
-          <div className="flex items-center space-x-4 mb-4">
-            <img
-              src="https://api.dicebear.com/8.x/avataaars/svg?seed=Sarah"
-              alt="Customer"
-              className="w-12 h-12 rounded-full"
-            />
-            <div>
-              <p className="font-medium text-neutral-900">Sarah Johnson</p>
-              <p className="text-sm text-neutral-600">Verified Customer</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-1 mb-4">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-            ))}
-          </div>
-          <p className="text-neutral-700 leading-relaxed italic">
-            "Absolutely exceptional quality and service. Every piece I've purchased has exceeded my expectations."
-          </p>
+        <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 md:space-x-6 text-white/90 text-xs sm:text-sm md:text-base backdrop-blur-sm bg-black/20 rounded-lg sm:rounded-xl py-2 sm:py-3 px-3 sm:px-4 md:px-6">
+          <motion.div 
+            className="flex items-center space-x-1.5 sm:space-x-2"
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 1.3 }}
+          >
+            <Truck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-yellow-400" />
+            <span className="font-medium">Free Shipping</span>
+          </motion.div>
+          
+          <motion.div 
+            className="flex items-center space-x-1.5 sm:space-x-2"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 1.5 }}
+          >
+            <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-yellow-400" />
+            <span className="font-medium">Authentic Products</span>
+          </motion.div>
+          
+          <motion.div 
+            className="flex items-center space-x-1.5 sm:space-x-2"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 1.7 }}
+          >
+            <RefreshCw className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-yellow-400" />
+            <span className="font-medium">30-Day Returns</span>
+          </motion.div>
         </div>
       </motion.div>
-
-      {/* Stats Section */}
-      <div className="bg-neutral-50 border-t border-neutral-200">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div>
-              <p className="text-3xl font-light text-neutral-900">50K+</p>
-              <p className="text-neutral-600 text-sm mt-1">Customers</p>
-            </div>
-            <div>
-              <p className="text-3xl font-light text-neutral-900">10K+</p>
-              <p className="text-neutral-600 text-sm mt-1">Products</p>
-            </div>
-            <div>
-              <p className="text-3xl font-light text-neutral-900">99%</p>
-              <p className="text-neutral-600 text-sm mt-1">Satisfaction</p>
-            </div>
-            <div>
-              <p className="text-3xl font-light text-neutral-900">24/7</p>
-              <p className="text-neutral-600 text-sm mt-1">Support</p>
-            </div>
-          </div>
-        </div>
-      </div>
     </section>
   );
 };

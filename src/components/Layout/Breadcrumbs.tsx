@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight, Home } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 interface BreadcrumbItem {
   label: string;
@@ -60,11 +59,8 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items, className = '' 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <ol className="flex items-center space-x-2 text-sm">
           {breadcrumbItems.map((item, index) => (
-            <motion.li
+            <li
               key={index}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
               className="flex items-center"
             >
               {index > 0 && (
@@ -88,7 +84,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items, className = '' 
                   {item.label}
                 </span>
               )}
-            </motion.li>
+            </li>
           ))}
         </ol>
       </div>

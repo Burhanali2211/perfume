@@ -11,35 +11,23 @@ import { Link } from 'react-router-dom';
 export const WishlistPage: React.FC = () => {
   const { items, clearWishlist } = useWishlist();
   const { addItem: addToCart } = useCart();
-  const { showNotification } = useNotification();
+  const { showInfo, showSuccess } = useNotification();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const handleAddAllToCart = () => {
     const inStockItems = items.filter(item => item.product.stock > 0);
     if (inStockItems.length === 0) {
-      showNotification({
-        type: 'info',
-        title: 'No Items in Stock',
-        message: 'None of your wishlist items are currently in stock.'
-      });
+      showInfo('None of your wishlist items are currently in stock.', 'No Items in Stock');
       return;
     }
     inStockItems.forEach(item => addToCart(item.product));
-    showNotification({
-      type: 'success',
-      title: 'Added to Cart',
-      message: `${inStockItems.length} items added to your cart.`
-    });
+    showSuccess(`${inStockItems.length} items added to your cart.`, 'Added to Cart');
   };
 
   const handleClearWishlist = () => {
     if (items.length > 0) {
       clearWishlist();
-      showNotification({
-        type: 'info',
-        title: 'Wishlist Cleared',
-        message: 'All items have been removed from your wishlist.'
-      });
+      showInfo('All items have been removed from your wishlist.', 'Wishlist Cleared');
     }
   };
 
@@ -128,3 +116,5 @@ export const WishlistPage: React.FC = () => {
     </div>
   );
 };
+
+export default WishlistPage;

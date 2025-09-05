@@ -47,19 +47,68 @@ export const DatabaseSchemaViewer: React.FC = () => {
       displayName: 'User Profiles',
       columns: [
         { name: 'id', type: 'uuid', nullable: false, isPrimaryKey: true, isForeignKey: false },
-        { name: 'full_name', type: 'text', nullable: false, isPrimaryKey: false, isForeignKey: false },
         { name: 'email', type: 'text', nullable: false, isPrimaryKey: false, isForeignKey: false },
-        { name: 'role', type: 'text', nullable: false, isPrimaryKey: false, isForeignKey: false },
+        { name: 'full_name', type: 'text', nullable: true, isPrimaryKey: false, isForeignKey: false },
         { name: 'avatar_url', type: 'text', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'role', type: 'text', nullable: false, isPrimaryKey: false, isForeignKey: false },
         { name: 'phone', type: 'text', nullable: true, isPrimaryKey: false, isForeignKey: false },
-        { name: 'created_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false }
+        { name: 'date_of_birth', type: 'date', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'is_active', type: 'boolean', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'email_verified', type: 'boolean', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'created_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'updated_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false }
       ],
       relationships: {
-        hasMany: ['orders', 'cart_items', 'wishlist_items', 'reviews', 'addresses', 'payment_methods'],
+        hasMany: ['orders', 'cart_items', 'wishlist_items', 'reviews', 'addresses', 'payment_methods', 'user_preferences', 'user_security_settings'],
         belongsTo: []
       },
       position: { x: 100, y: 100 },
       color: 'bg-blue-500'
+    },
+    {
+      name: 'user_preferences',
+      displayName: 'User Preferences',
+      columns: [
+        { name: 'id', type: 'uuid', nullable: false, isPrimaryKey: true, isForeignKey: false },
+        { name: 'user_id', type: 'uuid', nullable: false, isPrimaryKey: false, isForeignKey: true, referencedTable: 'profiles', referencedColumn: 'id' },
+        { name: 'email_order_updates', type: 'boolean', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'email_promotions', type: 'boolean', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'email_newsletter', type: 'boolean', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'push_order_updates', type: 'boolean', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'language', type: 'text', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'timezone', type: 'text', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'currency', type: 'text', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'created_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'updated_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false }
+      ],
+      relationships: {
+        hasMany: [],
+        belongsTo: ['profiles']
+      },
+      position: { x: 400, y: 50 },
+      color: 'bg-indigo-500'
+    },
+    {
+      name: 'user_security_settings',
+      displayName: 'Security Settings',
+      columns: [
+        { name: 'id', type: 'uuid', nullable: false, isPrimaryKey: true, isForeignKey: false },
+        { name: 'user_id', type: 'uuid', nullable: false, isPrimaryKey: false, isForeignKey: true, referencedTable: 'profiles', referencedColumn: 'id' },
+        { name: 'two_factor_enabled', type: 'boolean', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'two_factor_method', type: 'text', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'login_alerts', type: 'boolean', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'session_timeout', type: 'integer', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'password_changed_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'failed_login_attempts', type: 'integer', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'created_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'updated_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false }
+      ],
+      relationships: {
+        hasMany: [],
+        belongsTo: ['profiles']
+      },
+      position: { x: 400, y: 150 },
+      color: 'bg-red-500'
     },
     {
       name: 'categories',
@@ -70,13 +119,15 @@ export const DatabaseSchemaViewer: React.FC = () => {
         { name: 'slug', type: 'text', nullable: false, isPrimaryKey: false, isForeignKey: false },
         { name: 'description', type: 'text', nullable: true, isPrimaryKey: false, isForeignKey: false },
         { name: 'parent_id', type: 'uuid', nullable: true, isPrimaryKey: false, isForeignKey: true, referencedTable: 'categories', referencedColumn: 'id' },
-        { name: 'is_active', type: 'boolean', nullable: true, isPrimaryKey: false, isForeignKey: false }
+        { name: 'is_active', type: 'boolean', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'created_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'updated_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false }
       ],
       relationships: {
         hasMany: ['products'],
         belongsTo: ['categories']
       },
-      position: { x: 400, y: 100 },
+      position: { x: 700, y: 100 },
       color: 'bg-purple-500'
     },
     {
@@ -89,14 +140,65 @@ export const DatabaseSchemaViewer: React.FC = () => {
         { name: 'price', type: 'numeric', nullable: false, isPrimaryKey: false, isForeignKey: false },
         { name: 'category_id', type: 'uuid', nullable: false, isPrimaryKey: false, isForeignKey: true, referencedTable: 'categories', referencedColumn: 'id' },
         { name: 'seller_id', type: 'uuid', nullable: true, isPrimaryKey: false, isForeignKey: true, referencedTable: 'profiles', referencedColumn: 'id' },
-        { name: 'stock', type: 'integer', nullable: false, isPrimaryKey: false, isForeignKey: false }
+        { name: 'stock', type: 'integer', nullable: false, isPrimaryKey: false, isForeignKey: false },
+        { name: 'created_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'updated_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false }
       ],
       relationships: {
         hasMany: ['order_items', 'cart_items', 'wishlist_items', 'reviews', 'product_variants'],
         belongsTo: ['categories', 'profiles']
       },
-      position: { x: 700, y: 100 },
+      position: { x: 1000, y: 100 },
       color: 'bg-green-500'
+    },
+    {
+      name: 'addresses',
+      displayName: 'Addresses',
+      columns: [
+        { name: 'id', type: 'uuid', nullable: false, isPrimaryKey: true, isForeignKey: false },
+        { name: 'user_id', type: 'uuid', nullable: false, isPrimaryKey: false, isForeignKey: true, referencedTable: 'profiles', referencedColumn: 'id' },
+        { name: 'type', type: 'text', nullable: false, isPrimaryKey: false, isForeignKey: false },
+        { name: 'full_name', type: 'text', nullable: false, isPrimaryKey: false, isForeignKey: false },
+        { name: 'street_address', type: 'text', nullable: false, isPrimaryKey: false, isForeignKey: false },
+        { name: 'city', type: 'text', nullable: false, isPrimaryKey: false, isForeignKey: false },
+        { name: 'state', type: 'text', nullable: false, isPrimaryKey: false, isForeignKey: false },
+        { name: 'postal_code', type: 'text', nullable: false, isPrimaryKey: false, isForeignKey: false },
+        { name: 'country', type: 'text', nullable: false, isPrimaryKey: false, isForeignKey: false },
+        { name: 'phone', type: 'text', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'is_default', type: 'boolean', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'created_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'updated_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false }
+      ],
+      relationships: {
+        hasMany: [],
+        belongsTo: ['profiles']
+      },
+      position: { x: 100, y: 300 },
+      color: 'bg-teal-500'
+    },
+    {
+      name: 'payment_methods',
+      displayName: 'Payment Methods',
+      columns: [
+        { name: 'id', type: 'uuid', nullable: false, isPrimaryKey: true, isForeignKey: false },
+        { name: 'user_id', type: 'uuid', nullable: false, isPrimaryKey: false, isForeignKey: true, referencedTable: 'profiles', referencedColumn: 'id' },
+        { name: 'type', type: 'text', nullable: false, isPrimaryKey: false, isForeignKey: false },
+        { name: 'provider', type: 'text', nullable: false, isPrimaryKey: false, isForeignKey: false },
+        { name: 'last_four', type: 'text', nullable: false, isPrimaryKey: false, isForeignKey: false },
+        { name: 'expiry_month', type: 'integer', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'expiry_year', type: 'integer', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'holder_name', type: 'text', nullable: false, isPrimaryKey: false, isForeignKey: false },
+        { name: 'is_default', type: 'boolean', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'is_verified', type: 'boolean', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'created_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'updated_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false }
+      ],
+      relationships: {
+        hasMany: [],
+        belongsTo: ['profiles']
+      },
+      position: { x: 100, y: 450 },
+      color: 'bg-pink-500'
     },
     {
       name: 'orders',
@@ -107,13 +209,14 @@ export const DatabaseSchemaViewer: React.FC = () => {
         { name: 'user_id', type: 'uuid', nullable: false, isPrimaryKey: false, isForeignKey: true, referencedTable: 'profiles', referencedColumn: 'id' },
         { name: 'status', type: 'text', nullable: false, isPrimaryKey: false, isForeignKey: false },
         { name: 'total_amount', type: 'numeric', nullable: false, isPrimaryKey: false, isForeignKey: false },
-        { name: 'created_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false }
+        { name: 'created_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'updated_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false }
       ],
       relationships: {
         hasMany: ['order_items', 'order_tracking'],
         belongsTo: ['profiles']
       },
-      position: { x: 100, y: 400 },
+      position: { x: 400, y: 300 },
       color: 'bg-orange-500'
     },
     {
@@ -131,7 +234,7 @@ export const DatabaseSchemaViewer: React.FC = () => {
         hasMany: [],
         belongsTo: ['orders', 'products']
       },
-      position: { x: 400, y: 400 },
+      position: { x: 700, y: 300 },
       color: 'bg-orange-400'
     },
     {
@@ -147,7 +250,7 @@ export const DatabaseSchemaViewer: React.FC = () => {
         hasMany: [],
         belongsTo: ['profiles', 'products']
       },
-      position: { x: 700, y: 400 },
+      position: { x: 1000, y: 300 },
       color: 'bg-yellow-500'
     },
     {
@@ -158,13 +261,14 @@ export const DatabaseSchemaViewer: React.FC = () => {
         { name: 'product_id', type: 'uuid', nullable: false, isPrimaryKey: false, isForeignKey: true, referencedTable: 'products', referencedColumn: 'id' },
         { name: 'user_id', type: 'uuid', nullable: false, isPrimaryKey: false, isForeignKey: true, referencedTable: 'profiles', referencedColumn: 'id' },
         { name: 'rating', type: 'integer', nullable: false, isPrimaryKey: false, isForeignKey: false },
-        { name: 'comment', type: 'text', nullable: true, isPrimaryKey: false, isForeignKey: false }
+        { name: 'comment', type: 'text', nullable: true, isPrimaryKey: false, isForeignKey: false },
+        { name: 'created_at', type: 'timestamp', nullable: true, isPrimaryKey: false, isForeignKey: false }
       ],
       relationships: {
         hasMany: [],
         belongsTo: ['products', 'profiles']
       },
-      position: { x: 1000, y: 400 },
+      position: { x: 1000, y: 450 },
       color: 'bg-yellow-600'
     }
   ];

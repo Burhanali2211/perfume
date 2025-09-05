@@ -22,7 +22,7 @@ A modern, full-featured e-commerce platform built with React, TypeScript, and Su
 - **Product Categories**: Organize products efficiently
 
 ### 🔧 Admin Features
-- **User Management**: Manage customer and seller accounts
+- **Enhanced User Management**: Full CRUD operations with bulk actions
 - **Platform Analytics**: Comprehensive dashboard with charts
 - **System Monitoring**: Track platform performance
 - **Content Management**: Manage categories and featured products
@@ -59,7 +59,6 @@ A modern, full-featured e-commerce platform built with React, TypeScript, and Su
 - **Vite** - Build tool
 - **ESLint** - Code linting
 - **TypeScript** - Type checking
-- **Faker.js** - Mock data generation
 
 ## Quick Start
 
@@ -89,8 +88,8 @@ A modern, full-featured e-commerce platform built with React, TypeScript, and Su
 
 4. **Database setup**
    - Create a new project on [Supabase](https://supabase.com)
-   - Run the SQL script `complete_ecommerce_schema.sql` in your Supabase SQL editor
-   - Run the SQL script `sample_data.sql` to populate with sample data
+   - Follow the detailed setup guide in [supabase-scripts/SETUP-GUIDE.md](supabase-scripts/SETUP-GUIDE.md)
+   - Run the SQL scripts in order from the [supabase-scripts](supabase-scripts) directory
    - Update `.env` with your project URL and anon key
 
 5. **Start development**
@@ -100,25 +99,31 @@ A modern, full-featured e-commerce platform built with React, TypeScript, and Su
 
 6. **Access the application**
    - Open http://localhost:5173 in your browser
-   - Use demo accounts or create new ones
+   - Register a new account or use direct login in development
 
-📖 **Detailed setup instructions:** See [SETUP.md](SETUP.md)
-
-## Demo Accounts
-
-For testing purposes, you can use these demo accounts:
-
-- **Admin**: admin@example.com / demo123
-- **Seller**: seller@example.com / demo123
-- **Customer**: customer@example.com / demo123
+📖 **Detailed setup instructions:** See [supabase-scripts/SETUP-GUIDE.md](supabase-scripts/SETUP-GUIDE.md)
 
 ## 📦 Database Schema
 
 ### Quick Setup
-The database schema and sample data are provided in two files:
+The database schema has been organized into modular SQL scripts in the [supabase-scripts](supabase-scripts) directory:
 
-1. **`complete_ecommerce_schema.sql`** - Complete database schema with tables, indexes, triggers, and RLS policies
-2. **`sample_data.sql`** - Sample data including categories, products, coupons, and variants
+1. **[01-auth-schema.sql](supabase-scripts/01-auth-schema.sql)** - Authentication tables and policies
+2. **[02-user-profiles.sql](supabase-scripts/02-user-profiles.sql)** - User profiles and roles
+3. **[03-categories.sql](supabase-scripts/03-categories.sql)** - Product categories
+4. **[04-products.sql](supabase-scripts/04-products.sql)** - Products and product variants
+5. **[05-inventory.sql](supabase-scripts/05-inventory.sql)** - Inventory tracking
+6. **[06-shopping-cart.sql](supabase-scripts/06-shopping-cart.sql)** - Cart functionality
+7. **[07-wishlist.sql](supabase-scripts/07-wishlist.sql)** - Wishlist functionality
+8. **[08-orders.sql](supabase-scripts/08-orders.sql)** - Order management
+9. **[09-reviews.sql](supabase-scripts/09-reviews.sql)** - Product reviews
+10. **[10-coupons.sql](supabase-scripts/10-coupons.sql)** - Coupon/discount system
+11. **[11-analytics.sql](supabase-scripts/11-analytics.sql)** - Analytics and reporting
+12. **[12-admin-functions.sql](supabase-scripts/12-admin-functions.sql)** - Administrative functions
+13. **[13-security-policies.sql](supabase-scripts/13-security-policies.sql)** - Row Level Security policies
+14. **[14-sample-data.sql](supabase-scripts/14-sample-data.sql)** - Sample data for testing
+15. **[15-remove-mock-data.sql](supabase-scripts/15-remove-mock-data.sql)** - Script to clean up mock data
+16. **[17-user-management-functions.sql](supabase-scripts/17-user-management-functions.sql)** - Enhanced user management functions
 
 ### Database Tables
 
@@ -130,9 +135,7 @@ The database schema and sample data are provided in two files:
 - **`product_variants`** - Product variations (size, color, storage, etc.)
 
 #### Shopping & Orders
-- **`carts`** - Shopping cart for authenticated and guest users
 - **`cart_items`** - Individual items in shopping carts
-- **`wishlists`** - User wishlist management
 - **`wishlist_items`** - Items in user wishlists
 - **`orders`** - Order management with full order lifecycle
 - **`order_items`** - Individual items in orders with product snapshots
@@ -143,13 +146,21 @@ The database schema and sample data are provided in two files:
 - **`coupons`** - Discount codes and promotional offers
 - **`coupon_usage`** - Tracking of coupon usage by users
 
+#### Additional Features
+- **`user_preferences`** - User notification and preference settings
+- **`user_security_settings`** - Two-factor authentication and security settings
+- **`payment_methods`** - Stored payment methods
+- **`inventory_transactions`** - Inventory movement tracking
+- **`low_stock_alerts`** - Automated low stock notifications
+- **`analytics_events`** - User behavior tracking
+
 ### Key Features
 
 #### Security
 - **Row Level Security (RLS)** enabled on all tables
 - Comprehensive policies for user data access
 - Admin and vendor role-based permissions
-- Guest user support for carts
+- Rate limiting and security audit logging
 
 #### Performance
 - Optimized indexes for all common queries
@@ -159,7 +170,7 @@ The database schema and sample data are provided in two files:
 
 #### Functionality
 - **Automatic timestamps** with triggers
-- **Order number generation** with sequences
+- **Order number generation** with functions
 - **Product rating calculation** with triggers
 - **Inventory tracking** with stock management
 - **Product variants** for size, color, storage options
@@ -167,12 +178,52 @@ The database schema and sample data are provided in two files:
 
 ### Sample Data
 
-The `sample_data.sql` file includes:
-- **8 categories**: Electronics, Clothing, Home & Garden, Sports, Beauty, Books, Automotive, Health
-- **50+ products** across all categories with realistic data
-- **Product variants** for clothing (sizes/colors) and electronics (storage/colors)
-- **5 sample coupons** with different discount types
+The [14-sample-data.sql](supabase-scripts/14-sample-data.sql) file includes:
+- **8 categories**: Traditional Attars, Modern Blends, Floral Scents, Woody Scents, Oud-Based, Unisex Fragrances, Limited Edition, Gift Sets
+- **10+ products** with realistic attar data
+- **Product variants** for different bottle sizes
+- **Sample reviews** with ratings
 - **Realistic product ratings** and review counts
+
+### Database Fix Scripts
+
+If you encounter issues with category creation or other administrative operations, check out the fix scripts in the [supabase-scripts](supabase-scripts) directory:
+
+- **[17-setup-admin-user.sql](supabase-scripts/17-setup-admin-user.sql)** - Creates or updates an admin user
+- **[18-fix-category-rls.sql](supabase-scripts/18-fix-category-rls.sql)** - Fixes Row Level Security policies
+- **[FIX-DATABASE-ISSUES.sql](supabase-scripts/FIX-DATABASE-ISSUES.sql)** - Comprehensive database fixes
+- **[TEST-CATEGORY-CREATION.sql](supabase-scripts/TEST-CATEGORY-CREATION.sql)** - Test category creation
+
+See [supabase-scripts/FIXES-README.md](supabase-scripts/FIXES-README.md) for detailed instructions on using these scripts.
+
+## 🔧 Enhanced User Management System
+
+The platform now includes a comprehensive user management system with the following features:
+
+### Full CRUD Operations
+- **Create**: Add new users with complete profile information
+- **Read**: View all users with sorting and filtering capabilities
+- **Update**: Modify user details including role and status
+- **Delete**: Remove users with automatic cleanup of related data
+
+### Bulk Operations
+- **Bulk Role Changes**: Change roles for multiple users simultaneously
+- **Bulk Status Updates**: Activate or deactivate multiple users
+- **Bulk Deletion**: Remove multiple users with a single action
+
+### Advanced Features
+- **Sorting**: Sort users by name, email, role, or creation date
+- **Filtering**: Filter by role, status, or search term
+- **Export**: Export user data to CSV format
+- **Selection**: Select multiple users for batch operations
+
+### Security Features
+- **Role-Based Access Control**: Only admins can access management features
+- **Data Protection**: Automatic cleanup of related data on user deletion
+- **Input Validation**: Client and server-side validation
+- **Error Handling**: Comprehensive error handling and user feedback
+
+📖 **Detailed user management documentation:** See [USER_MANAGEMENT_GUIDE.md](USER_MANAGEMENT_GUIDE.md)
 
 ## Security Features
 
@@ -188,46 +239,3 @@ The `sample_data.sql` file includes:
 - **Lazy Loading**: Images and components loaded on demand
 - **Caching**: API responses cached for improved performance
 - **Code Splitting**: Dynamic imports for route-based code splitting
-- **Debouncing**: Search and API calls debounced to reduce load
-- **Optimistic Updates**: UI updates before server confirmation
-
-## Accessibility Features
-
-- **ARIA Labels**: Proper labeling for screen readers
-- **Keyboard Navigation**: Full keyboard support
-- **Color Contrast**: WCAG compliant color schemes
-- **Focus Management**: Proper focus handling in modals and forms
-- **Alternative Text**: Descriptive alt text for images
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## Documentation
-
-- 📋 [Setup Guide](SETUP.md) - Detailed installation and configuration
-- 🧪 [Testing Guide](TESTING.md) - Comprehensive testing procedures
-- 🚀 [Deployment Guide](DEPLOYMENT.md) - Production deployment instructions
-
-## Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
-
-## License
-
-This project is licensed under the MIT License.
-
-## Support
-
-For support and questions, please create an issue in the repository.
-
----
-
-*This project was generated through Alpha. For more information, visit [dualite.dev](https://dualite.dev).*

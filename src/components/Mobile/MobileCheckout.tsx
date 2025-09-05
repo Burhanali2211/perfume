@@ -47,24 +47,24 @@ export const MobileCheckoutLayout: React.FC<MobileCheckoutProps> = ({
     <div className="min-h-screen bg-neutral-50 flex flex-col">
       {/* Mobile Header */}
       <div className="bg-white border-b border-neutral-200 sticky top-0 z-10">
-        <div className="px-4 py-3">
+        <div className="px-3 sm:px-4 py-3">
           <div className="flex items-center justify-between mb-3">
             <button
               onClick={onBack}
-              className="p-2 -ml-2 rounded-lg hover:bg-neutral-100 transition-colors"
+              className="p-2 -ml-2 rounded-lg hover:bg-neutral-100 transition-colors active:bg-neutral-200 touch-manipulation"
             >
               <ArrowLeft className="h-5 w-5 text-neutral-600" />
             </button>
-            <h1 className="text-lg font-semibold text-neutral-900">{stepTitle}</h1>
-            <div className="text-sm text-neutral-500">
+            <h1 className="text-base sm:text-lg font-semibold text-neutral-900">{stepTitle}</h1>
+            <div className="text-xs sm:text-sm text-neutral-500">
               {currentStep}/{totalSteps}
             </div>
           </div>
           
           {/* Progress Bar */}
-          <div className="w-full bg-neutral-200 rounded-full h-2">
+          <div className="w-full bg-neutral-200 rounded-full h-1.5 sm:h-2">
             <motion.div
-              className="bg-neutral-900 h-2 rounded-full"
+              className="bg-neutral-900 h-1.5 sm:h-2 rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.3 }}
@@ -74,7 +74,7 @@ export const MobileCheckoutLayout: React.FC<MobileCheckoutProps> = ({
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-3 sm:p-4">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
@@ -202,7 +202,7 @@ export const MobilePaymentSelector: React.FC<MobilePaymentSelectorProps> = ({
             onClick={() => onMethodChange(method.id)}
             disabled={!method.available}
             className={`
-              w-full p-4 rounded-xl border-2 transition-all duration-200
+              w-full p-3 sm:p-4 rounded-xl border-2 transition-all duration-200
               ${selectedMethod === method.id
                 ? 'border-neutral-900 bg-neutral-50'
                 : 'border-neutral-200 bg-white hover:border-neutral-300'
@@ -212,19 +212,19 @@ export const MobilePaymentSelector: React.FC<MobilePaymentSelectorProps> = ({
             `}
             whileTap={{ scale: 0.98 }}
           >
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3 sm:space-x-4">
               <div className={`
                 p-2 rounded-lg
                 ${selectedMethod === method.id ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600'}
               `}>
-                <method.icon className="h-6 w-6" />
+                <method.icon className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
               <div className="flex-1 text-left">
-                <div className="font-medium text-neutral-900">{method.name}</div>
-                <div className="text-sm text-neutral-500">{method.description}</div>
+                <div className="font-medium text-neutral-900 text-sm sm:text-base">{method.name}</div>
+                <div className="text-xs sm:text-sm text-neutral-500">{method.description}</div>
               </div>
               {selectedMethod === method.id && (
-                <CheckCircle className="h-5 w-5 text-neutral-900" />
+                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-neutral-900" />
               )}
             </div>
           </motion.button>
@@ -257,8 +257,8 @@ export const MobileStepNavigation: React.FC<MobileStepNavigationProps> = ({
   const isLastStep = currentStep === totalSteps;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 p-4 safe-area-bottom">
-      <div className="flex space-x-3">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 p-3 sm:p-4 safe-area-bottom">
+      <div className="flex space-x-2 sm:space-x-3">
         {currentStep > 1 && onBack && (
           <MobileTouchButton
             onClick={onBack}

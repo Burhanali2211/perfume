@@ -29,11 +29,15 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => 
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-xl z-50 overflow-hidden"
+            className="fixed right-0 top-0 h-screen w-full max-w-md bg-white shadow-xl z-50"
+            style={{
+              height: '100vh',
+              maxHeight: '100vh'
+            }}
           >
-            <div className="flex flex-col h-full">
-              {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-neutral-200">
+            <div className="flex flex-col h-full max-h-screen">
+              {/* Header - flex-shrink-0 to prevent shrinking */}
+              <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-neutral-200">
                 <h2 className="text-xl font-semibold text-neutral-900">Shopping Cart ({itemCount})</h2>
                 <button
                   onClick={onClose}
@@ -44,8 +48,8 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => 
                 </button>
               </div>
 
-              {/* Cart Items */}
-              <div className="flex-1 overflow-y-auto p-6">
+              {/* Cart Items - flex-grow with overflow handling */}
+              <div className="flex-grow overflow-y-auto p-6">
                 {loading ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-900"></div>
@@ -78,7 +82,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => 
                             <h3 className="font-medium text-gray-900 truncate">
                               {item.product.name}
                             </h3>
-                            <p className="text-sm text-gray-500">${item.product.price}</p>
+                            <p className="text-sm text-gray-500">₹{item.product.price.toLocaleString('en-IN')}</p>
                             
                             <div className="flex items-center space-x-2 mt-2">
                               <button
@@ -104,7 +108,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => 
                           
                           <div className="text-right">
                             <p className="font-semibold text-gray-900">
-                              ${(item.product.price * item.quantity).toFixed(2)}
+                              ₹{(item.product.price * item.quantity).toLocaleString('en-IN')}
                             </p>
                             <button
                               onClick={() => removeItem(item.product.id)}
@@ -130,9 +134,9 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ isOpen, onClose }) => 
                 )}
               </div>
 
-              {/* Footer */}
+              {/* Footer - flex-shrink-0 to prevent shrinking */}
               {items.length > 0 && (
-                <div className="border-t border-neutral-200 p-6 bg-neutral-50">
+                <div className="flex-shrink-0 border-t border-neutral-200 p-6 bg-neutral-50">
                   <div className="flex items-center justify-between mb-6">
                     <span className="text-lg font-semibold text-neutral-700">Total:</span>
                     <span className="text-2xl font-bold text-neutral-900">${total.toFixed(2)}</span>

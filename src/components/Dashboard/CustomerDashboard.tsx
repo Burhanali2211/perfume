@@ -6,6 +6,7 @@ import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { getOrders } from '../../lib/supabase';
 import { Order } from '../../types';
+import { ResponsiveTable } from '../../components/Common/ResponsiveTable';
 
 export const CustomerDashboard: React.FC = () => {
   const { items: wishlistItems } = useWishlist();
@@ -68,7 +69,7 @@ export const CustomerDashboard: React.FC = () => {
       id: order.id,
       orderNumber: order.orderNumber,
       product: firstItem?.product?.name || 'Unknown Product',
-      image: firstItem?.product?.images?.[0] || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=100&h=100&fit=crop',
+      image: firstItem?.product?.images?.[0] || '/src/assets/images/products/sample-product-2.jpg',
       amount: `$${order.total.toFixed(2)}`,
       status: order.status.charAt(0).toUpperCase() + order.status.slice(1),
       date: new Date(order.createdAt).toLocaleDateString(),
@@ -111,6 +112,52 @@ export const CustomerDashboard: React.FC = () => {
   ];
 
   const displayOrders = recentOrders.length > 0 ? recentOrders : mockRecentOrders;
+
+  // Prepare columns for recent orders table
+  const orderColumns = [
+    {
+      key: 'product',
+      title: 'Product',
+      minWidth: 200,
+      render: (value: string, record: any) => (
+        <div className="flex items-center space-x-3">
+          <img
+            src={record.image}
+            alt={record.product}
+            className="h-10 w-10 rounded-lg object-cover"
+          />
+          <div>
+            <p className="font-medium text-gray-900">{record.product}</p>
+            <p className="text-sm text-gray-600">
+              {record.orderNumber} • {record.date}
+              {record.itemCount > 1 && ` • ${record.itemCount} items`}
+            </p>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'amount',
+      title: 'Amount',
+      width: 100,
+      render: (value: string) => <p className="font-semibold text-gray-900">{value}</p>
+    },
+    {
+      key: 'status',
+      title: 'Status',
+      width: 100,
+      render: (value: string) => (
+        <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
+          value === 'Delivered' ? 'bg-green-100 text-green-700' :
+          value === 'Shipped' ? 'bg-blue-100 text-blue-700' :
+          value === 'Processing' ? 'bg-yellow-100 text-yellow-700' :
+          'bg-gray-100 text-gray-700'
+        }`}>
+          {value}
+        </span>
+      )
+    }
+  ];
 
   const quickActions = [
     { icon: User, title: 'Edit Profile', description: 'Update your personal information' },
@@ -185,42 +232,52 @@ export const CustomerDashboard: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <div className="space-y-4">
-                {displayOrders.map((order) => (
-                  <div key={order.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <img
-                      src={order.image}
-                      alt={order.product}
-                      className="h-12 w-12 rounded-lg object-cover"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">{order.product}</p>
-                      <p className="text-sm text-gray-600">
-                        {order.orderNumber} • {order.date}
-                        {order.itemCount > 1 && ` • ${order.itemCount} items`}
-                      </p>
+              <>
+                <div className="hidden md:block">
+                  <ResponsiveTable
+                    columns={orderColumns}
+                    data={displayOrders}
+                    loading={false}
+                    emptyMessage="No orders yet"
+                  />
+                </div>
+                <div className="md:hidden space-y-4">
+                  {displayOrders.map((order) => (
+                    <div key={order.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <img
+                        src={order.image}
+                        alt={order.product}
+                        className="h-12 w-12 rounded-lg object-cover"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{order.product}</p>
+                        <p className="text-sm text-gray-600">
+                          {order.orderNumber} • {order.date}
+                          {order.itemCount > 1 && ` • ${order.itemCount} items`}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-gray-900">{order.amount}</p>
+                        <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
+                          order.status === 'Delivered' ? 'bg-green-100 text-green-700' :
+                          order.status === 'Shipped' ? 'bg-blue-100 text-blue-700' :
+                          order.status === 'Processing' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {order.status}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900">{order.amount}</p>
-                      <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
-                        order.status === 'Delivered' ? 'bg-green-100 text-green-700' :
-                        order.status === 'Shipped' ? 'bg-blue-100 text-blue-700' :
-                        order.status === 'Processing' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {order.status}
-                      </span>
+                  ))}
+                  {displayOrders.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>No orders yet</p>
+                      <p className="text-sm">Start shopping to see your orders here!</p>
                     </div>
-                  </div>
-                ))}
-                {displayOrders.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>No orders yet</p>
-                    <p className="text-sm">Start shopping to see your orders here!</p>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </motion.div>
@@ -265,7 +322,7 @@ export const CustomerDashboard: React.FC = () => {
         transition={{ delay: 0.5 }}
         className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-6 text-white"
       >
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h3 className="text-xl font-semibold mb-2">Recommended for You</h3>
             <p className="text-indigo-100">Discover products based on your preferences and purchase history.</p>
@@ -273,7 +330,7 @@ export const CustomerDashboard: React.FC = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="bg-white text-indigo-600 px-6 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+            className="bg-white text-indigo-600 px-6 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors self-start md:self-auto"
           >
             Shop Now
           </motion.button>

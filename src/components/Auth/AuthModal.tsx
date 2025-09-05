@@ -38,18 +38,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     setIsLoading(true);
     setErrors({});
 
-    // Basic validation
+    // Enhanced validation
     const newErrors: Record<string, string> = {};
 
     if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address.';
     }
 
-    if (!formData.password || (formData.password.length < 6)) {
-      newErrors.password = 'Password must be at least 6 characters long.';
+    if (!formData.password) {
+      newErrors.password = 'Password is required.';
+    } else if (!isLogin && formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters long.';
     }
 
-    if (!isLogin && !formData.name) {
+    if (!isLogin && !formData.name?.trim()) {
       newErrors.name = 'Full name is required for registration.';
     }
 
@@ -70,6 +72,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             detailedError = 'Please confirm your email address before signing in.';
           } else if (errorMessage.includes('Too many requests')) {
             detailedError = 'Too many login attempts. Please wait a moment and try again.';
+          } else if (errorMessage.includes('Account is temporarily locked')) {
+            detailedError = 'Account is temporarily locked due to too many failed attempts. Please try again later.';
           }
           setErrors({ general: detailedError });
         } else {
@@ -84,7 +88,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           });
         }
       } else {
-        const success = await register(formData);
+        const success = await register({
+          email: formData.email,
+          password: formData.password,
+          name: formData.name,
+          role: formData.role
+        });
+        
         if (success) {
           // Successfully registered
           onClose();
@@ -96,7 +106,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             role: 'customer',
           });
         } else {
-          setErrors({ general: 'Registration failed. The email might already be in use.' });
+          setErrors({ general: 'Registration failed. Please try again.' });
         }
       }
     } catch (error) {
@@ -109,9 +119,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   };
 
   const demoCredentials = [
-    { email: 'admin@example.com', role: 'Admin', password: 'demo123' },
-    { email: 'seller@example.com', role: 'Seller', password: 'demo123' },
-    { email: 'customer@example.com', role: 'Customer', password: 'demo123' },
+    { email: 'admin@sufiessences.com', role: 'Admin', password: 'demo123' },
+    { email: 'seller@sufiessences.com', role: 'Seller', password: 'demo123' },
+    { email: 'customer@sufiessences.com', role: 'Customer', password: 'demo123' },
   ];
 
   const fillDemoCredentials = (email: string) => {

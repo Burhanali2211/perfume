@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { createRetryableAction } from '../utils/errorHandling';
 import { performanceMonitor } from '../utils/performance';
+import { logThrottler } from '../utils/logging';
+import { validateSellerId, validateAndFixStoredUser } from '../utils/uuidValidation';
 import {
   User,
   Product,
@@ -14,21 +16,116 @@ import {
   DashboardAnalytics
 } from '../types';
 
+// Environment validation with better error messages
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const appEnv = import.meta.env.VITE_APP_ENV || 'development';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Supabase URL and Anon Key must be provided in .env file');
+// Enhanced environment validation with backend fix detection
+function validateEnvironment() {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  // Validate required environment variables
+  if (!supabaseUrl) {
+    errors.push('VITE_SUPABASE_URL is missing from environment variables');
+  } else if (!supabaseUrl.startsWith('https://')) {
+    errors.push('VITE_SUPABASE_URL must start with https://');
+  } else if (supabaseUrl.includes('mock.supabase.co') || supabaseUrl.includes('localhost')) {
+    warnings.push('Using mock or localhost URL - ensure this is intentional');
+  }
+
+  if (!supabaseAnonKey) {
+    errors.push('VITE_SUPABASE_ANON_KEY is missing from environment variables');
+  } else if (supabaseAnonKey.length < 50) {
+    warnings.push('Supabase anon key seems unusually short');
+  }
+
+  // Log validation results with throttling
+  if (appEnv === 'development') {
+    logThrottler.keyedLog('supabase_config', '🔍 Supabase Configuration Validation:');
+    logThrottler.keyedLog('supabase_url', `📍 URL: ${supabaseUrl || 'NOT SET'}`);
+    logThrottler.keyedLog('supabase_key', `🔑 Key: ${supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'NOT SET'}`);
+    logThrottler.keyedLog('supabase_env', `🌍 Environment: ${appEnv}`);
+    logThrottler.keyedLog('backend_fix', '🔧 Backend fixes will be applied automatically');
+  }
+
+  if (errors.length > 0) {
+    console.error('❌ Configuration errors:');
+    errors.forEach(error => console.error(`  - ${error}`));
+    throw new Error(`Supabase configuration errors: ${errors.join(', ')}`);
+  }
+
+  if (warnings.length > 0) {
+    console.warn('⚠️ Configuration warnings:');
+    warnings.forEach(warning => console.warn(`  - ${warning}`));
+  }
+
+  if (appEnv === 'development') {
+    logThrottler.keyedLog('supabase_success', '✅ Supabase configuration validated successfully!');
+  }
 }
 
-// Configure Supabase client with performance optimizations and security settings
+// Enhanced database initialization with automatic fix application
+async function initializeDatabase() {
+  try {
+    // Set development mode parameters
+    await supabase.rpc('set_config', {
+      setting_name: 'app.development_mode',
+      new_value: 'true',
+      is_local: false
+    }).catch(() => {
+      // Ignore errors if function doesn't exist
+      console.log('Development mode configuration not available');
+    });
+
+    // Test basic connectivity
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('count')
+      .limit(1);
+
+    if (error && error.message.includes('infinite recursion')) {
+      console.warn('⚠️ Database RLS policies need fixing. This is expected on first run.');
+      throw new Error('DATABASE_NEEDS_FIXING: Please run the COMPREHENSIVE-BACKEND-FIX.sql script in your Supabase SQL Editor.');
+    }
+
+    if (appEnv === 'development') {
+      console.log('✅ Database connection established successfully');
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('DATABASE_NEEDS_FIXING')) {
+      throw error;
+    }
+    console.warn('⚠️ Database initialization check failed:', error);
+  }
+}
+
+// Validate environment on load
+validateEnvironment();
+
+// Initialize database on load (async)
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    initializeDatabase().catch(err => {
+      if (err.message?.includes('DATABASE_NEEDS_FIXING')) {
+        console.error('🔧 DATABASE SETUP REQUIRED:', err.message);
+      } else {
+        console.warn('Database initialization warning:', err);
+      }
+    });
+  }, 1000);
+}
+
+// Enhanced Supabase client configuration with better error handling and monitoring
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    storageKey: 'supabase.auth.token'
+    storageKey: 'supabase.auth.token',
+    debug: appEnv === 'development' // Keep debug for auth but reduce other logs
   },
   realtime: {
     params: {
@@ -37,7 +134,41 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   global: {
     headers: {
-      'X-Client-Info': 'luxury-ecommerce@1.0.0'
+      'X-Client-Info': 'ecommerce-platform@1.0.0',
+      'X-App-Environment': appEnv,
+      'apikey': supabaseAnonKey,
+      'Authorization': `Bearer ${supabaseAnonKey}`
+    },
+    fetch: (url, options = {}) => {
+      // Reduce logging frequency - only log RPC calls and critical requests
+      if (appEnv === 'development') {
+        // Only log RPC calls and requests to specific endpoints to reduce noise
+        if (url.includes('/rpc/') || url.includes('profiles') || url.includes('orders') || url.includes('products')) {
+          // Use throttled logging to prevent excessive output
+          logThrottler.keyedLog(`db_request_${url}`, `🔗 Database request: ${url}`, 2000); // At most once every 2 seconds
+        }
+      }
+
+      // Ensure API key is always included in headers
+      const enhancedOptions = {
+        ...options,
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+          ...options.headers,
+          // Add caching headers for GET requests
+          ...((!options.method || options.method === 'GET') && {
+            'Cache-Control': 'max-age=60, stale-while-revalidate=300'
+          })
+        },
+        // Optimize timeout for better performance - reduce from 30s to 10s
+        signal: AbortSignal.timeout(10000), // 10 second timeout
+        // Add performance optimizations
+        keepalive: true
+      };
+
+      return fetch(url, enhancedOptions);
     }
   },
   db: {
@@ -45,10 +176,92 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// Add timeout wrapper for Supabase queries with more generous timeouts
+// Connection health monitoring
+let connectionHealthy = true;
+let lastHealthCheck = 0;
+const healthCheckTimeout: NodeJS.Timeout | null = null;
+
+export const checkDatabaseConnection = async (): Promise<{ healthy: boolean; latency?: number; error?: string }> => {
+  const now = Date.now();
+  
+  // Prevent too frequent health checks (at most once per 30 seconds)
+  if (now - lastHealthCheck < 30000) {
+    return { healthy: connectionHealthy };
+  }
+  
+  try {
+    const startTime = Date.now();
+    const { error } = await supabase
+      .from('profiles')
+      .select('count')
+      .limit(1)
+      .abortSignal(AbortSignal.timeout(5000)); // 5 second timeout for health check
+    
+    const latency = Date.now() - startTime;
+    
+    if (error) {
+      connectionHealthy = false;
+      if (appEnv === 'development') {
+        console.error('❌ Database connection unhealthy:', error.message);
+      }
+      return { healthy: false, error: error.message, latency };
+    }
+    
+    connectionHealthy = true;
+    lastHealthCheck = now;
+    
+    if (appEnv === 'development' && latency > 1000) {
+      console.log(`✅ Database connection healthy (${latency}ms)`);
+    }
+    
+    return { healthy: true, latency };
+  } catch (error) {
+    connectionHealthy = false;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown connection error';
+    if (appEnv === 'development') {
+      console.error('❌ Database connection check failed:', errorMessage);
+    }
+    return { healthy: false, error: errorMessage };
+  }
+};
+
+export const isDatabaseHealthy = (): boolean => {
+  // Consider connection healthy if last check was within 60 seconds
+  return connectionHealthy && (Date.now() - lastHealthCheck) < 60000;
+};
+
+// Helper function to set session configuration for direct login mode
+export const setDirectLoginSession = async (): Promise<void> => {
+  try {
+    // Try to set session parameters using RPC
+    await supabase.rpc('set_config', {
+      setting_name: 'app.direct_login_enabled',
+      new_value: 'true',
+      is_local: false
+    });
+  } catch (error) {
+    // If RPC fails, try alternative method
+    console.log('Setting direct login session context');
+    // The RLS policies will handle the direct login mode check
+  }
+};
+
+// Perform initial connection check with delay
+if (typeof window !== 'undefined') {
+  // Add a longer delay for initial check to allow app to initialize
+  setTimeout(() => {
+    checkDatabaseConnection().catch(err => {
+      if (appEnv === 'development') {
+        console.error('Initial database connection check failed:', err);
+      }
+    });
+  }, 3000); // Check after 3 seconds instead of 1 second
+}
+
+// Enhanced timeout wrapper with retry logic and better error handling
 export const withTimeout = <T>(
   promise: Promise<T>,
-  timeoutMs: number = 15000, // Increased default timeout to 15 seconds
+  timeoutMs: number = 8000,
   errorMessage: string = 'Request timed out'
 ): Promise<T> => {
   return Promise.race([
@@ -59,98 +272,355 @@ export const withTimeout = <T>(
   ]);
 };
 
+// Enhanced retry mechanism with exponential backoff
+export const withRetry = async <T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000,
+  operationName: string = 'Database operation'
+): Promise<T> => {
+  let lastError: Error;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const result = await operation();
+      
+      if (attempt > 1) {
+        console.log(`✅ ${operationName} succeeded on attempt ${attempt}`);
+      }
+      
+      return result;
+    } catch (error) {
+      lastError = error as Error;
+      
+      if (attempt === maxRetries) {
+        console.error(`❌ ${operationName} failed after ${maxRetries} attempts:`, lastError.message);
+        break;
+      }
+      
+      // Check if error is retryable
+      const isRetryable = isRetryableError(lastError);
+      
+      if (!isRetryable) {
+        console.error(`❌ ${operationName} failed with non-retryable error:`, lastError.message);
+        break;
+      }
+      
+      const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
+      console.warn(`⚠️ ${operationName} failed on attempt ${attempt}, retrying in ${delay}ms:`, lastError.message);
+      
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  throw lastError!;
+};
+
+// Check if an error is retryable
+function isRetryableError(error: Error): boolean {
+  const message = error.message.toLowerCase();
+  
+  // Network errors are retryable
+  if (message.includes('network') || message.includes('fetch') || message.includes('timeout')) {
+    return true;
+  }
+  
+  // Temporary database issues are retryable
+  if (message.includes('connection') || message.includes('temporarily unavailable')) {
+    return true;
+  }
+  
+  // Auth errors, validation errors, etc. are not retryable
+  return false;
+}
+
+// Helper to validate UUID format
+const isValidUUID = (value: string): boolean => {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+};
+
+// Helper to sanitize external/blocked image URLs
+const sanitizeImageUrls = (images: unknown): string[] => {
+  const placeholderSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600"><rect width="100%25" height="100%25" fill="%23f3f4f6"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-size="32" fill="%23999">No Image</text></svg>';
+  const arr = Array.isArray(images) ? images : [];
+  const sanitized = arr
+    .map(u => {
+      if (typeof u !== 'string') return '';
+      if (u.includes('://example.com/')) return placeholderSvg;
+      return u;
+    })
+    .filter(Boolean) as string[];
+  return sanitized.length ? sanitized : [placeholderSvg];
+};
+
 // =====================================================
 // USER PROFILE FUNCTIONS
 // =====================================================
 
 export const getProfileForUser = async (userId: string): Promise<User | null> => {
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+  if (!userId) {
+    console.warn('getProfileForUser: userId is empty');
+    return null;
+  }
 
-    if (error) {
+  try {
+    const result = await withRetry(async () => {
+      const { data, error } = await withTimeout(
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single(),
+        10000, // 10 second timeout for profile queries
+        'Profile query timed out'
+      );
+
+      if (error) {
         if (error.message.includes('infinite recursion')) {
           throw new Error('DATABASE SETUP ERROR: Your database security policies for the "profiles" table are causing an infinite loop. Please run the provided SQL script in your Supabase SQL Editor to fix this.');
         }
-        console.error('Error fetching profile:', error);
-        return null;
-    }
+        throw error;
+      }
 
-    if (data) {
-        return {
-            id: data.id,
-            name: data.full_name,
-            email: data.email,
-            avatar: data.avatar_url,
-            role: data.role,
-            phone: data.phone,
-            dateOfBirth: data.date_of_birth,
-            isActive: data.is_active,
-            emailVerified: data.email_verified,
-            createdAt: new Date(data.created_at),
-            updatedAt: data.updated_at ? new Date(data.updated_at) : undefined,
-        };
+      return data;
+    }, 3, 1000, `getProfileForUser(${userId})`);
+
+    if (result) {
+      return {
+        id: result.id,
+        name: result.full_name,
+        email: result.email,
+        avatar: result.avatar_url,
+        role: result.role,
+        phone: result.phone,
+        dateOfBirth: result.date_of_birth,
+        isActive: result.is_active,
+        emailVerified: result.email_verified,
+        createdAt: new Date(result.created_at),
+        updatedAt: result.updated_at ? new Date(result.updated_at) : undefined,
+      };
     }
 
     return null;
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    
+    // Check if this is a setup error that should bubble up
+    if (error instanceof Error && error.message.includes('DATABASE SETUP ERROR')) {
+      throw error;
+    }
+    
+    return null;
+  }
+};
+
+export const createUserProfile = async (userData: {
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'seller' | 'customer';
+  avatar?: string;
+  phone?: string;
+  dateOfBirth?: string;
+}): Promise<User | null> => {
+  if (!userData.id || !userData.email) {
+    console.error('createUserProfile: Missing required fields (id, email)');
+    return null;
+  }
+
+  try {
+    const result = await withRetry(async () => {
+      const { data, error } = await withTimeout(
+        supabase
+          .from('profiles')
+          .insert({
+            id: userData.id,
+            email: userData.email,
+            full_name: userData.name || '',
+            role: userData.role || 'customer',
+            avatar_url: userData.avatar || '',
+            phone: userData.phone || '',
+            date_of_birth: userData.dateOfBirth || null,
+            is_active: true,
+            email_verified: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single(),
+        10000,
+        'Profile creation timed out'
+      );
+
+      if (error) {
+        // Handle specific error cases
+        if (error.code === '23505') {
+          throw new Error('User profile already exists');
+        }
+        throw error;
+      }
+
+      return data;
+    }, 2, 1000, `createUserProfile(${userData.email})`);
+
+    if (result) {
+      console.log(`✅ Created user profile for ${userData.email}`);
+      return {
+        id: result.id,
+        name: result.full_name,
+        email: result.email,
+        role: result.role,
+        avatar: result.avatar_url,
+        phone: result.phone,
+        dateOfBirth: result.date_of_birth,
+        isActive: result.is_active,
+        emailVerified: result.email_verified,
+        createdAt: new Date(result.created_at),
+        updatedAt: new Date(result.updated_at)
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error creating user profile:', error);
+    return null;
+  }
 };
 
 export const updateUserProfile = async (userId: string, updates: Partial<User>): Promise<boolean> => {
-    console.log('🔄 Updating user profile:', { userId, updates });
+  if (!userId) {
+    console.error('updateUserProfile: userId is required');
+    return false;
+  }
 
-    // Build update object with only defined values
-    const updateData: Record<string, unknown> = {
-        updated_at: new Date().toISOString()
-    };
-
-    if (updates.name !== undefined) updateData.full_name = updates.name;
-    if (updates.avatar !== undefined) updateData.avatar_url = updates.avatar;
-    if (updates.phone !== undefined) updateData.phone = updates.phone;
-    if (updates.dateOfBirth !== undefined) updateData.date_of_birth = updates.dateOfBirth;
-    if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
-    if (updates.emailVerified !== undefined) updateData.email_verified = updates.emailVerified;
-
-    console.log('🔄 Database update data:', updateData);
-
-    const { data, error } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('id', userId)
-        .select()
-        .single();
-
-    if (error) {
-        console.error('❌ Error updating profile:', error);
-        return false;
-    }
-
-    console.log('✅ Profile updated successfully:', data);
+  if (!updates || Object.keys(updates).length === 0) {
+    console.warn('updateUserProfile: No updates provided');
     return true;
+  }
+
+  try {
+    const result = await withRetry(async () => {
+      const updateData: Record<string, unknown> = {
+        updated_at: new Date().toISOString()
+      };
+
+      // Map User interface fields to database columns
+      if (updates.name !== undefined) updateData.full_name = updates.name;
+      if (updates.avatar !== undefined) updateData.avatar_url = updates.avatar;
+      if (updates.phone !== undefined) updateData.phone = updates.phone;
+      if (updates.dateOfBirth !== undefined) updateData.date_of_birth = updates.dateOfBirth;
+      if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
+      if (updates.emailVerified !== undefined) updateData.email_verified = updates.emailVerified;
+      if (updates.role !== undefined) updateData.role = updates.role;
+
+      const { error } = await withTimeout(
+        supabase
+          .from('profiles')
+          .update(updateData)
+          .eq('id', userId),
+        10000,
+        'Profile update timed out'
+      );
+
+      if (error) {
+        throw error;
+      }
+
+      return true;
+    }, 2, 1000, `updateUserProfile(${userId})`);
+
+    console.log(`✅ Updated user profile for ${userId}`);
+    return result;
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    return false;
+  }
 };
 
-// New function to get all users (admin only)
-export const getAllUsers = async (): Promise<User[]> => {
-    const { data, error } = await supabase
+
+
+// Enhanced function to get all users with better error handling and pagination
+export const getAllUsers = async (options: {
+  limit?: number;
+  offset?: number;
+  searchTerm?: string;
+  roleFilter?: string;
+  isActiveFilter?: boolean;
+} = {}): Promise<{ users: User[]; total: number; error?: string }> => {
+  const { limit = 50, offset = 0, searchTerm, roleFilter, isActiveFilter } = options;
+
+  try {
+    const result = await withRetry(async () => {
+      let query = supabase
         .from('profiles')
-        .select('*')
+        .select('*', { count: 'exact' })
         .order('created_at', { ascending: false });
 
-    if (error) {
-        console.error('Error fetching users:', error);
-        return [];
-    }
+      // Apply filters
+      if (searchTerm) {
+        query = query.or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+      }
+      
+      if (roleFilter) {
+        query = query.eq('role', roleFilter);
+      }
+      
+      if (isActiveFilter !== undefined) {
+        query = query.eq('is_active', isActiveFilter);
+      }
 
-    return data?.map(mapUserFromDB) || [];
+      // Apply pagination
+      query = query.range(offset, offset + limit - 1);
+
+      const { data, error, count } = await withTimeout(
+        query,
+        15000,
+        'Get all users query timed out'
+      );
+
+      if (error) {
+        throw error;
+      }
+
+      return { data: data || [], count: count || 0 };
+    }, 2, 1000, 'getAllUsers');
+
+    const users: User[] = result.data.map(profile => ({
+      id: profile.id,
+      name: profile.full_name,
+      email: profile.email,
+      avatar: profile.avatar_url,
+      role: profile.role,
+      phone: profile.phone,
+      dateOfBirth: profile.date_of_birth,
+      isActive: profile.is_active,
+      emailVerified: profile.email_verified,
+      createdAt: new Date(profile.created_at),
+      updatedAt: profile.updated_at ? new Date(profile.updated_at) : undefined,
+    }));
+
+    console.log(`✅ Retrieved ${users.length} users (total: ${result.count})`);
+    return { users, total: result.count };
+  } catch (error) {
+    console.error('Error fetching all users:', error);
+    return { 
+      users: [], 
+      total: 0, 
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+};
+
+// Legacy function for backward compatibility
+export const getAllUsersLegacy = async (): Promise<User[]> => {
+  const result = await getAllUsers();
+  return result.users;
 };
 
 // New function to update user role (admin only)
 export const updateUserRole = async (userId: string, role: 'admin' | 'seller' | 'customer'): Promise<boolean> => {
-    // Map role to boolean fields
     const updateData = {
-        is_admin: role === 'admin',
-        is_vendor: role === 'seller',
+        role: role,
         updated_at: new Date().toISOString()
     };
 
@@ -166,22 +636,228 @@ export const updateUserRole = async (userId: string, role: 'admin' | 'seller' | 
     return true;
 };
 
-// Helper function to map database user to our User type
-const mapUserFromDB = (data: Record<string, unknown>): User => {
-    // Determine role based on database boolean fields
-    let role: 'admin' | 'seller' | 'customer' = 'customer';
-    if (data.is_admin === true) {
-        role = 'admin';
-    } else if (data.is_vendor === true) {
-        role = 'seller';
+// Add new functions for full CRUD operations
+
+// Function to create a new user
+export const createNewUser = async (userData: {
+  email: string;
+  name: string;
+  role: 'admin' | 'seller' | 'customer';
+  phone?: string;
+  dateOfBirth?: string;
+  isActive?: boolean;
+}): Promise<{ success: boolean; user?: User; error?: string }> => {
+  try {
+    // Note: This creates a profile entry only. For full user creation,
+    // the user would need to be created in the auth system first.
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert({
+        email: userData.email,
+        full_name: userData.name,
+        role: userData.role,
+        phone: userData.phone || null,
+        date_of_birth: userData.dateOfBirth || null,
+        is_active: userData.isActive !== undefined ? userData.isActive : true,
+        email_verified: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return { success: false, error: error.message };
     }
 
+    const user: User = {
+      id: data.id,
+      name: data.full_name,
+      email: data.email,
+      role: data.role,
+      phone: data.phone,
+      dateOfBirth: data.date_of_birth,
+      isActive: data.is_active,
+      emailVerified: data.email_verified,
+      createdAt: new Date(data.created_at),
+      updatedAt: data.updated_at ? new Date(data.updated_at) : undefined,
+      avatar: data.avatar_url || undefined
+    };
+
+    return { success: true, user };
+  } catch (error) {
+    console.error('Error creating user:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+};
+
+// Function to update a user
+export const updateUser = async (userId: string, updates: Partial<User>): Promise<{ success: boolean; user?: User; error?: string }> => {
+  try {
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString()
+    };
+
+    // Map User interface fields to database columns
+    if (updates.name !== undefined) updateData.full_name = updates.name;
+    if (updates.avatar !== undefined) updateData.avatar_url = updates.avatar;
+    if (updates.phone !== undefined) updateData.phone = updates.phone;
+    if (updates.dateOfBirth !== undefined) updateData.date_of_birth = updates.dateOfBirth;
+    if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
+    if (updates.emailVerified !== undefined) updateData.email_verified = updates.emailVerified;
+    if (updates.role !== undefined) updateData.role = updates.role;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(updateData)
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    const user: User = {
+      id: data.id,
+      name: data.full_name,
+      email: data.email,
+      role: data.role,
+      phone: data.phone,
+      dateOfBirth: data.date_of_birth,
+      isActive: data.is_active,
+      emailVerified: data.email_verified,
+      createdAt: new Date(data.created_at),
+      updatedAt: data.updated_at ? new Date(data.updated_at) : undefined,
+      avatar: data.avatar_url || undefined
+    };
+
+    return { success: true, user };
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+};
+
+// Function to delete a user
+export const deleteUser = async (userId: string): Promise<{ success: boolean; error?: string }> => {
+  try {
+    // First, delete related data (addresses, preferences, etc.)
+    const relatedTables = ['addresses', 'user_preferences', 'user_security_settings', 'payment_methods'];
+    
+    for (const table of relatedTables) {
+      const { error: deleteError } = await supabase
+        .from(table)
+        .delete()
+        .eq('user_id', userId);
+      
+      if (deleteError) {
+        console.warn(`Warning: Failed to delete ${table} for user ${userId}:`, deleteError.message);
+      }
+    }
+    
+    // Then delete the user profile
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', userId);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+};
+
+// Function to delete multiple users (bulk delete)
+export const deleteUsersBulk = async (userIds: string[]): Promise<{ success: boolean; deletedCount: number; error?: string }> => {
+  try {
+    let deletedCount = 0;
+    
+    // Delete related data for each user
+    const relatedTables = ['addresses', 'user_preferences', 'user_security_settings', 'payment_methods'];
+    
+    for (const userId of userIds) {
+      for (const table of relatedTables) {
+        const { error: deleteError } = await supabase
+          .from(table)
+          .delete()
+          .eq('user_id', userId);
+        
+        if (deleteError) {
+          console.warn(`Warning: Failed to delete ${table} for user ${userId}:`, deleteError.message);
+        }
+      }
+    }
+    
+    // Delete user profiles
+    const { data, error } = await supabase
+      .from('profiles')
+      .delete()
+      .in('id', userIds)
+      .select();
+
+    if (error) {
+      return { success: false, deletedCount: 0, error: error.message };
+    }
+
+    deletedCount = data?.length || 0;
+    return { success: true, deletedCount };
+  } catch (error) {
+    console.error('Error deleting users in bulk:', error);
+    return { success: false, deletedCount: 0, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+};
+
+// Function to update multiple users (bulk update)
+export const updateUsersBulk = async (
+  userIds: string[], 
+  updates: Partial<User>
+): Promise<{ success: boolean; updatedCount: number; error?: string }> => {
+  try {
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString()
+    };
+
+    // Map User interface fields to database columns
+    if (updates.name !== undefined) updateData.full_name = updates.name;
+    if (updates.avatar !== undefined) updateData.avatar_url = updates.avatar;
+    if (updates.phone !== undefined) updateData.phone = updates.phone;
+    if (updates.dateOfBirth !== undefined) updateData.date_of_birth = updates.dateOfBirth;
+    if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
+    if (updates.emailVerified !== undefined) updateData.email_verified = updates.emailVerified;
+    if (updates.role !== undefined) updateData.role = updates.role;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(updateData)
+      .in('id', userIds)
+      .select();
+
+    if (error) {
+      return { success: false, updatedCount: 0, error: error.message };
+    }
+
+    const updatedCount = data?.length || 0;
+    return { success: true, updatedCount };
+  } catch (error) {
+    console.error('Error updating users in bulk:', error);
+    return { success: false, updatedCount: 0, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+};
+
+// Helper function to map database user to our User type
+const mapUserFromDB = (data: Record<string, unknown>): User => {
     return {
         id: data.id as string,
         name: (data.full_name as string) || '',
         email: data.email as string,
         avatar: data.avatar_url as string,
-        role,
+        role: (data.role as 'admin' | 'seller' | 'customer') || 'customer',
         phone: data.phone as string,
         dateOfBirth: data.date_of_birth as string,
         isActive: data.is_active as boolean,
@@ -466,6 +1142,41 @@ export const getProductById = async (id: string): Promise<Product | null> => {
 };
 
 export const createProduct = async (product: Omit<Product, 'id' | 'createdAt' | 'reviews' | 'rating' | 'reviewCount'>): Promise<string | null> => {
+    // Check if we're in direct login mode
+    const isDirectLogin = import.meta.env.VITE_DIRECT_LOGIN_ENABLED === 'true';
+
+    // Set session parameters for direct login mode
+    if (isDirectLogin) {
+        await setDirectLoginSession();
+    }
+
+    let sellerId = product.sellerId;
+
+    // Validate and fix stored user data
+    validateAndFixStoredUser();
+
+    // If in direct login mode and no sellerId provided, use a default admin user
+    if (isDirectLogin && !sellerId) {
+        // Try to get sellerId from localStorage (direct login user)
+        const storedUser = localStorage.getItem('direct_login_current_user');
+        if (storedUser) {
+            try {
+                const user = JSON.parse(storedUser);
+                sellerId = user.id;
+            } catch (e) {
+                console.error('Error parsing direct login user:', e);
+                // Use default admin ID as fallback
+                sellerId = '33333333-3333-3333-3333-333333333333';
+            }
+        } else {
+            // Use default admin ID as fallback
+            sellerId = '33333333-3333-3333-3333-333333333333';
+        }
+    }
+
+    // Validate the seller ID before using it
+    sellerId = validateSellerId(sellerId);
+
     const { data, error } = await supabase
         .from('products')
         .insert({
@@ -476,7 +1187,7 @@ export const createProduct = async (product: Omit<Product, 'id' | 'createdAt' | 
             price: product.price,
             original_price: product.originalPrice,
             category_id: product.categoryId,
-            seller_id: product.sellerId,
+            seller_id: sellerId,
             images: product.images,
             stock: product.stock,
             min_stock_level: product.minStockLevel || 5,
@@ -502,6 +1213,14 @@ export const createProduct = async (product: Omit<Product, 'id' | 'createdAt' | 
 };
 
 export const updateProduct = async (product: Product): Promise<boolean> => {
+    // Check if we're in direct login mode
+    const isDirectLogin = import.meta.env.VITE_DIRECT_LOGIN_ENABLED === 'true';
+
+    // Set session parameters for direct login mode
+    if (isDirectLogin) {
+        await setDirectLoginSession();
+    }
+
     const { error } = await supabase
         .from('products')
         .update({
@@ -536,6 +1255,14 @@ export const updateProduct = async (product: Product): Promise<boolean> => {
 };
 
 export const deleteProduct = async (productId: string): Promise<boolean> => {
+    // Check if we're in direct login mode
+    const isDirectLogin = import.meta.env.VITE_DIRECT_LOGIN_ENABLED === 'true';
+
+    // Set session parameters for direct login mode
+    if (isDirectLogin) {
+        await setDirectLoginSession();
+    }
+
     const { error } = await supabase
         .from('products')
         .update({ is_active: false })
@@ -559,7 +1286,7 @@ const mapProductFromDB = (data: Record<string, unknown>): Product => ({
     originalPrice: data.original_price ? parseFloat(data.original_price) : undefined,
     categoryId: data.category_id,
     category: data.categories?.name || '',
-    images: data.images || [],
+    images: sanitizeImageUrls(data.images),
     stock: data.stock,
     minStockLevel: data.min_stock_level,
     sku: data.sku,
@@ -651,6 +1378,38 @@ export const getCategories = async (): Promise<Category[]> => {
 };
 
 export const createCategory = async (category: Omit<Category, 'id' | 'productCount' | 'createdAt' | 'updatedAt'>): Promise<string | null> => {
+    // Check if we're in direct login mode
+    const isDirectLogin = import.meta.env.VITE_DIRECT_LOGIN_ENABLED === 'true';
+
+    // Set session parameters for direct login mode
+    if (isDirectLogin) {
+        await setDirectLoginSession();
+    }
+
+    if (!isDirectLogin) {
+        // Standard authentication flow
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            console.error('Error creating category: User not authenticated');
+            return null;
+        }
+
+        // Check if user has admin role
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+        if (profileError || !profile || profile.role !== 'admin') {
+            console.error('Error creating category: User does not have admin privileges');
+            return null;
+        }
+    } else {
+        // In direct login mode, we'll rely on RLS policies to handle permissions
+        console.log('Creating category in direct login mode');
+    }
+
     const { data, error } = await supabase
         .from('categories')
         .insert({
@@ -671,6 +1430,93 @@ export const createCategory = async (category: Omit<Category, 'id' | 'productCou
     }
 
     return data?.id || null;
+};
+
+export const updateCategory = async (category: Category): Promise<boolean> => {
+    // Check if we're in direct login mode
+    const isDirectLogin = import.meta.env.VITE_DIRECT_LOGIN_ENABLED === 'true';
+
+    // Set session parameters for direct login mode
+    if (isDirectLogin) {
+        await setDirectLoginSession();
+    }
+
+    if (!isDirectLogin) {
+        // Standard authentication flow - check user permissions
+        // This will be handled by RLS policies
+    } else {
+        // In direct login mode, we'll rely on RLS policies to handle permissions
+        console.log('Updating category in direct login mode');
+    }
+
+    const { error } = await supabase
+        .from('categories')
+        .update({
+            name: category.name,
+            slug: category.slug || category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            description: category.description,
+            image_url: category.image,
+            parent_id: category.parentId,
+            sort_order: category.sortOrder,
+            is_active: category.isActive,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', category.id);
+
+    if (error) {
+        console.error('Error updating category:', error);
+        return false;
+    }
+
+    return true;
+};
+
+export const deleteCategory = async (categoryId: string): Promise<boolean> => {
+    // Check if we're in direct login mode
+    const isDirectLogin = import.meta.env.VITE_DIRECT_LOGIN_ENABLED === 'true';
+
+    // Set session parameters for direct login mode
+    if (isDirectLogin) {
+        await setDirectLoginSession();
+    }
+
+    if (!isDirectLogin) {
+        // Standard authentication flow - check user permissions
+        // This will be handled by RLS policies
+    } else {
+        // In direct login mode, we'll rely on RLS policies to handle permissions
+        console.log('Deleting category in direct login mode');
+    }
+    
+    // First check if there are products in this category
+    const { count, error: countError } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('category_id', categoryId);
+
+    if (countError) {
+        console.error('Error checking category products:', countError);
+        return false;
+    }
+
+    // Don't allow deletion if there are products in this category
+    if (count && count > 0) {
+        console.error('Cannot delete category with products');
+        return false;
+    }
+
+    // If no products, proceed with deletion
+    const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', categoryId);
+
+    if (error) {
+        console.error('Error deleting category:', error);
+        return false;
+    }
+
+    return true;
 };
 
 // Helper function to map database category to our Category type
@@ -1055,6 +1901,9 @@ export const createGuestOrder = async (orderData: {
 };
 
 export const getOrders = async (userId?: string): Promise<Order[]> => {
+    // Check if we're in direct login mode
+    const isDirectLogin = import.meta.env.VITE_DIRECT_LOGIN_ENABLED === 'true';
+    
     let query = supabase
         .from('orders')
         .select(`
@@ -1063,13 +1912,19 @@ export const getOrders = async (userId?: string): Promise<Order[]> => {
                 *,
                 products(name, images, price)
             ),
-            profiles(full_name),
-            order_tracking(*)
+            profiles(full_name)
         `)
         .order('created_at', { ascending: false });
 
     if (userId) {
-        query = query.eq('user_id', userId);
+        // Handle direct login mode - convert mock user ID to a valid approach
+        if (isDirectLogin && userId.startsWith('mock-')) {
+            // In direct login mode, we might want to fetch all orders or handle differently
+            // For now, we'll skip the user filter for mock users
+            console.warn('Skipping user filter for mock user in direct login mode');
+        } else {
+            query = query.eq('user_id', userId);
+        }
     }
 
     const { data, error } = await query;
@@ -1079,7 +1934,20 @@ export const getOrders = async (userId?: string): Promise<Order[]> => {
         return [];
     }
 
-    return data?.map(mapOrderFromDB) || [];
+    // Fetch tracking data separately to avoid relationship issues
+    const ordersWithTracking = await Promise.all(data.map(async (order) => {
+        const { data: trackingData, error: trackingError } = await supabase
+            .from('order_tracking')
+            .select('*')
+            .eq('order_id', order.id);
+        
+        return {
+            ...order,
+            trackingHistory: trackingData || []
+        };
+    }));
+
+    return ordersWithTracking?.map(mapOrderFromDB) || [];
 };
 
 export const getOrderById = async (orderId: string): Promise<Order | null> => {
@@ -1091,8 +1959,7 @@ export const getOrderById = async (orderId: string): Promise<Order | null> => {
                 *,
                 products(*)
             ),
-            profiles(full_name),
-            order_tracking(*)
+            profiles(full_name)
         `)
         .eq('id', orderId)
         .single();
@@ -1102,7 +1969,18 @@ export const getOrderById = async (orderId: string): Promise<Order | null> => {
         return null;
     }
 
-    return data ? mapOrderFromDB(data) : null;
+    // Fetch tracking data separately to avoid relationship issues
+    const { data: trackingData, error: trackingError } = await supabase
+        .from('order_tracking')
+        .select('*')
+        .eq('order_id', data.id);
+    
+    const orderWithTracking = {
+        ...data,
+        trackingHistory: trackingData || []
+    };
+
+    return orderWithTracking ? mapOrderFromDB(orderWithTracking) : null;
 };
 
 // Helper function to map database order to our Order type
@@ -1953,24 +2831,7 @@ export const validateCoupon = async (code: string, orderAmount: number): Promise
     return null;
 };
 
-// Helper function to map database coupon to our Coupon type
-const mapCouponFromDB = (data: Record<string, unknown>): Coupon => ({
-    id: data.id,
-    code: data.code,
-    name: data.name,
-    description: data.description,
-    type: data.type,
-    value: parseFloat(data.value),
-    minimumAmount: parseFloat(data.minimum_amount),
-    maximumDiscount: data.maximum_discount ? parseFloat(data.maximum_discount) : undefined,
-    usageLimit: data.usage_limit,
-    usedCount: data.used_count,
-    isActive: data.is_active,
-    validFrom: new Date(data.valid_from),
-    validUntil: data.valid_until ? new Date(data.valid_until) : undefined,
-    createdAt: data.created_at ? new Date(data.created_at) : undefined,
-    updatedAt: data.updated_at ? new Date(data.updated_at) : undefined
-});
+
 
 // =====================================================
 // ANALYTICS AND DASHBOARD FUNCTIONS

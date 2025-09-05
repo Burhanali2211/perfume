@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingCart, Star, GitCompare } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Product } from '../../types/product';
+import { Product } from '../../types';
 import { useCart } from '../../contexts/CartContext';
 import { useWishlist } from '../../contexts/WishlistContext';
 import { useCompare } from '../../contexts/CompareContext';
@@ -22,7 +22,7 @@ export const MobileProductCard: React.FC<MobileProductCardProps> = ({
   const { addItem: addToCart } = useCart();
   const { addItem: addToWishlist, isInWishlist } = useWishlist();
   const { addItem: addToCompare, isInCompare } = useCompare();
-  const { showNotification } = useNotification();
+  const { showSuccess } = useNotification();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Swipe gesture for image carousel
@@ -48,11 +48,7 @@ export const MobileProductCard: React.FC<MobileProductCardProps> = ({
     e.preventDefault();
     if (product.stock > 0) {
       addToCart(product);
-      showNotification({
-        type: 'success',
-        title: 'Added to Cart',
-        message: `${product.name} has been added to your cart.`
-      });
+      showSuccess(`${product.name} has been added to your cart.`, 'Added to Cart');
     }
   };
 
@@ -60,11 +56,10 @@ export const MobileProductCard: React.FC<MobileProductCardProps> = ({
     e.stopPropagation();
     e.preventDefault();
     addToWishlist(product);
-    showNotification({
-      type: 'success',
-      title: isInWishlist(product.id) ? 'Removed from Wishlist' : 'Added to Wishlist',
-      message: `${product.name} has been ${isInWishlist(product.id) ? 'removed from' : 'added to'} your wishlist.`
-    });
+    showSuccess(
+      `${product.name} has been ${isInWishlist(product.id) ? 'removed from' : 'added to'} your wishlist.`,
+      isInWishlist(product.id) ? 'Removed from Wishlist' : 'Added to Wishlist'
+    );
   };
 
   const handleCompareToggle = (e: React.MouseEvent) => {
@@ -92,7 +87,7 @@ export const MobileProductCard: React.FC<MobileProductCardProps> = ({
         <Link to={`/products/${product.id}`} className="block">
           <div className="flex">
             {/* Compact Image */}
-            <div className="w-24 h-24 flex-shrink-0 relative">
+            <div className="w-16 sm:w-20 h-16 sm:h-20 flex-shrink-0 relative">
               <img
                 src={product.images[0]}
                 alt={product.name}
@@ -100,34 +95,34 @@ export const MobileProductCard: React.FC<MobileProductCardProps> = ({
                 loading="lazy"
               />
               {discount > 0 && (
-                <span className="absolute top-1 left-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded font-bold">
+                <span className="absolute top-1 left-1 bg-red-500 text-white text-[10px] px-1 py-0.5 rounded font-bold">
                   -{discount}%
                 </span>
               )}
             </div>
             
             {/* Compact Content */}
-            <div className="flex-1 p-3 min-h-[96px] flex flex-col justify-between">
+            <div className="flex-1 p-2.5 min-h-[64px] sm:min-h-[80px] flex flex-col justify-between">
               <div>
-                <h3 className="font-medium text-neutral-900 text-sm leading-tight line-clamp-2">
+                <h3 className="font-medium text-neutral-900 text-xs leading-tight line-clamp-2">
                   {product.name}
                 </h3>
-                <p className="text-xs text-neutral-500 mt-1">{product.category}</p>
+                <p className="text-[10px] text-neutral-500 mt-1">{product.category}</p>
               </div>
               
-              <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center justify-between mt-1.5">
                 <div className="flex items-center space-x-1">
-                  <span className="font-semibold text-neutral-900 text-sm">${product.price}</span>
+                  <span className="font-semibold text-neutral-900 text-xs">₹{product.price.toLocaleString('en-IN')}</span>
                   {product.originalPrice && (
-                    <span className="text-xs text-neutral-500 line-through">
-                      ${product.originalPrice}
+                    <span className="text-[10px] text-neutral-500 line-through">
+                      ₹{product.originalPrice.toLocaleString('en-IN')}
                     </span>
                   )}
                 </div>
                 
                 <div className="flex items-center space-x-1">
-                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                  <span className="text-xs text-neutral-600">{product.rating}</span>
+                  <Star className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
+                  <span className="text-[10px] text-neutral-600">{product.rating}</span>
                 </div>
               </div>
             </div>
@@ -139,7 +134,7 @@ export const MobileProductCard: React.FC<MobileProductCardProps> = ({
 
   return (
     <motion.div
-      className="product-card bg-white overflow-hidden"
+      className="product-card bg-white overflow-hidden rounded-lg sm:rounded-xl shadow-sm border border-neutral-200"
       whileTap={{ scale: 0.98 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     >
@@ -162,7 +157,7 @@ export const MobileProductCard: React.FC<MobileProductCardProps> = ({
             
             {/* Image indicators for multiple images */}
             {product.images.length > 1 && (
-              <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
+              <div className="absolute bottom-1.5 left-1/2 transform -translate-x-1/2 flex space-x-1">
                 {product.images.map((_, index) => (
                   <button
                     key={index}
@@ -171,9 +166,10 @@ export const MobileProductCard: React.FC<MobileProductCardProps> = ({
                       e.stopPropagation();
                       setCurrentImageIndex(index);
                     }}
-                    className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                    className={`w-1 h-1 rounded-full transition-colors ${
                       index === currentImageIndex ? 'bg-white' : 'bg-white/50'
                     }`}
+                    aria-label={`View image ${index + 1}`}
                   />
                 ))}
               </div>
@@ -182,21 +178,21 @@ export const MobileProductCard: React.FC<MobileProductCardProps> = ({
         </Link>
 
         {/* Mobile-Optimized Badges */}
-        <div className="absolute top-2 left-2 flex flex-col space-y-1">
+        <div className="absolute top-1.5 left-1.5 flex flex-col space-y-1">
           {discount > 0 && (
-            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold shadow-sm">
+            <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm">
               -{discount}%
             </span>
           )}
           
-          <span className={`${stockStatus.color} text-white text-xs px-2 py-1 rounded-full font-bold shadow-sm flex items-center space-x-1`}>
+          <span className={`${stockStatus.color} text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold shadow-sm flex items-center space-x-1`}>
             <div className={`w-1 h-1 rounded-full bg-white ${product.stock > 0 ? 'animate-pulse' : ''}`}></div>
             <span>{stockStatus.text}</span>
           </span>
         </div>
 
         {/* Mobile Action Buttons */}
-        <div className="absolute top-2 right-2 flex flex-col space-y-2">
+        <div className="absolute top-1.5 right-1.5 flex flex-col space-y-1.5">
           <MobileIconButton
             icon={Heart}
             onClick={handleWishlistToggle}
@@ -218,13 +214,13 @@ export const MobileProductCard: React.FC<MobileProductCardProps> = ({
       </div>
 
       {/* Mobile-Optimized Content */}
-      <div className="p-4 space-y-3">
+      <div className="p-2.5 sm:p-3 space-y-2">
         <div>
-          <p className="text-xs text-neutral-500 font-medium uppercase tracking-wide">
+          <p className="text-[10px] text-neutral-500 font-medium uppercase tracking-wide">
             {product.category}
           </p>
           <Link to={`/products/${product.id}`}>
-            <h3 className="font-medium text-neutral-900 text-base leading-tight line-clamp-2 mt-1">
+            <h3 className="font-medium text-neutral-900 text-sm leading-tight line-clamp-2 mt-0.5">
               {product.name}
             </h3>
           </Link>
@@ -232,18 +228,18 @@ export const MobileProductCard: React.FC<MobileProductCardProps> = ({
         
         {/* Price and Rating */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <span className="font-semibold text-neutral-900 text-lg">${product.price}</span>
+          <div className="flex items-center space-x-1.5">
+            <span className="font-semibold text-neutral-900 text-base">₹{product.price.toLocaleString('en-IN')}</span>
             {product.originalPrice && (
-              <span className="text-sm text-neutral-500 line-through">
-                ${product.originalPrice}
+              <span className="text-xs text-neutral-500 line-through">
+                ₹{product.originalPrice.toLocaleString('en-IN')}
               </span>
             )}
           </div>
           
           <div className="flex items-center space-x-1">
-            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-            <span className="text-sm text-neutral-600 font-medium">{product.rating}</span>
+            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+            <span className="text-xs text-neutral-600 font-medium">{product.rating}</span>
           </div>
         </div>
         

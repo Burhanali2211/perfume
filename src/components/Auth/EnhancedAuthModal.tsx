@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   X, Eye, EyeOff, Mail, Lock, User, Phone, Calendar,
   ArrowLeft, CheckCircle, AlertCircle, Loader2,
-  Chrome, Facebook, Apple, Shield, Star
+  Shield, Fingerprint, Award, Sparkles, Crown
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
@@ -22,6 +22,7 @@ interface FormData {
   fullName: string;
   phone: string;
   dateOfBirth: string;
+  address: string;
   agreeToTerms: boolean;
   subscribeNewsletter: boolean;
 }
@@ -40,6 +41,7 @@ export const EnhancedAuthModal: React.FC<EnhancedAuthModalProps> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const { signIn, signUp } = useAuth();
   const { showNotification } = useNotification();
@@ -51,6 +53,7 @@ export const EnhancedAuthModal: React.FC<EnhancedAuthModalProps> = ({
     fullName: '',
     phone: '',
     dateOfBirth: '',
+    address: '',
     agreeToTerms: false,
     subscribeNewsletter: true
   });
@@ -68,11 +71,22 @@ export const EnhancedAuthModal: React.FC<EnhancedAuthModalProps> = ({
         fullName: '',
         phone: '',
         dateOfBirth: '',
+        address: '',
         agreeToTerms: false,
         subscribeNewsletter: true
       });
       setErrors({});
+      // Prevent background scrolling when modal opens
+      document.body.style.overflow = 'hidden';
+    } else {
+      // Restore background scrolling when modal closes
+      document.body.style.overflow = 'unset';
     }
+    
+    return () => {
+      // Cleanup: Restore background scrolling when component unmounts
+      document.body.style.overflow = 'unset';
+    };
   }, [isOpen, initialMode]);
 
   const validateEmail = (email: string): boolean => {
@@ -135,6 +149,10 @@ export const EnhancedAuthModal: React.FC<EnhancedAuthModalProps> = ({
         if (formData.phone && !/^\+?[\d\s-()]+$/.test(formData.phone)) {
           newErrors.phone = 'Please enter a valid phone number';
         }
+
+        if (!formData.address.trim()) {
+          newErrors.address = 'Address is required';
+        }
       }
     }
 
@@ -142,11 +160,17 @@ export const EnhancedAuthModal: React.FC<EnhancedAuthModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  // Clear error when user starts typing
   const handleInputChange = (field: keyof FormData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
     }
   };
 
@@ -160,7 +184,11 @@ export const EnhancedAuthModal: React.FC<EnhancedAuthModalProps> = ({
     try {
       if (mode === 'login') {
         await signIn(formData.email, formData.password);
-        showNotification('Welcome back! Successfully logged in.', 'success');
+        showNotification({
+          type: 'success',
+          title: 'Welcome back!',
+          message: 'Successfully logged in.'
+        });
         onClose();
       } else if (mode === 'signup') {
         if (step === 1) {
@@ -170,32 +198,32 @@ export const EnhancedAuthModal: React.FC<EnhancedAuthModalProps> = ({
             fullName: formData.fullName,
             phone: formData.phone,
             dateOfBirth: formData.dateOfBirth,
+            address: formData.address,
             subscribeNewsletter: formData.subscribeNewsletter
           });
           setMode('verify');
-          showNotification('Account created! Please check your email to verify your account.', 'success');
+          showNotification({
+            type: 'success',
+            title: 'Account created!',
+            message: 'Please check your email to verify your account.'
+          });
         }
       } else if (mode === 'forgot') {
         // Handle forgot password
-        showNotification('Password reset link sent to your email!', 'success');
+        showNotification({
+          type: 'success',
+          title: 'Password reset link sent!',
+          message: 'Check your email for instructions.'
+        });
         setMode('login');
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred. Please try again.';
-      showNotification(errorMessage, 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSocialAuth = async (provider: 'google' | 'facebook' | 'apple') => {
-    setLoading(true);
-    try {
-      // Implement social auth here
-      showNotification(`${provider} authentication coming soon!`, 'info');
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Social authentication failed';
-      showNotification(errorMessage, 'error');
+      showNotification({
+        type: 'error',
+        title: 'Authentication Error',
+        message: errorMessage
+      });
     } finally {
       setLoading(false);
     }
@@ -215,13 +243,14 @@ export const EnhancedAuthModal: React.FC<EnhancedAuthModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden border border-neutral-200">
-          {/* Header */}
-          <div className="relative bg-neutral-900 text-white p-6">
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden border border-neutral-200 relative flex flex-col">
+          {/* Branding Header */}
+          <div className="relative bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-6 flex-shrink-0">
             <button
               onClick={onClose}
               className="absolute top-4 right-4 p-2 hover:bg-white hover:bg-opacity-20 rounded-full transition-colors duration-200"
+              aria-label="Close"
             >
               <X className="h-5 w-5" />
             </button>
@@ -236,12 +265,13 @@ export const EnhancedAuthModal: React.FC<EnhancedAuthModalProps> = ({
                   }
                 }}
                 className="absolute top-4 left-4 p-2 hover:bg-white hover:bg-opacity-20 rounded-full transition-colors"
+                aria-label="Back"
               >
                 <ArrowLeft className="h-5 w-5" />
               </button>
             )}
 
-            <div className="text-center">
+            <div className="text-center mt-6">
               <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
                 {mode === 'verify' ? (
                   <CheckCircle className="h-8 w-8" />
@@ -252,15 +282,15 @@ export const EnhancedAuthModal: React.FC<EnhancedAuthModalProps> = ({
                 )}
               </div>
               <h2 className="text-2xl font-bold">
-                {mode === 'login' && 'Welcome Back'}
+                {mode === 'login' && 'Welcome to S.Essences'}
                 {mode === 'signup' && (step === 1 ? 'Create Account' : 'Complete Profile')}
                 {mode === 'forgot' && 'Reset Password'}
                 {mode === 'verify' && 'Check Your Email'}
                 {mode === 'reset' && 'New Password'}
               </h2>
               <p className="text-indigo-100 mt-2">
-                {mode === 'login' && 'Sign in to your account to continue'}
-                {mode === 'signup' && (step === 1 ? 'Join thousands of happy customers' : 'Tell us a bit about yourself')}
+                {mode === 'login' && 'Sign in to discover premium attars'}
+                {mode === 'signup' && (step === 1 ? 'Join our community of fragrance lovers' : 'Tell us about yourself')}
                 {mode === 'forgot' && 'Enter your email to reset your password'}
                 {mode === 'verify' && 'We sent a verification link to your email'}
                 {mode === 'reset' && 'Enter your new password'}
@@ -269,7 +299,7 @@ export const EnhancedAuthModal: React.FC<EnhancedAuthModalProps> = ({
           </div>
 
           {/* Content */}
-          <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+          <div className="p-6 overflow-y-auto flex-grow">
             {mode === 'verify' ? (
               <div className="text-center space-y-4">
                 <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
@@ -296,49 +326,17 @@ export const EnhancedAuthModal: React.FC<EnhancedAuthModalProps> = ({
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Social Login Buttons */}
+                {/* Branding Section */}
                 {(mode === 'login' || (mode === 'signup' && step === 1)) && (
-                  <div className="space-y-3">
-                    <button
-                      type="button"
-                      onClick={() => handleSocialAuth('google')}
-                      disabled={loading}
-                      className="w-full flex items-center justify-center space-x-3 border-2 border-neutral-200 rounded-lg py-3.5 hover:bg-neutral-50 hover:border-neutral-300 transition-all duration-200 disabled:opacity-50 font-medium"
-                    >
-                      <Chrome className="h-5 w-5 text-red-500" />
-                      <span className="text-neutral-700">Continue with Google</span>
-                    </button>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => handleSocialAuth('facebook')}
-                        disabled={loading}
-                        className="flex items-center justify-center space-x-2 border-2 border-neutral-200 rounded-lg py-3.5 hover:bg-neutral-50 hover:border-neutral-300 transition-all duration-200 disabled:opacity-50 font-medium"
-                      >
-                        <Facebook className="h-5 w-5 text-blue-600" />
-                        <span className="text-neutral-700">Facebook</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleSocialAuth('apple')}
-                        disabled={loading}
-                        className="flex items-center justify-center space-x-2 border-2 border-neutral-200 rounded-lg py-3.5 hover:bg-neutral-50 hover:border-neutral-300 transition-all duration-200 disabled:opacity-50 font-medium"
-                      >
-                        <Apple className="h-5 w-5 text-neutral-800" />
-                        <span className="text-neutral-700">Apple</span>
-                      </button>
+                  <div className="text-center mb-6">
+                    <div className="inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-full px-4 py-2 mb-4">
+                      <Sparkles className="h-5 w-5 text-purple-600" />
+                      <span className="text-sm font-semibold text-purple-800">Premium Attar Collection</span>
+                      <Crown className="h-5 w-5 text-amber-500" />
                     </div>
-
-                    <div className="relative my-6">
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-neutral-200" />
-                      </div>
-                      <div className="relative flex justify-center text-sm">
-                        <span className="px-4 bg-white text-neutral-500 font-medium">or continue with email</span>
-                      </div>
-                    </div>
+                    <p className="text-sm text-gray-600">
+                      Experience the finest natural perfumes from around the world
+                    </p>
                   </div>
                 )}
 
@@ -359,6 +357,7 @@ export const EnhancedAuthModal: React.FC<EnhancedAuthModalProps> = ({
                         }`}
                         placeholder="Enter your email"
                         disabled={loading}
+                        required
                       />
                     </div>
                     {errors.email && (
@@ -387,77 +386,75 @@ export const EnhancedAuthModal: React.FC<EnhancedAuthModalProps> = ({
                         }`}
                         placeholder="Enter your password"
                         disabled={loading}
+                        required
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors duration-200"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
                       >
                         {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
                     </div>
                     {errors.password && (
-                      <p className="form-error flex items-center">
+                      <p className="mt-2 text-sm text-state-error flex items-center">
                         <AlertCircle className="h-4 w-4 mr-1" />
                         {errors.password}
                       </p>
                     )}
-
-                    {/* Password Strength Indicator */}
-                    {mode === 'signup' && formData.password && (
-                      <div className="mt-2">
-                        {(() => {
-                          const strength = getPasswordStrength(formData.password);
-                          return (
-                            <div>
-                              <div className="flex justify-between text-xs text-gray-600 mb-1">
-                                <span>Password Strength</span>
-                                <span className={strength.strength >= 80 ? 'text-green-600' : strength.strength >= 60 ? 'text-blue-600' : 'text-orange-600'}>
-                                  {strength.label}
-                                </span>
-                              </div>
-                              <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div
-                                  className={`h-2 rounded-full transition-all duration-300 ${strength.color}`}
-                                  style={{ width: `${strength.strength}%` }}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })()}
+                    
+                    {/* Password Strength Indicator for Signup */}
+                    {mode === 'signup' && step === 1 && formData.password && (
+                      <div className="mt-3">
+                        <div className="flex justify-between text-xs text-gray-500 mb-1">
+                          <span>Password Strength</span>
+                          <span className="font-medium">{getPasswordStrength(formData.password).label}</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full ${getPasswordStrength(formData.password).color} transition-all duration-300`}
+                            style={{ width: `${getPasswordStrength(formData.password).strength}%` }}
+                          ></div>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Use 8+ characters with a mix of letters, numbers & symbols
+                        </p>
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* Confirm Password Field */}
+                {/* Confirm Password Field (Signup Step 1) */}
                 {mode === 'signup' && step === 1 && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-neutral-700 mb-3">
                       Confirm Password
                     </label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-400" />
                       <input
                         type={showConfirmPassword ? 'text' : 'password'}
                         value={formData.confirmPassword}
                         onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                        className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                          errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                        className={`form-input pl-10 pr-12 ${
+                          errors.confirmPassword ? 'form-input-error' : ''
                         }`}
                         placeholder="Confirm your password"
                         disabled={loading}
+                        required
                       />
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors duration-200"
+                        aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                       >
                         {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
                     </div>
                     {errors.confirmPassword && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <p className="mt-2 text-sm text-state-error flex items-center">
                         <AlertCircle className="h-4 w-4 mr-1" />
                         {errors.confirmPassword}
                       </p>
@@ -465,189 +462,287 @@ export const EnhancedAuthModal: React.FC<EnhancedAuthModalProps> = ({
                   </div>
                 )}
 
-                {/* Step 2 Fields for Signup */}
+                {/* Full Name Field (Signup Step 2) */}
                 {mode === 'signup' && step === 2 && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Full Name *
-                      </label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                        <input
-                          type="text"
-                          value={formData.fullName}
-                          onChange={(e) => handleInputChange('fullName', e.target.value)}
-                          className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                            errors.fullName ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                          placeholder="Enter your full name"
-                          disabled={loading}
-                        />
-                      </div>
-                      {errors.fullName && (
-                        <p className="mt-1 text-sm text-red-600 flex items-center">
-                          <AlertCircle className="h-4 w-4 mr-1" />
-                          {errors.fullName}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Phone Number (Optional)
-                      </label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                        <input
-                          type="tel"
-                          value={formData.phone}
-                          onChange={(e) => handleInputChange('phone', e.target.value)}
-                          className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                            errors.phone ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                          placeholder="+1 (555) 123-4567"
-                          disabled={loading}
-                        />
-                      </div>
-                      {errors.phone && (
-                        <p className="mt-1 text-sm text-red-600 flex items-center">
-                          <AlertCircle className="h-4 w-4 mr-1" />
-                          {errors.phone}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Date of Birth (Optional)
-                      </label>
-                      <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                        <input
-                          type="date"
-                          value={formData.dateOfBirth}
-                          onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                          disabled={loading}
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {/* Terms and Newsletter for Signup */}
-                {mode === 'signup' && (
-                  <div className="space-y-3">
-                    <div className="flex items-start">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-3">
+                      Full Name
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-400" />
                       <input
-                        type="checkbox"
-                        id="agreeToTerms"
-                        checked={formData.agreeToTerms}
-                        onChange={(e) => handleInputChange('agreeToTerms', e.target.checked)}
-                        className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        type="text"
+                        value={formData.fullName}
+                        onChange={(e) => handleInputChange('fullName', e.target.value)}
+                        className={`form-input pl-10 ${
+                          errors.fullName ? 'form-input-error' : ''
+                        }`}
+                        placeholder="Enter your full name"
                         disabled={loading}
+                        required
                       />
-                      <label htmlFor="agreeToTerms" className="ml-2 text-sm text-gray-600">
-                        I agree to the{' '}
-                        <a href="#" className="text-indigo-600 hover:text-indigo-700 font-medium">
-                          Terms of Service
-                        </a>{' '}
-                        and{' '}
-                        <a href="#" className="text-indigo-600 hover:text-indigo-700 font-medium">
-                          Privacy Policy
-                        </a>
-                      </label>
                     </div>
-                    {errors.agreeToTerms && (
-                      <p className="text-sm text-red-600 flex items-center">
+                    {errors.fullName && (
+                      <p className="mt-2 text-sm text-state-error flex items-center">
                         <AlertCircle className="h-4 w-4 mr-1" />
-                        {errors.agreeToTerms}
+                        {errors.fullName}
                       </p>
                     )}
+                  </div>
+                )}
 
-                    <div className="flex items-start">
+                {/* Phone Field (Signup Step 2) */}
+                {mode === 'signup' && step === 2 && (
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-3">
+                      Phone Number
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-400" />
                       <input
-                        type="checkbox"
-                        id="subscribeNewsletter"
-                        checked={formData.subscribeNewsletter}
-                        onChange={(e) => handleInputChange('subscribeNewsletter', e.target.checked)}
-                        className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        className={`form-input pl-10 ${
+                          errors.phone ? 'form-input-error' : ''
+                        }`}
+                        placeholder="Enter your phone number"
                         disabled={loading}
+                        required
                       />
-                      <label htmlFor="subscribeNewsletter" className="ml-2 text-sm text-gray-600">
-                        Subscribe to our newsletter for exclusive offers and updates
-                      </label>
+                    </div>
+                    {errors.phone && (
+                      <p className="mt-2 text-sm text-state-error flex items-center">
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        {errors.phone}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Date of Birth Field (Signup Step 2) */}
+                {mode === 'signup' && step === 2 && (
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-3">
+                      Date of Birth
+                    </label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-400" />
+                      <input
+                        type="date"
+                        value={formData.dateOfBirth}
+                        onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                        className="form-input pl-10"
+                        disabled={loading}
+                        required
+                      />
                     </div>
                   </div>
                 )}
 
-                {/* Forgot Password Link */}
+                {/* Address Field (Signup Step 2) - Updated Field */}
+                {mode === 'signup' && step === 2 && (
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-3">
+                      Address
+                    </label>
+                    <div className="relative">
+                      <svg className="absolute left-3 top-3 h-5 w-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                      </svg>
+                      <textarea
+                        value={formData.address}
+                        onChange={(e) => handleInputChange('address', e.target.value)}
+                        className="form-input pl-10"
+                        placeholder="Enter your full address"
+                        disabled={loading}
+                        rows={3}
+                        required
+                      />
+                    </div>
+                    {errors.address && (
+                      <p className="mt-2 text-sm text-state-error flex items-center">
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        {errors.address}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Remember Me (Login) */}
                 {mode === 'login' && (
-                  <div className="text-right">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <input
+                        id="remember-me"
+                        name="remember-me"
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        disabled={loading}
+                      />
+                      <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                        Remember me
+                      </label>
+                    </div>
+
                     <button
                       type="button"
                       onClick={() => setMode('forgot')}
-                      className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                      className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                      disabled={loading}
                     >
-                      Forgot your password?
+                      Forgot password?
                     </button>
                   </div>
                 )}
 
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                >
-                  {loading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <>
-                      {mode === 'login' && 'Sign In'}
-                      {mode === 'signup' && (step === 1 ? 'Continue' : 'Create Account')}
-                      {mode === 'forgot' && 'Send Reset Link'}
-                      {mode === 'reset' && 'Update Password'}
-                    </>
-                  )}
-                </button>
+                {/* Newsletter Subscription (Signup Step 2) */}
+                {mode === 'signup' && step === 2 && (
+                  <div className="flex items-start">
+                    <div className="flex items-center h-5">
+                      <input
+                        id="subscribe-newsletter"
+                        name="subscribe-newsletter"
+                        type="checkbox"
+                        checked={formData.subscribeNewsletter}
+                        onChange={(e) => handleInputChange('subscribeNewsletter', e.target.checked)}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        disabled={loading}
+                      />
+                    </div>
+                    <div className="ml-3 text-sm">
+                      <label htmlFor="subscribe-newsletter" className="font-medium text-gray-700">
+                        Subscribe to our newsletter
+                      </label>
+                      <p className="text-gray-500">Get updates on new arrivals and special offers</p>
+                    </div>
+                  </div>
+                )}
 
-                {/* Mode Switch */}
-                {(mode === 'login' || (mode === 'signup' && step === 1)) && (
-                  <div className="text-center">
-                    <p className="text-sm text-gray-600">
-                      {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}{' '}
+                {/* Terms Agreement (Signup Step 2) */}
+                {mode === 'signup' && step === 2 && (
+                  <div className="flex items-start">
+                    <div className="flex items-center h-5">
+                      <input
+                        id="terms-agreement"
+                        name="terms-agreement"
+                        type="checkbox"
+                        checked={formData.agreeToTerms}
+                        onChange={(e) => handleInputChange('agreeToTerms', e.target.checked)}
+                        className={`h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded ${
+                          errors.agreeToTerms ? 'border-state-error' : ''
+                        }`}
+                        disabled={loading}
+                        required
+                      />
+                    </div>
+                    <div className="ml-3 text-sm">
+                      <label htmlFor="terms-agreement" className="font-medium text-gray-700">
+                        I agree to the <a href="#" className="text-indigo-600 hover:text-indigo-500">Terms and Conditions</a>
+                      </label>
+                      {errors.agreeToTerms && (
+                        <p className="mt-1 text-sm text-state-error flex items-center">
+                          <AlertCircle className="h-4 w-4 mr-1" />
+                          {errors.agreeToTerms}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : mode === 'login' ? (
+                      'Sign In'
+                    ) : mode === 'signup' && step === 1 ? (
+                      'Continue'
+                    ) : mode === 'signup' && step === 2 ? (
+                      'Create Account'
+                    ) : mode === 'forgot' ? (
+                      'Send Reset Link'
+                    ) : (
+                      'Submit'
+                    )}
+                  </button>
+                </div>
+
+                {/* Mode Toggle */}
+                <div className="text-center text-sm text-gray-600">
+                  {mode === 'login' ? (
+                    <p>
+                      Don't have an account?{' '}
                       <button
                         type="button"
-                        onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-                        className="text-indigo-600 hover:text-indigo-700 font-medium"
+                        onClick={() => setMode('signup')}
+                        className="font-medium text-indigo-600 hover:text-indigo-500"
+                        disabled={loading}
                       >
-                        {mode === 'login' ? 'Sign up' : 'Sign in'}
+                        Sign up
                       </button>
                     </p>
+                  ) : mode === 'signup' ? (
+                    <p>
+                      Already have an account?{' '}
+                      <button
+                        type="button"
+                        onClick={() => setMode('login')}
+                        className="font-medium text-indigo-600 hover:text-indigo-500"
+                        disabled={loading}
+                      >
+                        Sign in
+                      </button>
+                    </p>
+                  ) : mode === 'forgot' ? (
+                    <p>
+                      Remember your password?{' '}
+                      <button
+                        type="button"
+                        onClick={() => setMode('login')}
+                        className="font-medium text-indigo-600 hover:text-indigo-500"
+                        disabled={loading}
+                      >
+                        Sign in
+                      </button>
+                    </p>
+                  ) : null}
+                </div>
+
+                {/* Trust Indicators */}
+                {(mode === 'login' || (mode === 'signup' && step === 1)) && (
+                  <div className="pt-4 border-t border-gray-200">
+                    <div className="flex items-center justify-center space-x-4 text-xs text-gray-500">
+                      <div className="flex items-center">
+                        <Shield className="h-4 w-4 mr-1 text-green-500" />
+                        <span>Secure</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Fingerprint className="h-4 w-4 mr-1 text-blue-500" />
+                        <span>Private</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Award className="h-4 w-4 mr-1 text-purple-500" />
+                        <span>Trusted</span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </form>
             )}
           </div>
-
-          {/* Trust Indicators */}
-          {(mode === 'login' || mode === 'signup') && (
-            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
-              <div className="flex items-center justify-center space-x-6 text-xs text-gray-500">
-                <div className="flex items-center space-x-1">
-                  <Shield className="h-4 w-4" />
-                  <span>Secure & Encrypted</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Star className="h-4 w-4" />
-                  <span>Trusted by 10k+ users</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
+    </div>
   );
 };

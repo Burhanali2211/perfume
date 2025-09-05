@@ -89,7 +89,7 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
                       <img src={product.images[0]} alt={product.name} className="w-14 h-14 object-cover rounded-lg shadow-sm" />
                       <div className="flex-1">
                         <p className="font-semibold text-neutral-900">{product.name}</p>
-                        <p className="text-lg font-bold text-neutral-700">${product.price}</p>
+                        <p className="text-lg font-bold text-neutral-700">₹{product.price.toLocaleString('en-IN')}</p>
                       </div>
                     </Link>
                   ))}

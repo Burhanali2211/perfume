@@ -6,17 +6,13 @@ import { useNotification } from '../../contexts/NotificationContext';
 export const NewsletterSection: React.FC = () => {
   const [email, setEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const { showNotification } = useNotification();
+  const { showSuccess } = useNotification();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (email) {
       setIsSubscribed(true);
-      showNotification({
-        type: 'success',
-        title: 'Successfully Subscribed!',
-        message: 'Thank you for subscribing to our newsletter.'
-      });
+      showSuccess('Thank you for subscribing to our newsletter.', 'Successfully Subscribed!');
       setEmail('');
       setTimeout(() => setIsSubscribed(false), 3000);
     }

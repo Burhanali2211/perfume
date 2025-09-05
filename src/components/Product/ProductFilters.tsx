@@ -75,7 +75,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
   const clearAllFilters = () => {
     onFiltersChange({
       category: 'all',
-      priceRange: [0, 1000],
+      priceRange: [0, 25000],
       rating: 0,
       inStock: false,
       brands: [],
@@ -88,7 +88,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
 
   const activeFilterCount = [
     filters.category !== 'all' ? 1 : 0,
-    filters.priceRange[0] > 0 || filters.priceRange[1] < 1000 ? 1 : 0,
+    filters.priceRange[0] > 0 || filters.priceRange[1] < 25000 ? 1 : 0,
     filters.rating > 0 ? 1 : 0,
     filters.inStock ? 1 : 0,
     filters.brands.length,
@@ -102,19 +102,19 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
     sectionKey: keyof typeof expandedSections;
     children: React.ReactNode;
   }> = ({ title, icon, sectionKey, children }) => (
-    <div className="border-b border-neutral-200 last:border-b-0">
+    <div className="border-b border-gray-200 last:border-b-0">
       <button
         onClick={() => toggleSection(sectionKey)}
-        className="w-full flex items-center justify-between py-4 px-1 text-left hover:bg-neutral-50 rounded-lg transition-colors"
+        className="w-full flex items-center justify-between py-3 text-left hover:bg-gray-50 rounded transition-colors"
       >
-        <div className="flex items-center space-x-3">
-          <div className="text-neutral-600">{icon}</div>
-          <span className="font-medium text-neutral-900">{title}</span>
+        <div className="flex items-center space-x-2">
+          <div className="text-gray-600">{icon}</div>
+          <span className="font-medium text-gray-900 text-sm">{title}</span>
         </div>
         {expandedSections[sectionKey] ? (
-          <ChevronUp className="h-4 w-4 text-neutral-500" />
+          <ChevronUp className="h-4 w-4 text-gray-500" />
         ) : (
-          <ChevronDown className="h-4 w-4 text-neutral-500" />
+          <ChevronDown className="h-4 w-4 text-gray-500" />
         )}
       </button>
       
@@ -127,7 +127,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="pb-4 px-1">
+            <div className="pb-3">
               {children}
             </div>
           </motion.div>
@@ -137,14 +137,14 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
   );
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm border border-neutral-200 ${className}`}>
-      {/* Filter Header */}
-      <div className="flex items-center justify-between p-6 border-b border-neutral-200">
-        <div className="flex items-center space-x-3">
-          <Filter className="h-5 w-5 text-neutral-600" />
-          <h3 className="font-semibold text-neutral-900">Filters</h3>
+    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 sticky top-24 ${className}`}>
+      {/* Compact Filter Header */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="flex items-center space-x-2">
+          <Filter className="h-4 w-4 text-gray-600" />
+          <h3 className="font-semibold text-gray-900 text-sm">Filters</h3>
           {activeFilterCount > 0 && (
-            <span className="bg-primary-100 text-primary-700 px-2 py-1 rounded-full text-xs font-medium">
+            <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium">
               {activeFilterCount}
             </span>
           )}
@@ -153,61 +153,61 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
           {activeFilterCount > 0 && (
             <button
               onClick={clearAllFilters}
-              className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+              className="text-xs text-gray-600 hover:text-gray-900 transition-colors"
             >
               Clear all
             </button>
           )}
           <button
             onClick={onToggle}
-            className="lg:hidden p-1 hover:bg-neutral-100 rounded-lg transition-colors"
+            className="lg:hidden p-1 hover:bg-gray-100 rounded transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
       </div>
 
-      {/* Results Count */}
-      <div className="px-6 py-3 bg-neutral-50 border-b border-neutral-200">
-        <p className="text-sm text-neutral-600">
-          <span className="font-medium text-neutral-900">{productCount}</span> products found
+      {/* Compact Results Count */}
+      <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+        <p className="text-xs text-gray-600">
+          <span className="font-medium text-gray-900">{productCount}</span> products
         </p>
       </div>
 
-      {/* Filter Sections */}
-      <div className="p-6 space-y-0">
+      {/* Compact Filter Sections */}
+      <div className="p-4 space-y-0 max-h-[calc(100vh-200px)] overflow-y-auto">
         {/* Category Filter */}
         <FilterSection
           title="Category"
           icon={<Package className="h-4 w-4" />}
           sectionKey="category"
         >
-          <div className="space-y-2">
-            <label className="flex items-center space-x-3 cursor-pointer group">
+          <div className="space-y-1.5">
+            <label className="flex items-center space-x-2 cursor-pointer group">
               <input
                 type="radio"
                 name="category"
                 checked={filters.category === 'all'}
                 onChange={() => updateFilter('category', 'all')}
-                className="form-radio text-primary-600 focus:ring-primary-500"
+                className="form-radio text-blue-600 focus:ring-blue-500 h-3 w-3"
               />
-              <span className="text-neutral-700 group-hover:text-neutral-900 transition-colors">
+              <span className="text-gray-700 group-hover:text-gray-900 transition-colors text-sm">
                 All Categories
               </span>
             </label>
             {categories.map((category) => (
-              <label key={category.id} className="flex items-center space-x-3 cursor-pointer group">
+              <label key={category.id} className="flex items-center space-x-2 cursor-pointer group">
                 <input
                   type="radio"
                   name="category"
                   checked={filters.category === category.name}
                   onChange={() => updateFilter('category', category.name)}
-                  className="form-radio text-primary-600 focus:ring-primary-500"
+                  className="form-radio text-blue-600 focus:ring-blue-500 h-3 w-3"
                 />
-                <span className="text-neutral-700 group-hover:text-neutral-900 transition-colors">
+                <span className="text-gray-700 group-hover:text-gray-900 transition-colors text-sm">
                   {category.name}
                 </span>
-                <span className="text-xs text-neutral-500 ml-auto">
+                <span className="text-xs text-gray-500 ml-auto">
                   {category.productCount}
                 </span>
               </label>
@@ -217,7 +217,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
 
         {/* Price Range Filter */}
         <FilterSection
-          title="Price Range"
+          title="Price Range (₹)"
           icon={<DollarSign className="h-4 w-4" />}
           sectionKey="price"
         >
@@ -230,7 +230,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
                   value={filters.priceRange[0]}
                   onChange={(e) => updateFilter('priceRange', [parseInt(e.target.value) || 0, filters.priceRange[1]])}
                   className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="0"
+                  placeholder="1000"
                 />
               </div>
               <div className="flex-1">
@@ -238,15 +238,42 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
                 <input
                   type="number"
                   value={filters.priceRange[1]}
-                  onChange={(e) => updateFilter('priceRange', [filters.priceRange[0], parseInt(e.target.value) || 1000])}
+                  onChange={(e) => updateFilter('priceRange', [filters.priceRange[0], parseInt(e.target.value) || 25000])}
                   className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="1000"
+                  placeholder="25000"
                 />
               </div>
             </div>
             <div className="flex items-center justify-between text-xs text-neutral-500">
-              <span>${filters.priceRange[0]}</span>
-              <span>${filters.priceRange[1]}</span>
+              <span>₹{filters.priceRange[0].toLocaleString('en-IN')}</span>
+              <span>₹{filters.priceRange[1].toLocaleString('en-IN')}</span>
+            </div>
+            {/* Quick Price Range Buttons for Attars */}
+            <div className="grid grid-cols-2 gap-2 mt-3">
+              <button
+                onClick={() => updateFilter('priceRange', [1000, 5000])}
+                className="px-3 py-2 text-xs border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors"
+              >
+                ₹1K - ₹5K
+              </button>
+              <button
+                onClick={() => updateFilter('priceRange', [5000, 10000])}
+                className="px-3 py-2 text-xs border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors"
+              >
+                ₹5K - ₹10K
+              </button>
+              <button
+                onClick={() => updateFilter('priceRange', [10000, 15000])}
+                className="px-3 py-2 text-xs border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors"
+              >
+                ₹10K - ₹15K
+              </button>
+              <button
+                onClick={() => updateFilter('priceRange', [15000, 25000])}
+                className="px-3 py-2 text-xs border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors"
+              >
+                ₹15K+
+              </button>
             </div>
           </div>
         </FilterSection>

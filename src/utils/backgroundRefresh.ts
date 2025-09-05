@@ -17,7 +17,7 @@ class BackgroundRefreshManager {
   private retryCount: Map<string, number> = new Map();
 
   private defaultConfig: RefreshConfig = {
-    interval: 10 * 60 * 1000, // 10 minutes (much less aggressive)
+    interval: 30 * 60 * 1000, // 30 minutes (much less aggressive)
     enabled: false, // Temporarily disabled to prevent conflicts
     maxRetries: 1 // Minimal retries
   };
@@ -27,6 +27,12 @@ class BackgroundRefreshManager {
    */
   startProductRefresh(config: Partial<RefreshConfig> = {}) {
     const finalConfig = { ...this.defaultConfig, ...config };
+    
+    // Disable background refresh in development to avoid conflicts
+    if (import.meta.env.DEV) {
+      console.log('🔄 Background product refresh disabled in development');
+      return;
+    }
     
     if (!finalConfig.enabled) return;
 
@@ -45,6 +51,12 @@ class BackgroundRefreshManager {
    */
   startCategoryRefresh(config: Partial<RefreshConfig> = {}) {
     const finalConfig = { ...this.defaultConfig, ...config };
+    
+    // Disable background refresh in development to avoid conflicts
+    if (import.meta.env.DEV) {
+      console.log('🔄 Background category refresh disabled in development');
+      return;
+    }
     
     if (!finalConfig.enabled) return;
 
@@ -217,13 +229,13 @@ if (typeof window !== 'undefined') {
   // Start with a delay to allow initial page load
   setTimeout(() => {
     backgroundRefreshManager.startProductRefresh({
-      interval: 3 * 60 * 1000, // 3 minutes for products
-      enabled: true
+      interval: 30 * 60 * 1000, // 30 minutes for products in production
+      enabled: !import.meta.env.DEV // Disable in development
     });
     
     backgroundRefreshManager.startCategoryRefresh({
-      interval: 10 * 60 * 1000, // 10 minutes for categories
-      enabled: true
+      interval: 60 * 60 * 1000, // 60 minutes for categories in production
+      enabled: !import.meta.env.DEV // Disable in development
     });
   }, 30000); // Start after 30 seconds
 

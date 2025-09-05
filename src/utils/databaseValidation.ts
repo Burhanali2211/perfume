@@ -82,7 +82,7 @@ export const validateDatabaseSetup = async (): Promise<DatabaseHealth> => {
     if (data && data.length > 0 && productsData && productsData.length > 0) {
       health.sampleDataExists = true;
     } else {
-      health.warnings.push('No sample data found - application will use mock data');
+      health.warnings.push('No data found in database - please run the setup scripts');
     }
 
     // Additional checks
@@ -111,7 +111,7 @@ export const generateDatabaseReport = (health: DatabaseHealth): string => {
   report += `**Connection Status:** ${health.isConnected ? '✅ Connected' : '❌ Failed'}\n`;
   report += `**Tables:** ${health.tablesExist ? '✅ All tables exist' : '❌ Missing tables'}\n`;
   report += `**Security:** ${health.rlsPoliciesEnabled ? '✅ RLS enabled' : '❌ RLS issues'}\n`;
-  report += `**Sample Data:** ${health.sampleDataExists ? '✅ Available' : '⚠️ Using mock data'}\n\n`;
+  report += `**Data:** ${health.sampleDataExists ? '✅ Available' : '⚠️ No data found'}\n\n`;
 
   if (health.errors.length > 0) {
     report += '## ❌ Errors\n';
@@ -136,11 +136,11 @@ export const generateDatabaseReport = (health: DatabaseHealth): string => {
 
   report += '## Next Steps\n';
   if (health.errors.length > 0) {
-    report += '1. Run the SQL schema in your Supabase SQL Editor\n';
+    report += '1. Run the SQL scripts in the supabase-scripts directory\n';
     report += '2. Check your environment variables\n';
     report += '3. Verify your Supabase project is active\n';
   } else if (!health.sampleDataExists) {
-    report += '1. Consider adding sample data for testing\n';
+    report += '1. Run the sample data script: supabase-scripts/14-sample-data.sql\n';
     report += '2. Create admin, seller, and customer accounts\n';
   } else {
     report += '1. Your setup is complete!\n';
@@ -161,78 +161,16 @@ export const createSampleData = async (): Promise<{ success: boolean; message: s
     if (existingProfiles && existingProfiles.length > 0) {
       return {
         success: false,
-        message: 'Sample data already exists'
+        message: 'Data already exists in database'
       };
     }
 
-    // Create sample profiles (these would need to be created through Supabase Auth first)
-    const sampleProfiles = [
-      {
-        id: '00000000-0000-0000-0000-000000000001',
-        full_name: 'Admin User',
-        role: 'admin'
-      },
-      {
-        id: '00000000-0000-0000-0000-000000000002',
-        full_name: 'Demo Seller',
-        role: 'seller'
-      },
-      {
-        id: '00000000-0000-0000-0000-000000000003',
-        full_name: 'Demo Customer',
-        role: 'customer'
-      }
-    ];
-
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert(sampleProfiles);
-
-    if (profileError) {
-      return {
-        success: false,
-        message: `Failed to create sample profiles: ${profileError.message}`
-      };
-    }
-
-    // Create sample products
-    const sampleProducts = [
-      {
-        name: 'Sample Product 1',
-        description: 'A great product for testing the platform',
-        price: 29.99,
-        category: 'Electronics',
-        stock: 100,
-        seller_id: '00000000-0000-0000-0000-000000000002',
-        seller_name: 'Demo Seller',
-        images: ['https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800&h=800&fit=crop']
-      },
-      {
-        name: 'Sample Product 2',
-        description: 'Another amazing product for demonstration',
-        price: 49.99,
-        category: 'Fashion',
-        stock: 50,
-        seller_id: '00000000-0000-0000-0000-000000000002',
-        seller_name: 'Demo Seller',
-        images: ['https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&h=800&fit=crop']
-      }
-    ];
-
-    const { error: productError } = await supabase
-      .from('products')
-      .insert(sampleProducts);
-
-    if (productError) {
-      return {
-        success: false,
-        message: `Failed to create sample products: ${productError.message}`
-      };
-    }
+    // Note: In a real implementation, profiles would be created through Supabase Auth
+    // This function is kept for compatibility but should not be used in production
 
     return {
-      success: true,
-      message: 'Sample data created successfully'
+      success: false,
+      message: 'Please use the SQL scripts in supabase-scripts directory to set up your database'
     };
 
   } catch (error) {

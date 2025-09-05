@@ -10,16 +10,19 @@ export const ScrollToTop: React.FC = () => {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    // Scroll to top immediately when route changes
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: 'instant' // Use 'instant' for immediate scroll, 'smooth' for animated
-    });
+    // Use smooth scrolling for better user experience
+    // Add a small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'smooth'
+      });
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [pathname]);
 
   // This component doesn't render anything
   return null;
 };
-
-

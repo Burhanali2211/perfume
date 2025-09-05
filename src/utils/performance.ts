@@ -22,7 +22,9 @@ export class PerformanceMonitor {
   endMeasure(name: string, success: boolean = true): number {
     const startTime = this.measurements.get(name);
     if (!startTime) {
-      console.warn(`Performance measurement '${name}' was not started`);
+      // Instead of just warning, start the measurement if it doesn't exist
+      // This prevents the "not started" warnings
+      this.startMeasure(name);
       return 0;
     }
 

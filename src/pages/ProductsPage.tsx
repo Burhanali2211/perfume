@@ -1,15 +1,16 @@
-import React, { useState, useMemo } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Grid, List, SlidersHorizontal, X, AlertCircle, RefreshCw, Search } from 'lucide-react';
 import { ProductCard } from '../components/Product/ProductCard';
-import { ProductFilters, FilterState } from '../components/Product/ProductFilters';
+import { ProductListCard } from '../components/Product/ProductListCard';
+import { AttrFilters, AttrFilterState } from '../components/Product/AttrFilters';
 import { EnhancedSearch } from '../components/Product/EnhancedSearch';
 import { MobileProductGrid } from '../components/Mobile/MobileProductCarousel';
 import { useMobileDetection } from '../hooks/useMobileGestures';
 import { useProducts } from '../contexts/ProductContext';
 import { useError } from '../contexts/ErrorContext';
-import { EnhancedLoadingSpinner, ProgressiveLoading } from '../components/Common/EnhancedLoadingSpinner';
+import { LoadingSpinner, ProgressiveLoading } from '../components/Common/LoadingSpinner';
 import { ProductGridError, NetworkStatus } from '../components/Common/ErrorFallback';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { ProductPageTrustSignals, RecentPurchaseNotification } from '../components/Trust';
@@ -19,6 +20,7 @@ import { ProductPageTrustSignals, RecentPurchaseNotification } from '../componen
 export const ProductsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { slug } = useParams<{ slug?: string }>();
   const { products, categories, loading, basicLoading, detailsLoading, fetchProducts } = useProducts();
   const { error, clearError } = useError();
   const { isMobile } = useMobileDetection();
@@ -26,17 +28,78 @@ export const ProductsPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
 
-  const [filters, setFilters] = useState<FilterState>({
-    category: searchParams.get('category') || 'all',
-    priceRange: [0, 1000] as [number, number],
+  // Debug: Log when component mounts and when products/categories change
+  useEffect(() => {
+    console.log('ProductsPage mounted');
+  }, []);
+
+  useEffect(() => {
+    console.log('Products updated:', products.length);
+  }, [products]);
+
+  useEffect(() => {
+    console.log('Categories updated:', categories.length);
+  }, [categories]);
+
+  // Determine initial category from URL slug or search params
+  const getInitialCategory = () => {
+    if (slug) {
+      // Find category by slug
+      const category = categories.find(cat => cat.slug === slug);
+      console.log('Finding category by slug:', slug, category);
+      return category ? category.name : '';
+    }
+    const categoryParam = searchParams.get('category');
+    console.log('Category param from URL:', categoryParam);
+    return categoryParam || '';
+  };
+
+  const [filters, setFilters] = useState<AttrFilterState>({
+    category: '',
+    priceRange: [0, 25000] as [number, number],
     rating: 0,
     inStock: false,
     brands: [],
-    tags: [],
-    features: [],
+    longevity: [],
+    sillage: [],
+    concentration: [],
+    origins: [],
+    fragranceFamily: [],
     sortBy: 'featured',
     search: searchParams.get('q') || ''
   });
+
+  // Debug: Log initial filters
+  useEffect(() => {
+    console.log('Initial filters set:', filters);
+  }, []);
+
+  // Update filters when URL changes
+  useEffect(() => {
+    const initialCategory = getInitialCategory();
+    // Only update category if it's different to prevent infinite loops
+    setFilters(prev => {
+      // If we're on the main products page with no category, show all products
+      if (!slug && !searchParams.get('category')) {
+        if (prev.category !== '') {
+          console.log('Resetting category filter to show all products');
+          return { ...prev, category: '' };
+        }
+      } else if (prev.category !== initialCategory) {
+        console.log('Updating category filter:', initialCategory);
+        return { ...prev, category: initialCategory };
+      }
+      return prev;
+    });
+  }, [slug, searchParams, categories]);
+  
+  // Debug: Log products and filters to see what's happening
+  useEffect(() => {
+    console.log('Products loaded:', products.length);
+    console.log('Categories loaded:', categories.length);
+    console.log('Current filters:', filters);
+  }, [products, categories, filters]);
+
   const isOnline = useNetworkStatus();
 
   const handleRetry = () => {
@@ -44,20 +107,47 @@ export const ProductsPage: React.FC = () => {
     fetchProducts(true); // Force refresh
   };
 
-  // Extract available filter options from products
-  const availableBrands = useMemo(() => {
-    return [...new Set(products.map(p => p.brand).filter(Boolean))];
+  // Attar-specific filter options extracted from products
+  const availableOrigins = useMemo(() => {
+    return [...new Set(products.map(p => {
+      const origin = p.specifications?.Origin;
+      return typeof origin === 'string' ? origin : '';
+    }).filter(Boolean))];
   }, [products]);
 
-  const availableTags = useMemo(() => {
-    return [...new Set(products.flatMap(p => p.tags || []))];
+  const availableLongevity = useMemo(() => {
+    return [...new Set(products.map(p => {
+      const longevity = p.specifications?.Longevity;
+      if (typeof longevity !== 'string') return '';
+      if (longevity.includes('12+') || longevity.includes('14+') || longevity.includes('16+')) return 'very-long';
+      if (longevity.includes('8+') || longevity.includes('10+')) return 'long';
+      if (longevity.includes('4+') || longevity.includes('6+') || longevity.includes('7+')) return 'moderate';
+      if (longevity.includes('2+')) return 'light';
+      return '';
+    }).filter(Boolean))];
   }, [products]);
 
-  const availableFeatures = useMemo(() => {
-    // Extract features from product descriptions or specifications
-    const features = ['Free Shipping', 'Warranty', 'Eco-Friendly', 'Premium Quality', 'Fast Delivery'];
-    return features;
-  }, []);
+  const availableSillage = useMemo(() => {
+    return [...new Set(products.map(p => {
+      const sillage = p.specifications?.Sillage;
+      if (typeof sillage !== 'string') return '';
+      if (sillage.includes('Very Strong')) return 'very-strong';
+      if (sillage.includes('Strong')) return 'strong';
+      if (sillage.includes('Moderate')) return 'moderate';
+      return 'intimate';
+    }).filter(Boolean))];
+  }, [products]);
+
+  const availableConcentration = useMemo(() => {
+    return [...new Set(products.map(p => {
+      const concentration = p.specifications?.Concentration;
+      if (typeof concentration !== 'string') return '';
+      if (concentration.includes('Pure Oil') || concentration.includes('Pure')) return 'pure-oil';
+      if (concentration.includes('Concentrated')) return 'concentrated';
+      if (concentration.includes('Blend')) return 'blend';
+      return 'diluted';
+    }).filter(Boolean))];
+  }, [products]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -72,11 +162,11 @@ export const ProductsPage: React.FC = () => {
     });
   };
 
-  const handleFiltersChange = (newFilters: FilterState) => {
+  const handleFiltersChange = (newFilters: AttrFilterState) => {
     setFilters(newFilters);
     // Update URL params
     setSearchParams(prev => {
-      if (newFilters.category !== 'all') {
+      if (newFilters.category && newFilters.category !== '' && newFilters.category !== 'all') {
         prev.set('category', newFilters.category);
       } else {
         prev.delete('category');
@@ -92,25 +182,70 @@ export const ProductsPage: React.FC = () => {
 
   const filteredProducts = useMemo(() => {
     let filtered = [...products];
+    
+    console.log('Filtering products:', {
+      totalProducts: products.length,
+      currentFilters: filters,
+      categories: categories.map(c => c.name)
+    });
 
-    // Search filtering
+    // Search filtering with enhanced attar-specific terms
     if (filters.search && filters.search.trim()) {
       const searchTerm = filters.search.toLowerCase();
       filtered = filtered.filter(p =>
         p.name.toLowerCase().includes(searchTerm) ||
         p.description.toLowerCase().includes(searchTerm) ||
-        p.category?.toLowerCase().includes(searchTerm) ||
+        (p.category && p.category.toLowerCase().includes(searchTerm)) ||
         (p.tags && p.tags.some(tag => tag.toLowerCase().includes(searchTerm))) ||
-        (p.brand && p.brand.toLowerCase().includes(searchTerm))
+        (p.sellerName && p.sellerName.toLowerCase().includes(searchTerm)) ||
+        // Enhanced attar-specific search terms
+        (p.specifications?.Origin && typeof p.specifications.Origin === 'string' && p.specifications.Origin.toLowerCase().includes(searchTerm)) ||
+        (p.specifications?.Concentration && typeof p.specifications.Concentration === 'string' && p.specifications.Concentration.toLowerCase().includes(searchTerm)) ||
+        (p.specifications?.Longevity && typeof p.specifications.Longevity === 'string' && p.specifications.Longevity.toLowerCase().includes(searchTerm)) ||
+        (p.specifications?.Sillage && typeof p.specifications.Sillage === 'string' && p.specifications.Sillage.toLowerCase().includes(searchTerm)) ||
+        // Search in fragrance notes and characteristics
+        (searchTerm.includes('floral') && p.tags?.some(tag => ['rose', 'jasmine', 'mogra', 'floral'].includes(tag.toLowerCase()))) ||
+        (searchTerm.includes('woody') && p.tags?.some(tag => ['oudh', 'sandalwood', 'woody'].includes(tag.toLowerCase()))) ||
+        (searchTerm.includes('oriental') && p.tags?.some(tag => ['amber', 'saffron', 'oriental'].includes(tag.toLowerCase()))) ||
+        (searchTerm.includes('musky') && p.tags?.some(tag => ['musk', 'white'].includes(tag.toLowerCase())))
       );
     }
 
-    // Category filtering
-    if (filters.category && filters.category !== 'all') {
-      filtered = filtered.filter(p =>
-        p.category?.toLowerCase() === filters.category.toLowerCase() ||
-        p.categoryId === filters.category
-      );
+    // Category filtering - only apply if a category is actually selected
+    if (filters.category && filters.category !== '' && filters.category.toLowerCase() !== 'all') {
+      console.log('Applying category filter:', filters.category);
+      filtered = filtered.filter(p => {
+        // Handle case where category might be undefined
+        if (!p.category) {
+          console.log('Product without category:', p.id, p.name);
+          return false;
+        }
+        
+        // Try exact match first
+        if (p.category === filters.category) {
+          console.log('Exact category match:', p.name, p.category);
+          return true;
+        }
+        // Try case-insensitive match
+        if (p.category?.toLowerCase() === filters.category.toLowerCase()) {
+          console.log('Case-insensitive category match:', p.name, p.category);
+          return true;
+        }
+        // Try category ID match
+        if (p.categoryId === filters.category) {
+          console.log('Category ID match:', p.name, p.categoryId);
+          return true;
+        }
+        // Try finding category by name and matching ID
+        const categoryByName = categories.find(cat => 
+          cat.name && cat.name.toLowerCase() === filters.category.toLowerCase()
+        );
+        const result = categoryByName && p.categoryId === categoryByName.id;
+        if (result) {
+          console.log('Category by name match:', p.name, categoryByName.name);
+        }
+        return result;
+      });
     }
 
     // Price range filtering
@@ -118,32 +253,98 @@ export const ProductsPage: React.FC = () => {
       p.price >= filters.priceRange[0] && p.price <= filters.priceRange[1]
     );
 
-    // Rating filtering
-    if (filters.rating > 0) {
-      filtered = filtered.filter(p => p.rating >= filters.rating);
+    // Longevity filtering
+    if (filters.longevity.length > 0) {
+      filtered = filtered.filter(p => {
+        const longevity = p.specifications?.Longevity;
+        if (typeof longevity !== 'string') return false;
+        return filters.longevity.some(selectedLongevity => {
+          switch (selectedLongevity) {
+            case 'very-long': return longevity.includes('12+') || longevity.includes('14+') || longevity.includes('16+');
+            case 'long': return longevity.includes('8+') || longevity.includes('10+');
+            case 'moderate': return longevity.includes('4+') || longevity.includes('6+') || longevity.includes('7+');
+            case 'light': return longevity.includes('2+') || longevity.includes('3+');
+            default: return false;
+          }
+        });
+      });
     }
 
-    // Stock filtering
-    if (filters.inStock) {
-      filtered = filtered.filter(p => p.stock > 0);
+    // Sillage filtering
+    if (filters.sillage.length > 0) {
+      filtered = filtered.filter(p => {
+        const sillage = p.specifications?.Sillage;
+        if (typeof sillage !== 'string') return false;
+        return filters.sillage.some(selectedSillage => {
+          switch (selectedSillage) {
+            case 'very-strong': return sillage.includes('Very Strong');
+            case 'strong': return sillage.includes('Strong') && !sillage.includes('Very Strong');
+            case 'moderate': return sillage.includes('Moderate');
+            case 'intimate': return !sillage.includes('Strong') && !sillage.includes('Moderate');
+            default: return false;
+          }
+        });
+      });
     }
 
-    // Brand filtering
-    if (filters.brands.length > 0) {
-      filtered = filtered.filter(p => p.brand && filters.brands.includes(p.brand));
+    // Concentration filtering
+    if (filters.concentration.length > 0) {
+      filtered = filtered.filter(p => {
+        const concentration = p.specifications?.Concentration;
+        if (typeof concentration !== 'string') return false;
+        return filters.concentration.some(selectedConcentration => {
+          switch (selectedConcentration) {
+            case 'pure-oil': return concentration.includes('Pure Oil') || concentration.includes('Pure');
+            case 'concentrated': return concentration.includes('Concentrated');
+            case 'blend': return concentration.includes('Blend');
+            case 'diluted': return !concentration.includes('Pure') && !concentration.includes('Concentrated') && !concentration.includes('Blend');
+            default: return false;
+          }
+        });
+      });
     }
 
-    // Tags filtering
-    if (filters.tags.length > 0) {
-      filtered = filtered.filter(p =>
-        p.tags && filters.tags.some(tag => p.tags!.includes(tag))
-      );
+    // Origins filtering
+    if (filters.origins.length > 0) {
+      filtered = filtered.filter(p => {
+        const origin = p.specifications?.Origin;
+        if (typeof origin !== 'string') return false;
+        return filters.origins.some(selectedOrigin => {
+          switch (selectedOrigin) {
+            case 'kannauj': return origin.toLowerCase().includes('kannauj');
+            case 'mysore': return origin.toLowerCase().includes('mysore');
+            case 'kashmir': return origin.toLowerCase().includes('kashmir');
+            case 'assam': return origin.toLowerCase().includes('assam');
+            case 'bulgarian': return origin.toLowerCase().includes('bulgaria');
+            case 'cambodian': return origin.toLowerCase().includes('cambodia');
+            case 'arabian': return origin.toLowerCase().includes('arab');
+            default: return false;
+          }
+        });
+      });
     }
 
-    // Features filtering (simplified - in real app, this would check product specifications)
-    if (filters.features.length > 0) {
-      // For demo purposes, randomly assign features to products
-      filtered = filtered.filter(p => Math.random() > 0.3);
+    // Fragrance Family filtering
+    if (filters.fragranceFamily.length > 0) {
+      filtered = filtered.filter(p => {
+        const tags = p.tags || [];
+        const name = p.name.toLowerCase();
+        const description = p.description.toLowerCase();
+        
+        return filters.fragranceFamily.some(family => {
+          switch (family) {
+            case 'floral': return tags.some(tag => ['rose', 'jasmine', 'mogra', 'floral'].includes(tag.toLowerCase())) || name.includes('rose') || name.includes('jasmine');
+            case 'woody': return tags.some(tag => ['oudh', 'sandalwood', 'woody'].includes(tag.toLowerCase())) || name.includes('oudh') || name.includes('sandalwood');
+            case 'oriental': return tags.some(tag => ['amber', 'saffron', 'oriental'].includes(tag.toLowerCase())) || name.includes('amber') || name.includes('saffron');
+            case 'spicy': return tags.some(tag => ['saffron', 'spicy'].includes(tag.toLowerCase())) || description.includes('spicy');
+            case 'fresh': return tags.some(tag => ['fresh', 'clean'].includes(tag.toLowerCase())) || description.includes('fresh');
+            case 'musky': return tags.some(tag => ['musk', 'white'].includes(tag.toLowerCase())) || name.includes('musk');
+            case 'citrus': return tags.some(tag => ['citrus', 'lemon'].includes(tag.toLowerCase())) || description.includes('citrus');
+            case 'herbal': return tags.some(tag => ['herbal', 'herb'].includes(tag.toLowerCase())) || description.includes('herbal');
+            default: return false;
+          }
+        });
+      });
     }
 
     // Sorting
@@ -161,112 +362,111 @@ export const ProductsPage: React.FC = () => {
       default:
         return filtered.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
     }
-  }, [products, filters]);
+  }, [products, filters, categories]);
+
+  // Calculate active filter count for UI
+  const activeFilterCount = [
+    filters.category && filters.category !== '' && filters.category.toLowerCase() !== 'all' ? 1 : 0,
+    filters.priceRange[0] > 0 || filters.priceRange[1] < 25000 ? 1 : 0,
+    filters.longevity.length,
+    filters.sillage.length,
+    filters.concentration.length,
+    filters.origins.length,
+    filters.fragranceFamily.length,
+    filters.search ? 1 : 0
+  ].reduce((sum, count) => sum + count, 0);
 
   // Legacy filter functions for backward compatibility
   const updateFilter = (key: string, value: unknown) => setFilters(prev => ({ ...prev, [key]: value }));
-  const clearFilters = () => setFilters({
-    category: 'all',
-    priceRange: [0, 1000],
-    rating: 0,
-    inStock: false,
-    brands: [],
-    tags: [],
-    features: [],
-    sortBy: 'featured',
-    search: ''
-  });
+  const clearFilters = () => {
+    const resetFilters: AttrFilterState = {
+      category: '',
+      priceRange: [0, 25000],
+      longevity: [],
+      sillage: [],
+      concentration: [],
+      origins: [],
+      fragranceFamily: [],
+      sortBy: 'featured',
+      search: '',
+      // Keep for compatibility
+      rating: 0,
+      inStock: false,
+      brands: []
+    };
+    setFilters(resetFilters);
+    
+    // Also clear URL parameters
+    setSearchParams({});
+    setSearchQuery('');
+  };
 
   return (
     <div className="min-h-screen bg-background-primary">
-      {/* Luxury Header Section */}
-      <div className="bg-white shadow-subtle border-b border-neutral-200">
-        <div className="container-luxury py-8 lg:py-12">
-          {/* Enhanced Header with Luxury Typography */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
-            <div className="space-y-3">
-              <h1 className="heading-luxury text-4xl lg:text-5xl font-light tracking-tight text-text-primary">
-                Products
-              </h1>
-              <p className="text-luxury-muted text-lg">
-                {loading ? 'Curating our collection...' : `${filteredProducts.length} exceptional products`}
-              </p>
-            </div>
+      {/* Network Status */}
+      <NetworkStatus isOnline={isOnline} onRetry={handleRetry} />
 
-            {/* Luxury Controls */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              {/* Sort Dropdown */}
-              <div className="relative">
-                <select
-                  value={filters.sortBy}
-                  onChange={(e) => handleFiltersChange({ ...filters, sortBy: e.target.value })}
-                  className="form-input-luxury min-w-[200px] appearance-none bg-white border border-neutral-300 rounded-luxury px-4 py-3 pr-10 text-sm font-medium text-text-primary focus:ring-2 focus:ring-neutral-200 focus:border-neutral-400 transition-all duration-200"
-                >
-                  <option value="featured">Featured Selection</option>
-                  <option value="newest">Latest Arrivals</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
-                  <option value="rating">Highest Rated</option>
-                  <option value="name">Alphabetical</option>
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <svg className="h-4 w-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
+      {/* Page Header */}
+      <div className="bg-white shadow-sm border-b border-neutral-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-gradient-to-br from-purple-100 to-blue-100 rounded-xl">
+                <Grid className="h-6 w-6 text-purple-600" />
               </div>
-
-              {/* View Mode Toggle */}
-              <div className="hidden sm:flex bg-neutral-100 rounded-luxury p-1 border border-neutral-200">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {filters.category && filters.category !== '' 
+                    ? `${filters.category} Collection` 
+                    : 'All Products'
+                  }
+                </h1>
+                <p className="text-gray-600 mt-1">
+                  {filters.category && filters.category !== ''
+                    ? `Discover premium ${filters.category.toLowerCase()} attars`
+                    : `Explore our complete collection of ${filteredProducts.length} premium attars`
+                  }
+                </p>
+              </div>
+            </div>
+            
+            {/* Quick Action Buttons */}
+            <div className="flex items-center space-x-3">
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={clearFilters}
+                  className="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Clear Filters ({activeFilterCount})
+                </button>
+              )}
+              <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`flex items-center justify-center w-10 h-10 rounded-md transition-all duration-200 ${
-                    viewMode === 'grid'
-                      ? 'bg-white text-neutral-900 shadow-sm'
-                      : 'text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50'
+                  className={`p-2 rounded-lg transition-colors ${
+                    viewMode === 'grid' 
+                      ? 'bg-purple-100 text-purple-600' 
+                      : 'text-gray-400 hover:text-gray-600'
                   }`}
                 >
-                  <Grid className="h-4 w-4" />
+                  <Grid className="h-5 w-5" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`flex items-center justify-center w-10 h-10 rounded-md transition-all duration-200 ${
-                    viewMode === 'list'
-                      ? 'bg-white text-neutral-900 shadow-sm'
-                      : 'text-neutral-500 hover:text-neutral-700 hover:bg-neutral-50'
+                  className={`p-2 rounded-lg transition-colors ${
+                    viewMode === 'list' 
+                      ? 'bg-purple-100 text-purple-600' 
+                      : 'text-gray-400 hover:text-gray-600'
                   }`}
                 >
-                  <List className="h-4 w-4" />
+                  <List className="h-5 w-5" />
                 </button>
               </div>
-
-              {/* Mobile Filter Button */}
-              <button
-                onClick={() => setIsFilterOpen(true)}
-                className="lg:hidden btn-secondary flex items-center space-x-2 px-6 py-3 bg-white border border-neutral-300 rounded-luxury hover:bg-neutral-50 transition-all duration-200"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-                <span className="font-medium">Filters</span>
-              </button>
             </div>
-          </div>
-
-          {/* Enhanced Search */}
-          <div className="max-w-2xl">
-            <EnhancedSearch
-              value={searchQuery}
-              onChange={setSearchQuery}
-              onSearch={handleSearch}
-              showFilters={true}
-              onFiltersToggle={() => setIsFilterOpen(true)}
-              placeholder="Search products, brands, categories..."
-            />
           </div>
         </div>
       </div>
-
-      {/* Network Status */}
-      <NetworkStatus isOnline={isOnline} onRetry={handleRetry} />
 
       {/* Error Display */}
       {error && (
@@ -290,9 +490,9 @@ export const ProductsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Luxury Main Content Layout */}
-      <div className="container-luxury py-8 lg:py-12">
-        <div className="flex gap-6 lg:gap-8 xl:gap-12">
+      {/* Amazon-Style Main Content Layout */}
+      <div className="container-luxury-wide py-6 lg:py-8">
+        <div className="flex gap-4 lg:gap-6 xl:gap-8">
           {/* Mobile Filter Sidebar */}
           <AnimatePresence>
             {isFilterOpen && (
@@ -314,13 +514,11 @@ export const ProductsPage: React.FC = () => {
                 transition={{ type: 'spring', damping: 30, stiffness: 300 }}
                 className="fixed top-0 left-0 w-80 h-full bg-white shadow-luxury z-50 lg:hidden overflow-y-auto"
               >
-                <ProductFilters
+                <AttrFilters
                   filters={filters}
                   onFiltersChange={handleFiltersChange}
                   categories={categories}
-                  availableBrands={availableBrands}
-                  availableTags={availableTags}
-                  availableFeatures={availableFeatures}
+                  availableBrands={[]} // Keep for compatibility
                   isOpen={isFilterOpen}
                   onToggle={() => setIsFilterOpen(false)}
                   productCount={filteredProducts.length}
@@ -330,30 +528,29 @@ export const ProductsPage: React.FC = () => {
             )}
           </AnimatePresence>
 
-          {/* Desktop Filter Sidebar - Responsive Width */}
-          <aside className="hidden lg:block w-72 xl:w-80 flex-shrink-0">
-            <div className="sticky top-28">
-              <ProductFilters
+          {/* Improved Amazon-Style Filter Sidebar - Optimized Width and Sticky Position */}
+          <aside className="filter-sidebar hidden lg:block w-64 xl:w-72 2xl:w-80 flex-shrink-0">
+            <div className="filter-sidebar-sticky sticky top-24 h-[calc(100vh-120px)] overflow-hidden flex flex-col">
+              <AttrFilters
                 filters={filters}
                 onFiltersChange={handleFiltersChange}
                 categories={categories}
-                availableBrands={availableBrands}
-                availableTags={availableTags}
-                availableFeatures={availableFeatures}
+                availableBrands={[]} // Keep for compatibility
                 isOpen={true}
                 onToggle={() => {}}
                 productCount={filteredProducts.length}
+                className="flex-1 flex flex-col h-full"
               />
             </div>
           </aside>
 
-          {/* Luxury Product Grid - Optimized for All Screen Sizes */}
+          {/* Amazon-Style Product Grid - Optimized for All Screen Sizes */}
           <div className="flex-1 min-w-0">
             {error && !products.length ? (
               <ProductGridError error={error} onRetry={handleRetry} />
             ) : basicLoading ? (
               <div className="space-y-8">
-                <EnhancedLoadingSpinner
+                <LoadingSpinner
                   text="Curating products..."
                   subText="Discovering exceptional pieces for you"
                   stage={!isOnline ? 'offline' : 'loading'}
@@ -375,7 +572,7 @@ export const ProductsPage: React.FC = () => {
                   />
                 )}
 
-                {/* Luxury Responsive Product Grid */}
+                {/* Amazon-Style Responsive Product Grid */}
                 <div className="block sm:hidden">
                   {/* Mobile-Optimized Grid */}
                   <MobileProductGrid
@@ -386,63 +583,64 @@ export const ProductsPage: React.FC = () => {
                 </div>
 
                 <div className="hidden sm:block">
-                  {/* Desktop/Tablet Grid */}
+                  {/* Amazon-Style Desktop/Tablet Grid */}
                   <div className={`
                     ${viewMode === 'grid'
-                      ? `grid gap-6 lg:gap-8 xl:gap-10
-                         grid-cols-2
-                         md:grid-cols-2
-                         lg:grid-cols-2
-                         xl:grid-cols-3
-                         2xl:grid-cols-4
-                         auto-rows-fr`
-                      : 'space-y-8'
+                      ? 'grid-luxury-products'
+                      : 'list-luxury-products'
                     }
                   `}>
-                    {filteredProducts.map((product, index) => (
-                      <motion.div
-                        key={product.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{
-                          delay: index * 0.05,
-                          duration: 0.4,
-                          ease: "easeOut"
-                        }}
-                        className={viewMode === 'list' ? 'w-full' : ''}
-                      >
-                        <ProductCard product={product} />
-                      </motion.div>
-                    ))}
+                    {filteredProducts && filteredProducts.length > 0 ? (
+                      filteredProducts.map((product, index) => (
+                        <motion.div
+                          key={product.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{
+                            delay: index * 0.03,
+                            duration: 0.4,
+                            ease: "easeOut"
+                          }}
+                          className={`${viewMode === 'list' ? 'w-full' : 'h-full'}`}
+                        >
+                          {viewMode === 'list' ? (
+                            <ProductListCard product={product} />
+                          ) : (
+                            <ProductCard product={product} />
+                          )}
+                        </motion.div>
+                      ))
+                    ) : (
+                      <div className="col-span-full text-center py-12">
+                        <p className="text-gray-500">
+                          {loading ? 'Loading products...' : 'No products found matching your criteria.'}
+                        </p>
+                        {loading && (
+                          <div className="mt-4">
+                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Luxury Empty State */}
-                {filteredProducts.length === 0 && !loading && (
+                {!loading && filteredProducts.length === 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="text-center py-16 lg:py-24"
                   >
-                    <div className="text-neutral-300 text-8xl mb-6">🔍</div>
+                    <div className="text-neutral-300 text-8xl mb-6">🌸</div>
                     <h3 className="heading-luxury text-2xl lg:text-3xl font-light text-text-primary mb-4">
-                      No products found
+                      No attars found
                     </h3>
                     <p className="text-luxury-muted text-lg max-w-md mx-auto leading-relaxed">
-                      We couldn't find any products matching your criteria. Try adjusting your filters or search terms.
+                      We couldn't find any attars matching your criteria. Try exploring different fragrance families or price ranges.
                     </p>
                     <button
-                      onClick={() => handleFiltersChange({
-                        category: 'all',
-                        priceRange: [0, 1000],
-                        rating: 0,
-                        inStock: false,
-                        brands: [],
-                        tags: [],
-                        features: [],
-                        sortBy: 'featured',
-                        search: ''
-                      })}
+                      onClick={clearFilters}
                       className="btn-primary mt-8"
                     >
                       Clear All Filters
@@ -469,3 +667,5 @@ export const ProductsPage: React.FC = () => {
     </div>
   );
 };
+
+export default ProductsPage;

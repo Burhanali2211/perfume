@@ -10,10 +10,13 @@ import {
   updateProduct,
   deleteProduct,
   addReview,
-  supabase
+  supabase,
+  createCategory,
+  updateCategory,
+  deleteCategory
 } from '../lib/supabase';
 import { useError } from './ErrorContext';
-import { productCache, categoryCache, generateCacheKey, invalidateProductCache } from '../utils/cache';
+import { productCache, categoryCache, generateCacheKey, invalidateProductCache, invalidateCategoryCache } from '../utils/cache';
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
@@ -31,7 +34,30 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [basicLoading, setBasicLoading] = useState(true);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [featuredLoading, setFeaturedLoading] = useState(true);
+  const [isUsingMockData, setIsUsingMockData] = useState(false);
   const { setError } = useError();
+
+  // Debug: Log initial state
+  useEffect(() => {
+    console.log('ProductProvider initialized');
+  }, []);
+
+  // Debug: Log when products/categories change
+  useEffect(() => {
+    console.log('Products state updated:', products.length);
+  }, [products]);
+
+  useEffect(() => {
+    console.log('Categories state updated:', categories.length);
+  }, [categories]);
+
+  useEffect(() => {
+    console.log('Loading state updated:', { loading, basicLoading, detailsLoading });
+  }, [loading, basicLoading, detailsLoading]);
+
+  useEffect(() => {
+    console.log('Using mock data state updated:', isUsingMockData);
+  }, [isUsingMockData]);
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -40,18 +66,24 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       const cachedCategories = categoryCache.get(cacheKey);
 
       if (cachedCategories) {
-        setCategories(cachedCategories);
+        console.log('Using cached categories');
+        setCategories(cachedCategories as Category[]);
         return;
       }
 
       const categoriesData = await getCategories();
+
+      console.log('Using database categories:', categoriesData.length);
       setCategories(categoriesData);
+      setIsUsingMockData(false);
 
       // Cache the results
       categoryCache.set(cacheKey, categoriesData);
     } catch (error) {
       console.error('Error fetching categories:', error);
-      setError('Failed to fetch categories. Please check your database connection.');
+      setError('Failed to load categories from database');
+      setCategories([]);
+      setIsUsingMockData(false);
     }
   }, [setError]);
 
@@ -62,17 +94,23 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       const cached = productCache.get(cacheKey);
 
       if (cached) {
-        setFeaturedProducts(cached);
+        console.log('Using cached featured products');
+        setFeaturedProducts(cached as Product[]);
         setFeaturedLoading(false);
         return;
       }
 
       const featuredData = await getFeaturedProducts(limit);
+
+      console.log('Using database featured products:', featuredData.length);
       setFeaturedProducts(featuredData);
+      setIsUsingMockData(false);
       productCache.set(cacheKey, featuredData);
     } catch (error) {
       console.error('Error fetching featured products:', error);
-      setError('Failed to fetch featured products. Please check your database connection.');
+      setError('Failed to load featured products from database');
+      setFeaturedProducts([]);
+      setIsUsingMockData(false);
     } finally {
       setFeaturedLoading(false);
     }
@@ -92,39 +130,44 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       const cachedCategories = !forceRefresh ? categoryCache.get(categoryCacheKey) : null;
 
       if (cachedProducts && cachedCategories) {
-        setProducts(cachedProducts);
-        setCategories(cachedCategories);
+        console.log('Using cached products and categories');
+        setProducts(cachedProducts as Product[]);
+        setCategories(cachedCategories as Category[]);
         setBasicLoading(false);
         setLoading(false);
         return;
       }
 
-      // Fetch products and categories in parallel for better performance
-      const [productsResult, categoriesResult] = await Promise.allSettled([
-        cachedProducts ? Promise.resolve(cachedProducts) : getProductsBasic({ limit: 20 }),
-        cachedCategories ? Promise.resolve(cachedCategories) : getCategories()
-      ]);
+      // Try to fetch from database first
+      try {
+        console.log('Attempting to fetch products from database');
+        const [productsResult, categoriesResult] = await Promise.all([
+          getProductsBasic({ limit: 50 }),
+          getCategories()
+        ]);
 
-      // Handle products result
-      if (productsResult.status === 'fulfilled') {
-        setProducts(productsResult.value);
-        if (!cachedProducts) {
-          productCache.set(productCacheKey, productsResult.value);
-        }
-      } else {
-        console.error('Failed to fetch products:', productsResult.reason);
-        throw productsResult.reason;
-      }
+        console.log('Database fetch results:', { 
+          productsCount: productsResult.length, 
+          categoriesCount: categoriesResult.length 
+        });
 
-      // Handle categories result
-      if (categoriesResult.status === 'fulfilled') {
-        setCategories(categoriesResult.value);
-        if (!cachedCategories) {
-          categoryCache.set(categoryCacheKey, categoriesResult.value);
-        }
-      } else {
-        console.warn('Failed to fetch categories:', categoriesResult.reason);
-        // Don't fail the entire operation if categories fail
+        // If we get data from database, use it
+        console.log('Using database products');
+        setProducts(productsResult);
+        productCache.set(productCacheKey, productsResult);
+        setIsUsingMockData(false);
+
+        console.log('Using database categories');
+        setCategories(categoriesResult);
+        categoryCache.set(categoryCacheKey, categoriesResult);
+        setIsUsingMockData(false);
+      } catch (dbError) {
+        // If database fetch fails, show error but don't use mock data
+        console.log('Database error:', dbError);
+        setError('Failed to load data from database');
+        setProducts([]);
+        setCategories([]);
+        setIsUsingMockData(false);
       }
 
       setBasicLoading(false);
@@ -134,7 +177,8 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
         setDetailsLoading(true);
         setTimeout(async () => {
           try {
-            const fullProductsData = await getProducts({ limit: 20 });
+            const fullProductsData = await getProducts({ limit: 50 });
+            console.log('Fetched full product details:', fullProductsData.length);
             setProducts(fullProductsData);
             productCache.set('products-full', fullProductsData);
           } catch (detailError) {
@@ -149,7 +193,11 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
       if (error instanceof Error && error.message.includes('infinite recursion')) {
         setError('DATABASE SETUP ERROR: Your database security policies are causing an infinite loop. This is a common setup issue. Please run the provided SQL script in your Supabase SQL Editor to fix it.');
       } else {
-        setError('Failed to fetch products. Please check your database connection.');
+        console.log('Database error');
+        setError('Failed to load data from database');
+        setProducts([]);
+        setCategories([]);
+        setIsUsingMockData(false);
       }
       console.error('Error fetching products:', error);
       setBasicLoading(false);
@@ -170,6 +218,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const addProduct = async (productData: Omit<Product, 'id' | 'createdAt' | 'reviews' | 'rating' | 'reviewCount'>) => {
     try {
+      // Try to use database
       const productId = await createProduct(productData);
       if (productId) {
         // Invalidate cache and refresh
@@ -179,12 +228,14 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
         setError('Failed to add product');
       }
     } catch (error) {
+      console.error('Error adding product:', error);
       setError('Error adding product: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 
   const updateProductData = async (updatedProduct: Product) => {
     try {
+      // Try database
       const success = await updateProduct(updatedProduct);
       if (success) {
         // Invalidate cache for this specific product and refresh
@@ -194,12 +245,14 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
         setError('Failed to update product');
       }
     } catch (error) {
+      console.error('Error updating product:', error);
       setError('Error updating product: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 
   const deleteProductData = async (productId: string) => {
     try {
+      // Try database
       const success = await deleteProduct(productId);
       if (success) {
         // Invalidate cache for this specific product and refresh
@@ -209,6 +262,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
         setError('Failed to delete product');
       }
     } catch (error) {
+      console.error('Error deleting product:', error);
       setError('Error deleting product: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
@@ -243,7 +297,68 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
-  const value: ProductContextType = {
+  const addCategory = async (categoryData: Omit<Category, 'id' | 'productCount' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      // Try to use database
+      const categoryId = await createCategory(categoryData);
+      if (categoryId) {
+        // Invalidate cache and refresh
+        invalidateCategoryCache();
+        await fetchCategories();
+        return Promise.resolve();
+      } else {
+        setError('Failed to add category');
+        return Promise.reject(new Error('Failed to add category'));
+      }
+    } catch (error) {
+      console.error('Error adding category:', error);
+      setError('Error adding category: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      return Promise.reject(error);
+    }
+  };
+
+  const updateCategoryData = async (updatedCategory: Category) => {
+    try {
+      // Try database
+      const success = await updateCategory(updatedCategory);
+      if (success) {
+        // Invalidate cache and refresh
+        invalidateCategoryCache();
+        await fetchCategories();
+        return Promise.resolve();
+      } else {
+        setError('Failed to update category');
+        return Promise.reject(new Error('Failed to update category'));
+      }
+    } catch (error) {
+      console.error('Error updating category:', error);
+      setError('Error updating category: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      return Promise.reject(error);
+    }
+  };
+
+  const deleteCategoryData = async (categoryId: string) => {
+    try {
+      // Try database
+      const success = await deleteCategory(categoryId);
+      if (success) {
+        // Invalidate cache and refresh
+        invalidateCategoryCache();
+        await fetchCategories();
+        return Promise.resolve();
+      } else {
+        setError('Failed to delete category - it may have products associated with it');
+        return Promise.reject(new Error('Failed to delete category'));
+      }
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      setError('Error deleting category: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      return Promise.reject(error);
+    }
+  };
+
+  // Add the new functions to the context value
+  const contextValue: ProductContextType = {
     products,
     featuredProducts,
     categories,
@@ -259,8 +374,15 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     basicLoading,
     detailsLoading,
     featuredLoading,
-    isUsingMockData: false // We're using real database data
+    isUsingMockData,
+    addCategory,
+    updateCategory: updateCategoryData,
+    deleteCategory: deleteCategoryData
   };
 
-  return <ProductContext.Provider value={value}>{children}</ProductContext.Provider>;
+  return (
+    <ProductContext.Provider value={contextValue}>
+      {children}
+    </ProductContext.Provider>
+  );
 };

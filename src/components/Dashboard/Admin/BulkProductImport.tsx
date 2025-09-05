@@ -42,12 +42,12 @@ export const BulkProductImport: React.FC = () => {
   const { showNotification } = useNotification();
 
   const downloadTemplate = () => {
-    const csvContent = `name,description,short_description,price,original_price,category,stock,sku,weight,tags,is_featured,images
-"iPhone 15 Pro","Latest iPhone with advanced camera system","Premium smartphone with A17 Pro chip",999.00,1099.00,"Electronics",50,"IPH15PRO001",0.19,"smartphone,apple,iphone",true,"https://example.com/image1.jpg,https://example.com/image2.jpg"
-"Cotton T-Shirt","Comfortable organic cotton t-shirt","Soft and breathable daily wear",29.99,39.99,"Clothing",100,"TSHIRT001",0.15,"t-shirt,cotton,casual",false,"https://example.com/tshirt1.jpg"
-"Yoga Mat","Premium non-slip yoga mat","Eco-friendly exercise mat",49.99,69.99,"Sports & Fitness",60,"YOGA001",1.2,"yoga,fitness,exercise",false,"https://example.com/yoga1.jpg"`;
+    const sampleCSV = `"Name","Short Description","Description","Price","Original Price","Category","Stock","SKU","Weight (kg)","Tags","Featured","Image URLs"
+"Royal Oudh Supreme","Premium Cambodian oudh aged for 3 years with rose damascus","Aged Cambodian oudh with premium fragrance",12500.00,15000.00,"Oudh Attars",15,"OUDH001",0.012,"oudh,premium,aged,cambodian",true,"/images/products/royal-oud1.jpg,/images/products/royal-oud2.jpg"
+"Bulgarian Rose Attar","Steam-distilled Bulgarian rose petals with romantic fragrance","Pure Bulgarian rose attar",5800.00,7200.00,"Floral Attars",25,"ROSE001",0.010,"rose,floral,bulgarian,romantic",false,"/images/products/rose1.jpg"
+"White Musk Arabia","Pure white musk with soft, clean, and powdery notes","Premium white musk attar",3200.00,4000.00,"Musk Attars",30,"MUSK001",0.012,"musk,white,clean,soft",false,"/images/products/musk1.jpg"`;
     
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([sampleCSV], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

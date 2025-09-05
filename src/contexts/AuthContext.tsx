@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { User, AuthContextType } from '../types';
-import { supabase, getProfileForUser } from '../lib/supabase';
+import { supabase, getProfileForUser, createUserProfile, updateUserProfile } from '../lib/supabase';
 import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { useError } from './ErrorContext';
+
+import { MobileAuthView } from '../components/Auth/MobileAuthView';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -21,99 +23,122 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [isLocked, setIsLocked] = useState(false);
+  const [isMobileAuthOpen, setIsMobileAuthOpen] = useState(false);
+  const [mobileAuthMode, setMobileAuthMode] = useState<'login' | 'signup' | 'profile'>('login');
   const { setError } = useError();
+  
 
+
+  // Initialize auth state
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        // Standard Supabase authentication
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          await handleUserSession(session.user);
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        setError('Authentication initialization failed');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
+  }, []);
+
+
+
+  // Handle auth state changes
   useEffect(() => {
     const handleAuthStateChange = async (event: AuthChangeEvent, session: Session | null) => {
       setLoading(true);
+
       if (session?.user) {
-        try {
-          const profileData = await getProfileForUser(session.user.id);
-          if (profileData) {
-            const fullUser: User = {
-              ...profileData,
-              email: session.user.email!,
-            };
-            setUser(fullUser);
-            setError(null); // Clear any previous errors on success
-          } else {
-            setUser(null);
-          }
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Authentication error'); // Set global error state
-          setUser(null); // Prevent app from continuing in a broken state
-        }
+        await handleUserSession(session.user);
       } else {
         setUser(null);
+        // Clear any stored user data
+        localStorage.removeItem('user_preferences');
+        localStorage.removeItem('cart_items');
       }
+
       setLoading(false);
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+    return () => subscription?.unsubscribe();
+  }, []);
 
-    return () => {
-      subscription?.unsubscribe();
-    };
-  }, [setError]);
-
-
-  const login = async (email: string, password: string): Promise<string | null> => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      console.error('Login error:', error.message);
-      return error.message;
-    }
-    return null;
-  };
-
-  const register = async (userData: Partial<User>): Promise<boolean> => {
-    if (!userData.email || !userData.password) {
-        console.error("Email and password are required for registration.");
-        return false;
-    }
-    const { data, error } = await supabase.auth.signUp({
-      email: userData.email,
-      password: userData.password,
-      options: {
-        data: {
-          full_name: userData.name,
-          avatar_url: userData.avatar,
-          role: userData.role || 'customer'
+  const handleUserSession = async (authUser: any) => {
+    try {
+      const profileData = await getProfileForUser(authUser.id);
+      
+      if (profileData) {
+        const fullUser: User = {
+          ...profileData,
+          email: authUser.email!,
+        };
+        setUser(fullUser);
+        setError(null);
+      } else {
+        // Create profile if it doesn't exist
+        const newProfile = await createUserProfile({
+          id: authUser.id,
+          email: authUser.email!,
+          name: authUser.user_metadata?.full_name || '',
+          role: authUser.user_metadata?.role || 'customer',
+          avatar: authUser.user_metadata?.avatar_url || '',
+          phone: authUser.user_metadata?.phone || '',
+          dateOfBirth: authUser.user_metadata?.date_of_birth || '',
+        });
+        
+        if (newProfile) {
+          setUser(newProfile);
+        } else {
+          setUser(null);
+          setError('Failed to create user profile');
         }
       }
-    });
-
-    if (error) {
-        console.error('Registration error:', error.message);
-        return false;
+    } catch (err) {
+      console.error('Session handling error:', err);
+      setError(err instanceof Error ? err.message : 'Authentication error');
+      setUser(null);
     }
-    
-    // The onAuthStateChange listener will handle setting the user state
-    return !!data.user;
   };
 
-  const logout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-        console.error('Logout error:', error.message);
-    }
-    setUser(null);
-  };
 
-  // Enhanced authentication methods
+
+  // Standard Authentication Methods
   const signIn = async (email: string, password: string): Promise<void> => {
-    console.log('🔐 Attempting signIn with:', { email, passwordLength: password.length });
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    console.log('🔐 SignIn response:', { data: data?.user?.email, error: error?.message });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    
     if (error) {
-      console.error('🔐 SignIn error details:', error);
-      throw new Error(error.message);
+      // Handle specific error cases
+      if (error.message.includes('Invalid login credentials')) {
+        throw new Error('Invalid credentials. Please check your email and password.');
+      } else if (error.message.includes('Email not confirmed')) {
+        throw new Error('Please confirm your email address before signing in.');
+      } else if (error.message.includes('Too many requests')) {
+        throw new Error('Too many login attempts. Please wait a moment and try again.');
+      } else if (error.message.includes('Account is temporarily locked')) {
+        throw new Error('Account is temporarily locked due to too many failed attempts. Please try again later.');
+      } else {
+        throw new Error(error.message);
+      }
     }
   };
 
-  const signUp = async (email: string, password: string, additionalData?: Record<string, unknown>): Promise<void> => {
-    console.log('📝 Attempting signUp with:', { email, passwordLength: password.length, additionalData });
-    const { data, error } = await supabase.auth.signUp({
+  const signUp = async (
+    email: string,
+    password: string,
+    additionalData?: Record<string, unknown>
+  ): Promise<void> => {
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -121,15 +146,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           full_name: additionalData?.fullName || '',
           phone: additionalData?.phone || '',
           date_of_birth: additionalData?.dateOfBirth || '',
+          address: additionalData?.address || '',
           subscribe_newsletter: additionalData?.subscribeNewsletter || false,
-          role: 'customer'
+          role: 'customer' // Default role for new users
         }
       }
     });
-    console.log('📝 SignUp response:', { data: data?.user?.email, error: error?.message });
 
     if (error) {
-      console.error('📝 SignUp error details:', error);
       throw new Error(error.message);
     }
   };
@@ -139,115 +163,86 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (error) {
       throw new Error(error.message);
     }
+    
+    // Clear user data
     setUser(null);
+    localStorage.removeItem('user_preferences');
+    localStorage.removeItem('cart_items');
   };
 
-  const resetPassword = async (email: string): Promise<void> => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`
-    });
-
-    if (error) {
-      throw new Error(error.message);
-    }
+  const logout = async () => {
+    await signOut();
   };
 
-  const updatePassword = async (newPassword: string): Promise<void> => {
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword
-    });
-
-    if (error) {
-      throw new Error(error.message);
-    }
-  };
-
-  const resendVerification = async (): Promise<void> => {
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email: user?.email || ''
-    });
-
-    if (error) {
-      throw new Error(error.message);
-    }
-  };
-
-  const updateProfile = async (data: Partial<User>): Promise<void> => {
-    if (!user) throw new Error('No user logged in');
-
-    console.log('🔄 AuthContext updateProfile called with:', data);
-
-    // Update auth user metadata
-    const authUpdate: Record<string, string> = {};
-    if (data.name) authUpdate.full_name = data.name;
-    if (data.avatar) authUpdate.avatar_url = data.avatar;
-    if (data.phone) authUpdate.phone = data.phone;
-
-    if (Object.keys(authUpdate).length > 0) {
-      const { error: authError } = await supabase.auth.updateUser({
-        data: authUpdate
-      });
-
-      if (authError) {
-        console.error('❌ Auth update error:', authError);
-        throw new Error(authError.message);
-      }
-      console.log('✅ Auth metadata updated successfully');
-    }
-
-    // Update profile table
-    const profileUpdate: Record<string, string> = {};
-    if (data.name) profileUpdate.full_name = data.name;
-    if (data.avatar) profileUpdate.avatar_url = data.avatar;
-    if (data.phone) profileUpdate.phone = data.phone;
-    if (data.dateOfBirth) profileUpdate.date_of_birth = data.dateOfBirth;
-
-    if (Object.keys(profileUpdate).length > 0) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update(profileUpdate)
-        .eq('id', user.id);
-
-      if (profileError) {
-        console.error('❌ Profile update error:', profileError);
-        throw new Error(profileError.message);
-      }
-      console.log('✅ Profile table updated successfully');
-    }
-
-    // Refresh user data from database to ensure consistency
+  const login = async (email: string, password: string): Promise<string | null> => {
     try {
-      const refreshedProfile = await getProfileForUser(user.id);
-      if (refreshedProfile) {
-        const fullUser: User = {
-          ...refreshedProfile,
-          email: user.email, // Keep the email from the current session
-        };
-        setUser(fullUser);
-        console.log('✅ User state refreshed from database:', fullUser);
-      }
+      await signIn(email, password);
+      return null;
     } catch (error) {
-      console.error('❌ Error refreshing user profile:', error);
-      // Fallback to local update if refresh fails
-      setUser(prev => prev ? { ...prev, ...data } : null);
+      return error instanceof Error ? error.message : 'Login failed';
     }
+  };
+
+  const register = async (userData: Partial<User>): Promise<boolean> => {
+    try {
+      await signUp(
+        userData.email!,
+        userData.password!,
+        {
+          fullName: userData.name,
+          phone: userData.phone,
+          dateOfBirth: userData.dateOfBirth,
+          address: userData.address || ''
+        }
+      );
+      return true;
+    } catch (error) {
+      console.error('Registration error:', error);
+      return false;
+    }
+  };
+
+  // Mobile Authentication Methods
+  const openMobileAuth = (mode: 'login' | 'signup' | 'profile' = 'login') => {
+    setMobileAuthMode(mode);
+    setIsMobileAuthOpen(true);
+  };
+
+  const closeMobileAuth = () => {
+    setIsMobileAuthOpen(false);
   };
 
   const value: AuthContextType = {
     user,
-    login,
-    logout,
-    register,
+    loading,
+    loginAttempts,
+    isLocked,
     signIn,
     signUp,
+    logout,
     signOut,
-    resetPassword,
-    updatePassword,
-    resendVerification,
-    updateProfile,
-    loading,
+    login,
+    register,
+    resetPassword: async () => {},
+    updatePassword: async () => {},
+    resendVerification: async () => {},
+    updateProfile: async () => {},
+
+    openMobileAuth,
+    closeMobileAuth,
+    isMobileAuthOpen,
+    mobileAuthMode
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      {/* Mobile Auth View */}
+      <MobileAuthView 
+        isOpen={isMobileAuthOpen}
+        onClose={closeMobileAuth}
+        initialMode={mobileAuthMode}
+      />
+    </AuthContext.Provider>
+  );
 };

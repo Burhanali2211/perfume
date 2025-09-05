@@ -281,3 +281,5 @@ export const ProductDetailPage: React.FC = () => {
     </div>
   );
 };
+
+export default ProductDetailPage;

@@ -8,6 +8,16 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
 
+  server: {
+    host: 'localhost',
+    port: 5179, // Changed from 5174 to match the port in the error messages
+    hmr: {
+      protocol: 'ws',
+      host: 'localhost',
+      port: 5179 // Updated to match the new port
+    }
+  },
+
   build: {
     rollupOptions: {
       output: {

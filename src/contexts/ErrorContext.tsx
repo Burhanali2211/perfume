@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 interface ErrorContextType {
   error: string | null;
   setError: (message: string | null) => void;
+  clearError: () => void;
 }
 
 const ErrorContext = createContext<ErrorContextType | undefined>(undefined);
@@ -16,8 +17,10 @@ export const useError = () => {
 export const ErrorProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
 
+  const clearError = () => setError(null);
+
   return (
-    <ErrorContext.Provider value={{ error, setError }}>
+    <ErrorContext.Provider value={{ error, setError, clearError }}>
       {children}
     </ErrorContext.Provider>
   );

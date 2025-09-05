@@ -98,10 +98,11 @@ export const PasswordResetFlow: React.FC<PasswordResetFlowProps> = ({
     setErrors({});
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Import the resetPassword function from AuthContext
+      const { resetPassword } = await import('../../contexts/AuthContext');
+      await resetPassword(resetData.email);
       
-      showNotification('Password reset code sent to your email!', 'success');
+      showNotification('Password reset link sent to your email!', 'success');
       setStep('verify');
       setResendTimer(60); // 60 seconds cooldown
     } catch (error: unknown) {
@@ -171,8 +172,9 @@ export const PasswordResetFlow: React.FC<PasswordResetFlowProps> = ({
     setErrors({});
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Import the updatePassword function from AuthContext
+      const { updatePassword } = await import('../../contexts/AuthContext');
+      await updatePassword(resetData.newPassword);
       
       setStep('success');
       showNotification('Password reset successfully!', 'success');
