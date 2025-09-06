@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/react';
 import * as LogRocket from 'logrocket';
-import { BrowserTracing } from '@sentry/tracing';
+import { browserTracingIntegration } from '@sentry/browser';
 
 // Types for our monitoring configuration
 export interface MonitoringConfig {
@@ -31,10 +31,7 @@ export const initSentry = (config: MonitoringConfig['sentry']) => {
     environment: config.environment,
     release: config.release,
     integrations: [
-      new BrowserTracing({
-        // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
-        tracePropagationTargets: ['localhost', /^https:\/\/yourserver\.io\/api/],
-      }),
+      browserTracingIntegration(),
     ],
     // Performance Monitoring
     tracesSampleRate: config.tracesSampleRate, // Capture 100% of transactions in development, less in production
@@ -63,7 +60,7 @@ export const reportError = (error: Error, context?: Record<string, unknown>) => 
   console.error('Application Error:', error, context);
 
   // Send to Sentry if initialized
-  if (Sentry.getCurrentHub().getClient()) {
+  if (Sentry.getClient()) {
     Sentry.captureException(error, {
       contexts: {
         app: context
@@ -82,20 +79,20 @@ export const reportError = (error: Error, context?: Record<string, unknown>) => 
 };
 
 // Track user sessions with LogRocket
-export const identifyUser = (userId: string, userInfo: Record<string, unknown>) => {
+export const identifyUser = (userId: string, userInfo: Record<string, string | number | boolean>) => {
   if ((window as any).LogRocket) {
     LogRocket.identify(userId, userInfo);
   }
   
-  if (Sentry.getCurrentHub().getClient()) {
+  if (Sentry.getClient()) {
     Sentry.setUser({ id: userId, ...userInfo });
   }
 };
 
 // Track custom events
-export const trackEvent = (eventName: string, properties?: Record<string, unknown>) => {
+export const trackEvent = (eventName: string, properties?: Record<string, string | number | boolean | string[] | number[] | boolean[] | null>) => {
   // Track with Sentry
-  if (Sentry.getCurrentHub().getClient()) {
+  if (Sentry.getClient()) {
     Sentry.addBreadcrumb({
       category: 'user-action',
       message: eventName,
@@ -117,29 +114,22 @@ export const trackEvent = (eventName: string, properties?: Record<string, unknow
 
 // Performance monitoring utilities
 export const startTransaction = (name: string, op: string) => {
-  if (Sentry.getCurrentHub().getClient()) {
-    return Sentry.startTransaction({ name, op });
+  if (Sentry.getClient()) {
+    return Sentry.startSpan({ name, op }, (span) => span);
   }
   return null;
 };
 
 export const finishTransaction = (transaction: any) => {
-  if (transaction) {
-    transaction.finish();
-  }
+  // In Sentry v10, spans are automatically finished when the function completes
+  // This function is kept for backward compatibility
 };
 
 // Web Vitals monitoring
 export const reportWebVitals = (metric: any) => {
-  if (Sentry.getCurrentHub().getClient()) {
-    Sentry.metrics.increment(`web_vital_${metric.name}`, 1, {
-      value: metric.value,
-      tags: {
-        rating: metric.rating
-      }
-    });
-  }
-
+  // In Sentry v10, web vitals are automatically captured
+  // This function is kept for backward compatibility
+  
   if (process.env.NODE_ENV === 'development') {
     console.log(`📊 Web Vital: ${metric.name}`, metric);
   }
@@ -149,7 +139,7 @@ export const reportWebVitals = (metric: any) => {
 export const healthCheck = async (): Promise<{ status: 'healthy' | 'unhealthy'; details?: any }> => {
   try {
     // Check if monitoring services are initialized
-    const sentryHealthy = !!Sentry.getCurrentHub().getClient();
+    const sentryHealthy = !!Sentry.getClient();
     const logRocketHealthy = !!(window as any).LogRocket;
     
     // In a real implementation, you might check network connectivity,
