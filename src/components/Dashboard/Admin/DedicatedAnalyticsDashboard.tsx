@@ -136,7 +136,7 @@ export const DedicatedAnalyticsDashboard: React.FC = () => {
       });
 
       // Calculate metrics
-      const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+      const totalRevenue = orders.reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0);
       const totalOrders = orders.length;
       const totalCustomers = users.length;
       const totalProducts = products.length;

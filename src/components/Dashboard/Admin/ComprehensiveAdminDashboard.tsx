@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import {
   Database,
   Users,
@@ -259,7 +259,7 @@ export const ComprehensiveAdminDashboard: React.FC = () => {
     try {
       // Fetch basic metrics from tables directly since RPC functions don't exist
       const [ordersResult, usersResult, productsResult] = await Promise.all([
-        supabase.from('orders').select('id, total, status, created_at'),
+        supabase.from('orders').select('id, total_amount, status, created_at'),
         supabase.from('profiles').select('id, created_at'),
         supabase.from('products').select('id')
       ]);
@@ -279,13 +279,13 @@ export const ComprehensiveAdminDashboard: React.FC = () => {
       const completedOrders = orders.filter(order => order.status === 'completed');
       const revenueToday = ordersToday
         .filter(order => order.status === 'completed')
-        .reduce((sum, order) => sum + (order.total || 0), 0);
+        .reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0);
 
       setMetrics({
         totalUsers: users.length,
         totalProducts: products.length,
         totalOrders: orders.length,
-        totalRevenue: completedOrders.reduce((sum, order) => sum + (order.total || 0), 0),
+        totalRevenue: completedOrders.reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0),
         pendingOrders: orders.filter(order => order.status === 'pending').length,
         lowStockProducts: 0, // Will be calculated separately
         newUsersToday: usersToday.length,
@@ -492,10 +492,13 @@ export const ComprehensiveAdminDashboard: React.FC = () => {
     await fetchAllData();
   };
 
-  const filteredTables = stats?.tables.filter(table =>
-    table.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    table.description.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  const filteredTables = useMemo(() => {
+    if (!stats?.tables) return [];
+    return stats.tables.filter(table =>
+      table.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      table.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [stats?.tables, searchTerm]);
 
   // Handle different views
   if (currentView === 'table' && selectedTable) {
@@ -625,7 +628,7 @@ export const ComprehensiveAdminDashboard: React.FC = () => {
               </div>
               <div className="flex items-center">
                 <DollarSign className="h-4 w-4 mr-1 text-green-500" />
-                <span className="text-gray-600">${(realtimeMetrics?.recentSalesValue || 0).toFixed(2)} Recent Sales</span>
+                <span className="text-gray-600">${(realtimeMetrics?.recentSalesValue ?? 0).toFixed(2)} Recent Sales</span>
               </div>
             </div>
           </div>

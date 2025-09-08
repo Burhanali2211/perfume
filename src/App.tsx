@@ -41,6 +41,8 @@ const CollectionsPage = React.lazy(() => import('./pages/CollectionsPage.tsx'));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage.tsx'));
 const AuthPage = React.lazy(() => import('./pages/AuthPage.tsx'));
 const HealthPage = React.lazy(() => import('./pages/HealthPage.tsx'));
+const TestPage = React.lazy(() => import('./pages/TestPage.tsx'));
+const DirectLoginTest = React.lazy(() => import('./pages/DirectLoginTest.tsx'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage.tsx'));
 
 // Loading fallback component
@@ -157,6 +159,8 @@ function App() {
                                             <Route path="/collections/:slug" element={<ProductsPage />} />
                                             <Route path="/auth" element={<AuthPage />} />
                                             <Route path="/health" element={<HealthPage />} />
+                                            <Route path="/test" element={<TestPage />} />
+                                            <Route path="/direct-login-test" element={<DirectLoginTest />} />
                                             <Route path="*" element={<NotFoundPage />} />
                                           </Routes>
                                         </Suspense>

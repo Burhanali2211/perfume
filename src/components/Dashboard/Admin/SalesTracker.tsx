@@ -70,7 +70,7 @@ export const SalesTracker: React.FC = () => {
       if (customersError) throw customersError;
 
       // Calculate metrics
-      const totalRevenue = orders?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
+      const totalRevenue = orders?.reduce((sum, order) => sum + (parseFloat(order.total_amount) || 0), 0) || 0;
       const totalOrders = orders?.length || 0;
       const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
       const totalCustomers = customersCount || 0;

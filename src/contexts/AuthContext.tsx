@@ -106,6 +106,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (err) {
       console.error('Session handling error:', err);
+      // Fallback for direct login mode when RLS policies aren't set up
+      if (import.meta.env.VITE_DIRECT_LOGIN_ENABLED === 'true') {
+        console.log('Direct login mode: Creating temporary user profile');
+        const directLoginRole = import.meta.env.VITE_DIRECT_LOGIN_DEFAULT_ROLE || 'admin';
+        const tempUser: User = {
+          id: authUser.id || 'direct-login-user',
+          email: authUser.email || 'admin@sufiessences.com',
+          name: 'Direct Login User',
+          role: directLoginRole as 'admin' | 'seller' | 'customer',
+          isActive: true,
+          emailVerified: true,
+          createdAt: new Date(),
+        };
+        setUser(tempUser);
+        setError(null);
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Authentication error');
       setUser(null);
     }
