@@ -1,11 +1,15 @@
 [build]
-  command = "npm ci && npm run build"
+  command = "npm install && npm run build"
   publish = "dist"
   base = "/"
 
 [build.environment]
   NODE_VERSION = "18"
   CI = "true"
+  VITE_SUPABASE_URL = "https://gtnpmxlnzpfqbhfzuitj.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0bnBteGxuenBmcWJoZnp1aXRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4MjExNTQsImV4cCI6MjA3MzM5NzE1NH0.cREEJprRj9dnCk5zc9vqsyiSAdFt3ih7aTUUnpkNjB8"
+  VITE_APP_ENV = "production"
+  VITE_DIRECT_LOGIN_ENABLED = "false"
 
 # Redirect all routes to index.html for SPA routing
 [[redirects]]

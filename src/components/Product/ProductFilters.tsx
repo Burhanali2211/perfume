@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react'; // useEffect unused
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Filter, 
-  X, 
-  ChevronDown, 
-  ChevronUp, 
-  Star, 
+import {
+  Filter,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Star,
   DollarSign,
   Package,
   Tag,
-  Truck,
-  Shield,
-  Search
+  // Truck, // Unused
+  Shield
+  // Search // Unused
 } from 'lucide-react';
 import { Category } from '../../types';
 
@@ -47,7 +47,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
   availableBrands,
   availableTags,
   availableFeatures,
-  isOpen,
+  isOpen: _isOpen, // Unused
   onToggle,
   productCount,
   className = ''
@@ -61,7 +61,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
     tags: false
   });
 
-  const updateFilter = (key: keyof FilterState, value: any) => {
+  const updateFilter = (key: keyof FilterState, value: unknown) => {
     onFiltersChange({ ...filters, [key]: value });
   };
 

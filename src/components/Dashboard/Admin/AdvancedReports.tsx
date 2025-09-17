@@ -2,20 +2,10 @@ import React, { useState, useEffect } from 'react';
 import {
   FileText,
   BarChart3,
-  TrendingUp,
   Download,
-  Calendar,
-  Filter,
   Settings,
   Plus,
   Play,
-  Pause,
-  Clock,
-  Mail,
-  Users,
-  Package,
-  ShoppingCart,
-  DollarSign,
   Eye,
   Edit,
   Trash2,
@@ -24,12 +14,19 @@ import {
   Save,
   Search
 } from 'lucide-react';
-import { supabase } from '../../../lib/supabase';
+// import { supabase } from '../../../lib/supabase';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { LoadingSpinner } from '../../Common/LoadingSpinner';
 import { EnhancedButton } from '../../Common/EnhancedButton';
 import { Modal } from '../../Common/Modal';
 import { AdminErrorBoundary } from '../../Common/AdminErrorBoundary';
+import {
+  ResponsiveAdminLayout,
+  AdminPageHeader,
+  AdminSection
+} from '../../Common/ResponsiveAdminLayout';
+// import { EnhancedAdminTable, TableColumn, TableAction } from '../../Common/EnhancedAdminTable';
+import { useResponsive } from '../../Common/AdminDesignSystem';
 
 interface Report {
   id: string;
@@ -43,7 +40,7 @@ interface Report {
   nextRun: string;
   createdBy: string;
   createdAt: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   recipients: string[];
 }
 
@@ -78,12 +75,14 @@ export const AdvancedReports: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'reports' | 'templates' | 'exports' | 'builder'>('reports');
   const [isCreateReportModalOpen, setIsCreateReportModalOpen] = useState(false);
-  const [isCreateTemplateModalOpen, setIsCreateTemplateModalOpen] = useState(false);
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  // const [isCreateTemplateModalOpen, setIsCreateTemplateModalOpen] = useState(false);
+  // const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [error] = useState<string | null>(null);
   const { showNotification } = useNotification();
+  const { isMobile } = useResponsive();
 
   const tabs = [
     { id: 'reports', name: 'Reports', icon: FileText },
@@ -366,63 +365,81 @@ export const AdvancedReports: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="p-8">
-        <LoadingSpinner size="large" text="Loading reports..." />
-      </div>
+      <ResponsiveAdminLayout>
+        <div className="flex items-center justify-center min-h-96">
+          <LoadingSpinner size="large" text="Loading reports..." />
+        </div>
+      </ResponsiveAdminLayout>
     );
   }
 
+  if (error) {
+    return (
+      <ResponsiveAdminLayout>
+        <AdminSection variant="card">
+          <div className="text-center py-12">
+            <FileText className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Reports</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <EnhancedButton onClick={() => window.location.reload()} icon={RefreshCw}>
+              Try Again
+            </EnhancedButton>
+          </div>
+        </AdminSection>
+      </ResponsiveAdminLayout>
+    );
+  }
+
+  const headerActions = (
+    <div className={`flex items-center ${isMobile ? 'flex-col space-y-2' : 'space-x-2'}`}>
+      <EnhancedButton
+        onClick={() => setIsCreateReportModalOpen(true)}
+        icon={Plus}
+        size={isMobile ? 'sm' : 'md'}
+      >
+        {isMobile ? 'Report' : 'Create Report'}
+      </EnhancedButton>
+      <EnhancedButton
+        onClick={() => setIsCreateTemplateModalOpen(true)}
+        icon={Settings}
+        variant="outline"
+        size={isMobile ? 'sm' : 'md'}
+      >
+        {isMobile ? 'Template' : 'Create Template'}
+      </EnhancedButton>
+      <EnhancedButton
+        onClick={fetchData}
+        icon={RefreshCw}
+        variant="outline"
+        size={isMobile ? 'sm' : 'md'}
+      >
+        {isMobile ? '' : 'Refresh'}
+      </EnhancedButton>
+    </div>
+  );
+
   return (
     <AdminErrorBoundary>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-              <BarChart3 className="h-8 w-8 mr-3 text-indigo-600" />
-              Advanced Reports & Export
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Create, schedule, and manage comprehensive business reports
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <EnhancedButton
-              onClick={() => setIsCreateReportModalOpen(true)}
-              icon={Plus}
-            >
-              Create Report
-            </EnhancedButton>
-            <EnhancedButton
-              onClick={() => setIsCreateTemplateModalOpen(true)}
-              icon={Settings}
-              variant="outline"
-            >
-              Create Template
-            </EnhancedButton>
-            <EnhancedButton
-              onClick={fetchData}
-              icon={RefreshCw}
-              variant="outline"
-            >
-              Refresh
-            </EnhancedButton>
-          </div>
-        </div>
+      <ResponsiveAdminLayout>
+        <AdminPageHeader
+          title="Advanced Reports & Export"
+          subtitle="Create, schedule, and manage comprehensive business reports"
+          icon={BarChart3}
+          actions={headerActions}
+        />
 
         {/* Tabs */}
         <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
+          <nav className={`-mb-px flex ${isMobile ? 'space-x-4 overflow-x-auto' : 'space-x-8'}`}>
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id as 'reports' | 'templates' | 'exports' | 'builder')}
                 className={`${
                   activeTab === tab.id
-                    ? 'border-indigo-500 text-indigo-600'
+                    ? 'border-primary-500 text-primary-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center`}
+                } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center ${isMobile ? 'flex-shrink-0' : ''}`}
               >
                 <tab.icon className="h-5 w-5" />
                 <span className="ml-2">{tab.name}</span>
@@ -432,7 +449,7 @@ export const AdvancedReports: React.FC = () => {
         </div>
 
         {/* Tab Content */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <AdminSection variant="card">
           {activeTab === 'reports' && (
             <div className="space-y-6">
               {/* Filters */}
@@ -667,7 +684,7 @@ export const AdvancedReports: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
+        </AdminSection>
 
         {/* Create Report Modal */}
         <Modal
@@ -756,7 +773,7 @@ export const AdvancedReports: React.FC = () => {
             </div>
           </div>
         </Modal>
-      </div>
+      </ResponsiveAdminLayout>
     </AdminErrorBoundary>
   );
 };

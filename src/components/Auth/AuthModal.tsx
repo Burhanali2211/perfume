@@ -131,160 +131,159 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   return (
     <>
       {isOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex min-h-screen items-center justify-center p-4">
-            <div
-              className="fixed inset-0 bg-black bg-opacity-50"
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
+          <div
+            className="fixed inset-0"
+            onClick={onClose}
+            aria-hidden="true"
+          />
+
+          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+            <button
               onClick={onClose}
-            />
+              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Close modal"
+            >
+              <X className="h-5 w-5" />
+            </button>
 
-            <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-                <button
-                  onClick={onClose}
-                  className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  aria-label="Close modal"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {isLogin ? 'Welcome Back' : 'Create Account'}
+                </h2>
+                <p className="text-gray-600 mt-2">
+                  {isLogin ? 'Sign in to your account' : 'Sign up to get started'}
+                </p>
+              </div>
 
-              <div className="p-6">
-                <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    {isLogin ? 'Welcome Back' : 'Create Account'}
-                  </h2>
-                  <p className="text-gray-600 mt-2">
-                    {isLogin ? 'Sign in to your account' : 'Sign up to get started'}
-                  </p>
+              {/* Demo Credentials */}
+              {isLogin && (
+                <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                  <h3 className="text-sm font-medium text-blue-800 mb-2">Demo Accounts:</h3>
+                  <div className="space-y-1">
+                    {demoCredentials.map((cred) => (
+                      <button
+                        key={cred.email}
+                        onClick={() => fillDemoCredentials(cred.email)}
+                        className="block w-full text-left text-sm text-blue-600 hover:text-blue-800"
+                        aria-label={`Fill demo credentials for ${cred.role}`}
+                      >
+                        {cred.role}: {cred.email}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+              )}
 
-                {/* Demo Credentials */}
-                {isLogin && (
-                  <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                    <h3 className="text-sm font-medium text-blue-800 mb-2">Demo Accounts:</h3>
-                    <div className="space-y-1">
-                      {demoCredentials.map((cred) => (
-                        <button
-                          key={cred.email}
-                          onClick={() => fillDemoCredentials(cred.email)}
-                          className="block w-full text-left text-sm text-blue-600 hover:text-blue-800"
-                          aria-label={`Fill demo credentials for ${cred.role}`}
-                        >
-                          {cred.role}: {cred.email}
-                        </button>
-                      ))}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {!isLogin && (
+                  <div>
+                    <label htmlFor="auth-fullname" className="block text-sm font-medium text-gray-700 mb-2">
+                      Full Name
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                      <input
+                        id="auth-fullname"
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className={`w-full pl-10 pr-4 py-3 border ${errors.name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500`}
+                        placeholder="Enter your full name"
+                        required={!isLogin}
+                      />
                     </div>
+                    {errors.name && <p className="text-red-600 text-sm mt-1" role="alert">{errors.name}</p>}
                   </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {!isLogin && (
-                    <div>
-                      <label htmlFor="auth-fullname" className="block text-sm font-medium text-gray-700 mb-2">
-                        Full Name
-                      </label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                        <input
-                          id="auth-fullname"
-                          type="text"
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          className={`w-full pl-10 pr-4 py-3 border ${errors.name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500`}
-                          placeholder="Enter your full name"
-                          required={!isLogin}
-                        />
-                      </div>
-                      {errors.name && <p className="text-red-600 text-sm mt-1" role="alert">{errors.name}</p>}
-                    </div>
-                  )}
-
-                  <div>
-                    <label htmlFor="auth-email" className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                      <input
-                        id="auth-email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className={`w-full pl-10 pr-4 py-3 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500`}
-                        placeholder="Enter your email"
-                        required
-                      />
-                    </div>
-                    {errors.email && <p className="text-red-600 text-sm mt-1" role="alert">{errors.email}</p>}
+                <div>
+                  <label htmlFor="auth-email" className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                    <input
+                      id="auth-email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className={`w-full pl-10 pr-4 py-3 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500`}
+                      placeholder="Enter your email"
+                      required
+                    />
                   </div>
-
-                  <div>
-                    <label htmlFor="auth-password" className="block text-sm font-medium text-gray-700 mb-2">
-                      Password
-                    </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                      <input
-                        id="auth-password"
-                        type={showPassword ? 'text' : 'password'}
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        className={`w-full pl-10 pr-12 py-3 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500`}
-                        placeholder="Enter your password"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-3 p-1 text-gray-400 hover:text-gray-600"
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                      </button>
-                    </div>
-                    {errors.password && <p className="text-red-600 text-sm mt-1" role="alert">{errors.password}</p>}
-                  </div>
-
-                  {!isLogin && (
-                    <div>
-                      <label htmlFor="auth-role" className="block text-sm font-medium text-gray-700 mb-2">
-                        Account Type
-                      </label>
-                      <select
-                        id="auth-role"
-                        value={formData.role}
-                        onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'seller' | 'customer' })}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                      >
-                        <option value="customer">Customer</option>
-                        <option value="seller">Seller</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    </div>
-                  )}
-
-                  {errors.general && (
-                    <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg" role="alert">
-                      {errors.general}
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full btn-primary"
-                  >
-                    {isLoading ? 'Please wait...' : isLogin ? 'Sign In' : 'Create Account'}
-                  </button>
-                </form>
-
-                <div className="mt-6 text-center">
-                  <button
-                    onClick={switchMode}
-                    className="text-indigo-600 hover:text-indigo-700"
-                  >
-                    {isLogin ? 'Don\'t have an account? Sign up' : 'Already have an account? Sign in'}
-                  </button>
+                  {errors.email && <p className="text-red-600 text-sm mt-1" role="alert">{errors.email}</p>}
                 </div>
+
+                <div>
+                  <label htmlFor="auth-password" className="block text-sm font-medium text-gray-700 mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                    <input
+                      id="auth-password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className={`w-full pl-10 pr-12 py-3 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500`}
+                      placeholder="Enter your password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3 p-1 text-gray-400 hover:text-gray-600"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+                  {errors.password && <p className="text-red-600 text-sm mt-1" role="alert">{errors.password}</p>}
+                </div>
+
+                {!isLogin && (
+                  <div>
+                    <label htmlFor="auth-role" className="block text-sm font-medium text-gray-700 mb-2">
+                      Account Type
+                    </label>
+                    <select
+                      id="auth-role"
+                      value={formData.role}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'seller' | 'customer' })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      <option value="customer">Customer</option>
+                      <option value="seller">Seller</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                )}
+
+                {errors.general && (
+                  <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg" role="alert">
+                    {errors.general}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full btn-primary"
+                >
+                  {isLoading ? 'Please wait...' : isLogin ? 'Sign In' : 'Create Account'}
+                </button>
+              </form>
+
+              <div className="mt-6 text-center">
+                <button
+                  onClick={switchMode}
+                  className="text-indigo-600 hover:text-indigo-700"
+                >
+                  {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+                </button>
               </div>
             </div>
           </div>

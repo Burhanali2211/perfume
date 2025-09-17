@@ -37,9 +37,9 @@ export const EnhancedButton: React.FC<EnhancedButtonProps> = ({
     : '';
 
   const variantClasses = {
-    primary: 'bg-gradient-to-r from-purple-600 to-purple-700 text-white hover:from-purple-700 hover:to-purple-800 focus:ring-purple-500 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-500',
-    secondary: 'bg-white text-purple-700 hover:bg-purple-100 focus:ring-purple-500 dark:bg-purple-800 dark:text-purple-100 dark:hover:bg-purple-700',
-    ghost: 'text-purple-600 hover:text-purple-700 hover:bg-purple-50 focus:ring-purple-500 dark:text-purple-400 dark:hover:text-purple-300 dark:hover:bg-purple-800',
+    primary: 'bg-neutral-900 text-white hover:bg-neutral-800 focus:ring-neutral-500 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:focus:ring-neutral-500',
+    secondary: 'bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50 focus:ring-neutral-500 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-700',
+    ghost: 'text-neutral-600 hover:text-neutral-700 hover:bg-neutral-50 focus:ring-neutral-500 dark:text-neutral-400 dark:hover:text-neutral-300 dark:hover:bg-neutral-800',
   };
 
   // Enhanced size classes with mobile-optimized touch targets

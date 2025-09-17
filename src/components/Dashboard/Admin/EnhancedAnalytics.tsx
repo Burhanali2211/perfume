@@ -5,10 +5,9 @@ import {
   LineChart, Line, PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
 import {
-  TrendingUp, TrendingDown, Users, Package, DollarSign, ShoppingCart,
-  AlertTriangle, Clock, Filter
+  TrendingUp, TrendingDown, Users, Package, DollarSign, ShoppingCart
 } from 'lucide-react';
-import { supabase } from '../../../lib/supabase';
+// import { supabase } from '../../../lib/supabase';
 
 // Define types for our data
 interface SalesTrendData {
@@ -95,7 +94,7 @@ export const EnhancedAnalytics: React.FC = () => {
         }
         
         setAnalytics(data);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching analytics:', err);
         setError('Failed to load analytics data. Please try again later.');
       } finally {

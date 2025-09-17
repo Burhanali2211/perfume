@@ -20,6 +20,8 @@ import { useNotification } from '../../../contexts/NotificationContext';
 import { ResponsiveTable } from '../../Common/ResponsiveTable';
 import { EnhancedButton } from '../../Common/EnhancedButton';
 import { Modal } from '../../Common/Modal';
+import { adminService, adminOperations } from '../../../services/adminService';
+import { userService } from '../../../services/backendService';
 
 export const EnhancedUserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -84,8 +86,8 @@ export const EnhancedUserManagement: React.FC = () => {
   };
 
   const sortedUsers = [...users].sort((a, b) => {
-    let aValue: any = a[sortBy];
-    let bValue: any = b[sortBy];
+    let aValue: unknown = a[sortBy];
+    let bValue: unknown = b[sortBy];
     
     // Handle date sorting
     if (sortBy === 'createdAt') {
@@ -108,7 +110,7 @@ export const EnhancedUserManagement: React.FC = () => {
 
   const handleCreateUser = async () => {
     try {
-      const result = await createNewUser({
+      const newUser = await userService.create({
         email: formData.email,
         name: formData.name,
         role: formData.role,
@@ -117,20 +119,18 @@ export const EnhancedUserManagement: React.FC = () => {
         isActive: formData.isActive
       });
 
-      if (result.success && result.user) {
-        setUsers([...users, result.user]);
+      if (newUser) {
+        setUsers([...users, newUser]);
         setIsCreateModalOpen(false);
         resetForm();
         showNotification({ type: 'success', title: 'User Created', message: 'User has been created successfully.' });
-      } else {
-        showNotification({ type: 'error', title: 'Error', message: result.error || 'Failed to create user.' });
       }
     } catch (error) {
       console.error('Error creating user:', error);
       showNotification({
         type: 'error',
         title: 'Error',
-        message: 'Failed to create user. Please try again later.'
+        message: error instanceof Error ? error.message : 'Failed to create user. Please try again later.'
       });
     }
   };
@@ -139,7 +139,7 @@ export const EnhancedUserManagement: React.FC = () => {
     if (!currentUser) return;
 
     try {
-      const result = await updateUser(currentUser.id, {
+      const updatedUser = await userService.update(currentUser.id, {
         name: formData.name,
         email: formData.email,
         role: formData.role,
@@ -148,20 +148,18 @@ export const EnhancedUserManagement: React.FC = () => {
         isActive: formData.isActive
       });
 
-      if (result.success && result.user) {
-        setUsers(users.map(u => u.id === currentUser.id ? result.user! : u));
+      if (updatedUser) {
+        setUsers(users.map(u => u.id === currentUser.id ? updatedUser : u));
         setIsEditModalOpen(false);
         resetForm();
         showNotification({ type: 'success', title: 'User Updated', message: 'User has been updated successfully.' });
-      } else {
-        showNotification({ type: 'error', title: 'Error', message: result.error || 'Failed to update user.' });
       }
     } catch (error) {
       console.error('Error updating user:', error);
       showNotification({
         type: 'error',
         title: 'Error',
-        message: 'Failed to update user. Please try again later.'
+        message: error instanceof Error ? error.message : 'Failed to update user. Please try again later.'
       });
     }
   };
@@ -172,21 +170,16 @@ export const EnhancedUserManagement: React.FC = () => {
     }
 
     try {
-      const result = await deleteUser(userId);
-
-      if (result.success) {
-        setUsers(users.filter(u => u.id !== userId));
-        setSelectedUsers(selectedUsers.filter(id => id !== userId));
-        showNotification({ type: 'success', title: 'User Deleted', message: 'User has been deleted successfully.' });
-      } else {
-        showNotification({ type: 'error', title: 'Error', message: result.error || 'Failed to delete user.' });
-      }
+      await userService.delete(userId);
+      setUsers(users.filter(u => u.id !== userId));
+      setSelectedUsers(selectedUsers.filter(id => id !== userId));
+      showNotification({ type: 'success', title: 'User Deleted', message: 'User has been deleted successfully.' });
     } catch (error) {
       console.error('Error deleting user:', error);
       showNotification({
         type: 'error',
         title: 'Error',
-        message: 'Failed to delete user. Please try again later.'
+        message: error instanceof Error ? error.message : 'Failed to delete user. Please try again later.'
       });
     }
   };
@@ -202,25 +195,20 @@ export const EnhancedUserManagement: React.FC = () => {
     }
 
     try {
-      const result = await deleteUsersBulk(selectedUsers);
-
-      if (result.success) {
-        setUsers(users.filter(u => !selectedUsers.includes(u.id)));
-        setSelectedUsers([]);
-        showNotification({ 
-          type: 'success', 
-          title: 'Users Deleted', 
-          message: `${result.deletedCount} users have been deleted successfully.` 
-        });
-      } else {
-        showNotification({ type: 'error', title: 'Error', message: result.error || 'Failed to delete users.' });
-      }
+      await adminService.bulkDelete('profiles', selectedUsers);
+      setUsers(users.filter(u => !selectedUsers.includes(u.id)));
+      setSelectedUsers([]);
+      showNotification({
+        type: 'success',
+        title: 'Users Deleted',
+        message: `${selectedUsers.length} users have been deleted successfully.`
+      });
     } catch (error) {
       console.error('Error deleting users:', error);
       showNotification({
         type: 'error',
         title: 'Error',
-        message: 'Failed to delete users. Please try again later.'
+        message: error instanceof Error ? error.message : 'Failed to delete users. Please try again later.'
       });
     }
   };
@@ -232,26 +220,24 @@ export const EnhancedUserManagement: React.FC = () => {
     }
 
     try {
-      const result = await updateUsersBulk(selectedUsers, { role: newRole });
+      const updates = selectedUsers.map(id => ({ id, data: { role: newRole } }));
+      await adminService.bulkUpdate('profiles', updates);
 
-      if (result.success) {
-        setUsers(users.map(u => 
-          selectedUsers.includes(u.id) ? { ...u, role: newRole } : u
-        ));
-        showNotification({ 
-          type: 'success', 
-          title: 'Users Updated', 
-          message: `${result.updatedCount} users have been updated successfully.` 
-        });
-      } else {
-        showNotification({ type: 'error', title: 'Error', message: result.error || 'Failed to update users.' });
-      }
+      setUsers(users.map(u =>
+        selectedUsers.includes(u.id) ? { ...u, role: newRole } : u
+      ));
+      setSelectedUsers([]);
+      showNotification({
+        type: 'success',
+        title: 'Users Updated',
+        message: `${selectedUsers.length} users have been updated successfully.`
+      });
     } catch (error) {
       console.error('Error updating users:', error);
       showNotification({
         type: 'error',
         title: 'Error',
-        message: 'Failed to update users. Please try again later.'
+        message: error instanceof Error ? error.message : 'Failed to update users. Please try again later.'
       });
     }
   };
@@ -263,26 +249,24 @@ export const EnhancedUserManagement: React.FC = () => {
     }
 
     try {
-      const result = await updateUsersBulk(selectedUsers, { isActive });
+      const updates = selectedUsers.map(id => ({ id, data: { is_active: isActive } }));
+      await adminService.bulkUpdate('profiles', updates);
 
-      if (result.success) {
-        setUsers(users.map(u => 
-          selectedUsers.includes(u.id) ? { ...u, isActive } : u
-        ));
-        showNotification({ 
-          type: 'success', 
-          title: 'Users Updated', 
-          message: `${result.updatedCount} users have been ${isActive ? 'activated' : 'deactivated'} successfully.` 
-        });
-      } else {
-        showNotification({ type: 'error', title: 'Error', message: result.error || 'Failed to update users.' });
-      }
+      setUsers(users.map(u =>
+        selectedUsers.includes(u.id) ? { ...u, isActive } : u
+      ));
+      setSelectedUsers([]);
+      showNotification({
+        type: 'success',
+        title: 'Users Updated',
+        message: `${selectedUsers.length} users have been ${isActive ? 'activated' : 'deactivated'} successfully.`
+      });
     } catch (error) {
       console.error('Error updating users:', error);
       showNotification({
         type: 'error',
         title: 'Error',
-        message: 'Failed to update users. Please try again later.'
+        message: error instanceof Error ? error.message : 'Failed to update users. Please try again later.'
       });
     }
   };
@@ -376,7 +360,7 @@ export const EnhancedUserManagement: React.FC = () => {
         </div>
       ),
       width: 50,
-      render: (_: any, record: User) => (
+      render: (_: unknown, record: User) => (
         <input
           type="checkbox"
           checked={selectedUsers.includes(record.id)}
@@ -398,7 +382,7 @@ export const EnhancedUserManagement: React.FC = () => {
         </div>
       ),
       minWidth: 200,
-      render: (value: any, record: User) => (
+      render: (value: unknown, record: User) => (
         <div className="flex items-center">
           <img 
             src={record.avatar || `https://api.dicebear.com/8.x/initials/svg?seed=${record.name}`} 
@@ -439,7 +423,7 @@ export const EnhancedUserManagement: React.FC = () => {
       key: 'status',
       title: 'Status',
       width: 100,
-      render: (value: any, record: User) => (
+      render: (value: unknown, record: User) => (
         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
           record.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
         }`}>
@@ -466,7 +450,7 @@ export const EnhancedUserManagement: React.FC = () => {
       key: 'actions',
       title: 'Actions',
       width: 150,
-      render: (value: any, record: User) => (
+      render: (value: unknown, record: User) => (
         <div className="flex space-x-2">
           <button
             onClick={() => openEditModal(record)}
@@ -696,7 +680,7 @@ export const EnhancedUserManagement: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700">Role</label>
             <select
               value={formData.role}
-              onChange={(e) => setFormData({...formData, role: e.target.value as any})}
+              onChange={(e) => setFormData({...formData, role: e.target.value as 'admin' | 'user'})}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500"
             >
               <option value="customer">Customer</option>
@@ -783,7 +767,7 @@ export const EnhancedUserManagement: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700">Role</label>
             <select
               value={formData.role}
-              onChange={(e) => setFormData({...formData, role: e.target.value as any})}
+              onChange={(e) => setFormData({...formData, role: e.target.value as 'admin' | 'user'})}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-indigo-500"
             >
               <option value="customer">Customer</option>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Star, Heart, ShieldCheck, Truck, RotateCcw, Plus, Minus, MessageSquare, Edit } from 'lucide-react';
+import { Heart, ShieldCheck, Truck, RotateCcw, Plus, Minus, MessageSquare, Edit } from 'lucide-react';
 import { useProducts } from '../contexts/ProductContext';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
@@ -32,7 +32,7 @@ export const ProductDetailPage: React.FC = () => {
 
   const { addItem: addToCart } = useCart();
   const { addItem: toggleWishlistItem, isInWishlist } = useWishlist();
-  const { addToRecentlyViewed, getRelatedProducts, getFrequentlyBoughtTogether } = useRecommendations();
+  const { addToRecentlyViewed } = useRecommendations();
   const { showNotification } = useNotification();
   
   const [reviews, setReviews] = useState<Review[]>([]);

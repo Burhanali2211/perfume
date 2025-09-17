@@ -32,7 +32,16 @@ export const AddressProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     setLoading(true);
     try {
-      const addressesData = await getUserAddresses();
+      // If direct login is enabled, use empty addresses
+      const directLoginEnabled = import.meta.env.VITE_DIRECT_LOGIN_ENABLED === 'true';
+      if (directLoginEnabled) {
+        console.log('🔧 Direct login mode: Using empty addresses');
+        setAddresses([]);
+        setLoading(false);
+        return;
+      }
+
+      const addressesData = await getUserAddresses(user.id);
       setAddresses(addressesData);
     } catch (error) {
       console.error('Error fetching addresses:', error);
@@ -61,6 +70,19 @@ export const AddressProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
 
     try {
+      // If direct login is enabled, simulate adding address
+      const directLoginEnabled = import.meta.env.VITE_DIRECT_LOGIN_ENABLED === 'true';
+      if (directLoginEnabled) {
+        console.log('🔧 Direct login mode: Simulating add address');
+        await fetchAddresses();
+        showNotification({
+          type: 'success',
+          title: 'Address Added',
+          message: 'Your address has been added successfully'
+        });
+        return;
+      }
+
       const success = await addAddressDB(address);
       if (success) {
         await fetchAddresses();
@@ -88,6 +110,19 @@ export const AddressProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const updateAddress = async (address: Address) => {
     try {
+      // If direct login is enabled, simulate updating address
+      const directLoginEnabled = import.meta.env.VITE_DIRECT_LOGIN_ENABLED === 'true';
+      if (directLoginEnabled) {
+        console.log('🔧 Direct login mode: Simulating update address');
+        await fetchAddresses();
+        showNotification({
+          type: 'success',
+          title: 'Address Updated',
+          message: 'Your address has been updated successfully'
+        });
+        return;
+      }
+
       const success = await updateAddressDB(address);
       if (success) {
         await fetchAddresses();
@@ -115,6 +150,19 @@ export const AddressProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const deleteAddress = async (addressId: string) => {
     try {
+      // If direct login is enabled, simulate deleting address
+      const directLoginEnabled = import.meta.env.VITE_DIRECT_LOGIN_ENABLED === 'true';
+      if (directLoginEnabled) {
+        console.log('🔧 Direct login mode: Simulating delete address');
+        await fetchAddresses();
+        showNotification({
+          type: 'success',
+          title: 'Address Deleted',
+          message: 'Your address has been deleted successfully'
+        });
+        return;
+      }
+
       const success = await deleteAddressDB(addressId);
       if (success) {
         await fetchAddresses();
@@ -142,6 +190,19 @@ export const AddressProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const setDefaultAddress = async (addressId: string, type: 'shipping' | 'billing') => {
     try {
+      // If direct login is enabled, simulate setting default address
+      const directLoginEnabled = import.meta.env.VITE_DIRECT_LOGIN_ENABLED === 'true';
+      if (directLoginEnabled) {
+        console.log('🔧 Direct login mode: Simulating set default address');
+        await fetchAddresses();
+        showNotification({
+          type: 'success',
+          title: 'Default Address Set',
+          message: `Default ${type} address has been updated`
+        });
+        return;
+      }
+
       const success = await setDefaultAddressDB(addressId, type);
       if (success) {
         await fetchAddresses();

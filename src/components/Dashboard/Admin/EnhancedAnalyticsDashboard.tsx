@@ -6,18 +6,11 @@ import {
   Users,
   ShoppingCart,
   Package,
-  Calendar,
-  Download,
-  Filter,
-  RefreshCw,
-  BarChart3,
-  PieChart,
-  LineChart,
-  Activity
+  // Calendar, // Unused
+  RefreshCw
 } from 'lucide-react';
-import { supabase } from '../../../lib/supabase';
+// import { supabase } from '../../../lib/supabase';
 import { LoadingSpinner } from '../../Common/LoadingSpinner';
-import { EnhancedButton } from '../../Common/EnhancedButton';
 
 interface AnalyticsData {
   totalRevenue: number;

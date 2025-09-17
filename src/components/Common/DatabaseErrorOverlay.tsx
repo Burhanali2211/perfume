@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertTriangle, X, Database, RefreshCw } from 'lucide-react';
 import { useError } from '../../contexts/ErrorContext';
-import { detectRLSRecursionError, generateRLSFixSuggestion } from '../../utils/errorHandling';
+import { detectRLSRecursionError } from '../../utils/errorHandling';
 
 export const DatabaseErrorOverlay: React.FC = () => {
   const { error, setError } = useError();

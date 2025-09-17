@@ -5,10 +5,10 @@ import {
   CheckCircle,
   XCircle,
   Search,
-  Filter,
+  // Filter, // Unused
   Eye,
   Edit,
-  Trash2,
+  // Trash2, // Unused
   Download,
   RefreshCw,
   CheckSquare,
@@ -16,12 +16,12 @@ import {
   Calendar,
   DollarSign,
   User,
-  MapPin,
-  Truck,
-  MoreVertical,
+  // MapPin, // Unused
+  // Truck, // Unused
+  // MoreVertical, // Unused
   FileText,
-  Mail,
-  Phone,
+  // Mail, // Unused
+  // Phone, // Unused
   SortAsc,
   SortDesc
 } from 'lucide-react';
@@ -32,6 +32,8 @@ import { AdminLoadingState, EmptyState } from '../../Common/EnhancedLoadingState
 import { useNotification } from '../../../contexts/NotificationContext';
 import { Modal } from '../../Common/Modal';
 import { motion, AnimatePresence } from 'framer-motion';
+import { adminService } from '../../../services/adminService'; // adminOperations unused
+import { orderService } from '../../../services/backendService';
 
 interface Order {
   id: string;
@@ -114,7 +116,7 @@ export const OrderManager: React.FC = () => {
 
     // Sorting
     filtered.sort((a, b) => {
-      let aValue: any, bValue: any;
+      let aValue: unknown, bValue: unknown;
 
       switch (sortBy) {
         case 'created_at':
@@ -195,15 +197,10 @@ export const OrderManager: React.FC = () => {
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: newStatus })
-        .eq('id', orderId);
-
-      if (error) throw error;
+      await orderService.update(orderId, { status: newStatus });
 
       setOrders(orders.map(order =>
-        order.id === orderId ? { ...order, status: newStatus as any } : order
+        order.id === orderId ? { ...order, status: newStatus as string } : order
       ));
 
       showNotification({
@@ -216,7 +213,7 @@ export const OrderManager: React.FC = () => {
       showNotification({
         type: 'error',
         title: 'Update Failed',
-        message: 'Failed to update order status. Please try again.'
+        message: error instanceof Error ? error.message : 'Failed to update order status. Please try again.'
       });
     }
   };
@@ -242,16 +239,12 @@ export const OrderManager: React.FC = () => {
     if (selectedOrders.length === 0) return;
 
     try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: newStatus })
-        .in('id', selectedOrders);
-
-      if (error) throw error;
+      const updates = selectedOrders.map(id => ({ id, data: { status: newStatus } }));
+      await adminService.bulkUpdate('orders', updates);
 
       setOrders(orders.map(order =>
         selectedOrders.includes(order.id)
-          ? { ...order, status: newStatus as any }
+          ? { ...order, status: newStatus as string }
           : order
       ));
 
@@ -266,7 +259,7 @@ export const OrderManager: React.FC = () => {
       showNotification({
         type: 'error',
         title: 'Update Failed',
-        message: 'Failed to update orders. Please try again.'
+        message: error instanceof Error ? error.message : 'Failed to update orders. Please try again.'
       });
     }
   };
@@ -276,12 +269,7 @@ export const OrderManager: React.FC = () => {
 
     if (window.confirm(`Are you sure you want to delete ${selectedOrders.length} orders? This action cannot be undone.`)) {
       try {
-        const { error } = await supabase
-          .from('orders')
-          .delete()
-          .in('id', selectedOrders);
-
-        if (error) throw error;
+        await adminService.bulkDelete('orders', selectedOrders);
 
         setOrders(orders.filter(order => !selectedOrders.includes(order.id)));
         setSelectedOrders([]);
@@ -296,7 +284,7 @@ export const OrderManager: React.FC = () => {
         showNotification({
           type: 'error',
           title: 'Delete Failed',
-          message: 'Failed to delete orders. Please try again.'
+          message: error instanceof Error ? error.message : 'Failed to delete orders. Please try again.'
         });
       }
     }
@@ -323,7 +311,7 @@ export const OrderManager: React.FC = () => {
         title: 'Export Complete',
         message: 'Orders have been exported successfully.'
       });
-    } catch (error) {
+    } catch (_error) {
       showNotification({
         type: 'error',
         title: 'Export Failed',
@@ -409,7 +397,7 @@ export const OrderManager: React.FC = () => {
         </button>
       ),
       width: 50,
-      render: (value: any, record: Order) => (
+      render: (_value: unknown, record: Order) => (
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -445,7 +433,7 @@ export const OrderManager: React.FC = () => {
       key: 'customer',
       title: 'Customer',
       minWidth: 200,
-      render: (value: any, record: Order) => (
+      render: (_value: unknown, record: Order) => (
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
             <User className="h-4 w-4 text-indigo-600" />
@@ -514,7 +502,7 @@ export const OrderManager: React.FC = () => {
       key: 'actions',
       title: 'Actions',
       width: 150,
-      render: (value: any, record: Order) => (
+      render: (_value: unknown, record: Order) => (
         <div className="flex items-center space-x-1">
           <button
             onClick={(e) => {

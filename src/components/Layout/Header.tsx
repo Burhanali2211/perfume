@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Search, ShoppingCart, User, Menu, X, Heart, LogOut, Settings, Package,
-  ChevronDown, Zap, RefreshCw, Sparkles
+  Search, ShoppingCart, User, Menu, Heart, LogOut, Settings, Package,
+  ChevronDown, Sparkles
+  // X, // Unused
+  // Zap, // Unused
+  // RefreshCw, // Unused
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
@@ -42,7 +45,6 @@ const OptimizedLogo = React.memo(() => {
       width={40}
       height={40}
       loading="eager"
-      fetchPriority="high"
       decoding="async"
       className="object-contain w-10 h-10 transition-all duration-300 md:w-8 md:h-8"
     />
@@ -66,7 +68,7 @@ interface NavigationItem {
   dropdownItems?: DropdownItem[];
 }
 
-export const Header: React.FC<HeaderProps> = ({ onAuthClick, onCartClick }) => {
+export const Header: React.FC<HeaderProps> = ({ onAuthClick: _onAuthClick, onCartClick }) => {
   const { user, logout } = useAuth();
   const { itemCount } = useCart();
   const { items: wishlistItems } = useWishlist();
@@ -146,7 +148,7 @@ export const Header: React.FC<HeaderProps> = ({ onAuthClick, onCartClick }) => {
     if (isCategoriesOpen) setIsCategoriesOpen(false);
 
     if (isSearchOpen) setIsSearchOpen(false);
-  }, [location.pathname]);
+  }, [location.pathname, isUserMenuOpen, isCategoriesOpen, isSearchOpen]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {

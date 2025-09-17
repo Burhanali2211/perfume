@@ -37,10 +37,10 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-xl"
+          className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-xl flex items-start justify-center pt-24"
           onClick={onClose}
         >
-          <div className="max-w-3xl mx-auto mt-24 px-6" onClick={(e) => e.stopPropagation()}>
+          <div className="max-w-3xl w-full mx-auto px-6" onClick={(e) => e.stopPropagation()}>
             <motion.div
               initial={{ y: -30, opacity: 0, scale: 0.95 }}
               animate={{ y: 0, opacity: 1, scale: 1 }}

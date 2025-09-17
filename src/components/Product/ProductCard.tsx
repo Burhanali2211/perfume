@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Star, Heart, ShoppingCart, GitCompare } from 'lucide-react';
 import { Product } from '../../types';
-import { useCart } from '../../contexts/CartContext';
+// import { useCart } from '../../contexts/CartContext'; // Unused
 import { useWishlist } from '../../contexts/WishlistContext';
 import { useCompare } from '../../contexts/CompareContext';
 import { useNotification } from '../../contexts/NotificationContext';
@@ -19,7 +19,7 @@ interface ProductCardProps {
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { isInWishlist } = useWishlist();
   const { isInCompare } = useCompare();
-  const { showSuccess } = useNotification();
+  // const { showSuccess } = useNotification(); // Unused
   const { handleAddToCart } = useAddToCartWithAuth();
   const { handleAddToWishlist } = useAddToWishlistWithAuth();
   const { handleAddToCompare } = useAddToCompareWithAuth();
@@ -47,7 +47,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     return { text: 'In Stock', color: 'bg-green-500', textColor: 'text-green-600' };
   };
 
-  const stockStatus = getStockStatus();
+  // const stockStatus = getStockStatus(); // Unused
 
   return (
     <div
@@ -79,7 +79,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               <div className="absolute bottom-1.5 sm:bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1 sm:space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 {product.images.map((_, index) => (
                   <button
-                    key={`${product.id}-image-${index}`}
+                    key={`image-nav-${product.id}-${index}`}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -189,7 +189,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <div className="flex items-center space-x-0.5 sm:space-x-1">
             {[...Array(5)].map((_, i) => (
               <Star
-                key={`${product.id}-star-${i}`}
+                key={`star-${product.id}-${i}`}
                 className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${
                   i < Math.floor(product.rating)
                     ? 'text-yellow-400 fill-current'

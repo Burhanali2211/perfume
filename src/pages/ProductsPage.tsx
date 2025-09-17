@@ -382,7 +382,6 @@ export const ProductsPage: React.FC = () => {
     
     // Also clear URL parameters
     setSearchParams({});
-    setSearchQuery('');
   };
 
   return (
@@ -562,7 +561,7 @@ export const ProductsPage: React.FC = () => {
                   <MobileProductGrid
                     products={filteredProducts}
                     columns={viewMode === 'list' ? 1 : 2}
-                    variant="luxury"
+                    variant="default"
                   />
                 </div>
 
@@ -577,7 +576,7 @@ export const ProductsPage: React.FC = () => {
                     {filteredProducts && filteredProducts.length > 0 ? (
                       filteredProducts.map((product, index) => (
                         <motion.div
-                          key={product.id}
+                          key={`product-${product.id}`}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{

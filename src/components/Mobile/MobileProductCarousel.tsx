@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-// Removed framer-motion imports
 import { Product } from '../../types';
 import { MobileProductCard } from './MobileProductCard';
 import { MobileIconButton } from './MobileTouchButton';
@@ -26,28 +25,19 @@ export const MobileProductCarousel: React.FC<MobileProductCarouselProps> = ({
   autoPlayInterval = 5000,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  // Removed auto-play state
   const carouselRef = useRef<HTMLDivElement>(null);
-  // Removed autoPlayRef
 
   const maxIndex = Math.max(0, products.length - Math.floor(itemsPerView));
 
-  // Removed auto-play functionality
-
-  // Removed pauseAutoPlay function
-
   const goToNext = () => {
-    // Removed pauseAutoPlay call
     setCurrentIndex(prev => Math.min(prev + 1, maxIndex));
   };
 
   const goToPrevious = () => {
-    // Removed pauseAutoPlay call
     setCurrentIndex(prev => Math.max(prev - 1, 0));
   };
 
   const goToSlide = (index: number) => {
-    // Removed pauseAutoPlay call
     setCurrentIndex(Math.min(Math.max(index, 0), maxIndex));
   };
 
@@ -111,7 +101,7 @@ export const MobileProductCarousel: React.FC<MobileProductCarouselProps> = ({
         >
           {products.map((product, index) => (
             <div
-              key={product.id}
+              key={`carousel-product-${product.id}-${index}`}
               className="flex-shrink-0 px-1.5"
               style={{ width: `${itemWidth}%` }}
             >
@@ -151,7 +141,7 @@ export const MobileProductCarousel: React.FC<MobileProductCarouselProps> = ({
         <div className="flex justify-center mt-3 space-x-1.5">
           {Array.from({ length: maxIndex + 1 }, (_, index) => (
             <button
-              key={index}
+              key={`indicator-${index}`}
               onClick={() => goToSlide(index)}
               className={`w-1.5 h-1.5 rounded-full transition-colors duration-200 ${
                 index === currentIndex 
@@ -207,24 +197,23 @@ export const MobileCompactCarousel: React.FC<{
 interface MobileProductGridProps {
   products: Product[];
   columns?: 1 | 2;
-  variant?: 'default' | 'compact' | 'luxury';
+  variant?: 'default' | 'compact' | 'featured';
 }
 
 export const MobileProductGrid: React.FC<MobileProductGridProps> = ({
   products,
   columns = 2,
-  variant = 'luxury',
+  variant = 'default',
 }) => {
   const gridCols = columns === 1 ? 'grid-cols-1' : 'grid-cols-2';
-  const gap = variant === 'compact' ? 'gap-2' : variant === 'luxury' ? 'gap-3' : 'gap-3';
-  const padding = variant === 'luxury' ? 'px-3' : 'p-3';
+  const gap = variant === 'compact' ? 'gap-2' : 'gap-3';
+  const padding = variant === 'compact' ? 'p-3' : 'px-3';
 
   return (
     <div className={`grid ${gridCols} ${gap} ${padding} py-4`}>
       {products.map((product, index) => (
-        // Removed motion animations
         <div
-          key={product.id}
+          key={`mobile-product-${product.id}`}
           className="touch-manipulation"
         >
           <MobileProductCard

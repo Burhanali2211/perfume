@@ -20,7 +20,7 @@ class DataPreloader {
    * Preload product details when user hovers over product card
    */
   async preloadProduct(productId: string, options: PreloadOptions = {}) {
-    const { priority = 'medium', timeout = 8000, force = false } = options; // Increased timeout
+    const { priority = 'medium', timeout = 30000, force = false } = options; // Increased timeout
     
     const cacheKey = `product-${productId}`;
     
@@ -44,10 +44,14 @@ class DataPreloader {
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Preload timeout')), timeout)
           )
-        ]) as unknown;
+        ]) as any;
 
         if (product) {
-          productCache.set(cacheKey, product, 5 * 60 * 1000); // 5 minute cache
+          productCache.set(cacheKey, product, {
+            ttl: 5 * 60 * 1000, // 5 minute cache
+            priority: priority,
+            tags: ['product', `product-${productId}`]
+          });
           this.preloadedItems.add(cacheKey);
           console.log(`✅ Preloaded product ${productId}`);
         }
@@ -70,7 +74,7 @@ class DataPreloader {
    * Preload products for a category
    */
   async preloadCategoryProducts(categoryId: string, options: PreloadOptions = {}) {
-    const { priority = 'low', timeout = 8000, force = false } = options;
+    const { priority = 'low', timeout = 30000, force = false } = options;
     
     const cacheKey = `category-products-${categoryId}`;
     
@@ -87,10 +91,14 @@ class DataPreloader {
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Preload timeout')), timeout)
           )
-        ]) as unknown;
+        ]) as any[];
 
         if (products && products.length > 0) {
-          productCache.set(cacheKey, products, 3 * 60 * 1000); // 3 minute cache
+          productCache.set(cacheKey, products, {
+            ttl: 3 * 60 * 1000, // 3 minute cache
+            priority: priority,
+            tags: ['products', `category-products-${categoryId}`]
+          });
           this.preloadedItems.add(cacheKey);
           console.log(`✅ Preloaded ${products.length} products for category ${categoryId}`);
         }
@@ -112,7 +120,7 @@ class DataPreloader {
    * Preload next page of products
    */
   async preloadNextPage(currentOffset: number, limit: number = 12, options: PreloadOptions = {}) {
-    const { timeout = 10000 } = options; // Increased timeout for page preloading
+    const { timeout = 30000 } = options; // Increased timeout for page preloading
     
     const nextOffset = currentOffset + limit;
     const cacheKey = `products-page-${nextOffset}-${limit}`;
@@ -130,10 +138,14 @@ class DataPreloader {
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Preload timeout')), timeout)
           )
-        ]) as unknown;
+        ]) as any[];
 
         if (products && products.length > 0) {
-          productCache.set(cacheKey, products, 2 * 60 * 1000); // 2 minute cache
+          productCache.set(cacheKey, products, {
+            ttl: 2 * 60 * 1000, // 2 minute cache
+            priority: 'low',
+            tags: ['products', `products-page-${nextOffset}`]
+          });
           this.preloadedItems.add(cacheKey);
           console.log(`✅ Preloaded next page with ${products.length} products`);
         }

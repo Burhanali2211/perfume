@@ -2,34 +2,31 @@ import React, { useState, useEffect } from 'react';
 import {
   FileText,
   Search,
-  Filter,
   Download,
   Eye,
-  Calendar,
-  User,
   Activity,
   Shield,
   AlertTriangle,
   Info,
   CheckCircle,
   XCircle,
-  Clock,
-  Database,
   Settings,
-  Users,
-  Package,
-  ShoppingCart,
-  CreditCard,
-  RefreshCw,
-  ChevronDown,
-  ChevronUp
+  RefreshCw
 } from 'lucide-react';
-import { supabase } from '../../../lib/supabase';
+// import { supabase } from '../../../lib/supabase';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { LoadingSpinner } from '../../Common/LoadingSpinner';
 import { EnhancedButton } from '../../Common/EnhancedButton';
 import { Modal } from '../../Common/Modal';
 import { AdminErrorBoundary } from '../../Common/AdminErrorBoundary';
+import {
+  ResponsiveAdminLayout,
+  AdminPageHeader,
+  AdminSection
+  // MobileOptimizedCard // Unused
+} from '../../Common/ResponsiveAdminLayout';
+import { EnhancedAdminTable, TableColumn, TableAction } from '../../Common/EnhancedAdminTable';
+import { useResponsive } from '../../Common/AdminDesignSystem';
 
 interface AuditLog {
   id: string;
@@ -45,7 +42,7 @@ interface AuditLog {
   userAgent: string;
   status: 'success' | 'failure' | 'warning';
   category: 'auth' | 'user' | 'product' | 'order' | 'system' | 'security';
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 interface AuditFilters {
@@ -67,7 +64,9 @@ export const AuditLogs: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pageSize] = useState(50);
+  const [error, setError] = useState<string | null>(null);
   const { showNotification } = useNotification();
+  const { isMobile } = useResponsive();
 
   const [filters, setFilters] = useState<AuditFilters>({
     dateFrom: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -102,6 +101,7 @@ export const AuditLogs: React.FC = () => {
 
   const fetchAuditLogs = async () => {
     setLoading(true);
+    setError(null);
     try {
       // Mock data - replace with actual Supabase query
       const mockLogs: AuditLog[] = [
@@ -271,112 +271,246 @@ export const AuditLogs: React.FC = () => {
     }
   };
 
-  const toggleRowExpansion = (logId: string) => {
-    const newExpanded = new Set(expandedRows);
-    if (newExpanded.has(logId)) {
-      newExpanded.delete(logId);
-    } else {
-      newExpanded.add(logId);
-    }
-    setExpandedRows(newExpanded);
-  };
+  // const toggleRowExpansion = (logId: string) => {
+  //   const newExpanded = new Set(expandedRows);
+  //   if (newExpanded.has(logId)) {
+  //     newExpanded.delete(logId);
+  //   } else {
+  //     newExpanded.add(logId);
+  //   }
+  //   setExpandedRows(newExpanded);
+  // };
 
   const viewLogDetails = (log: AuditLog) => {
     setSelectedLog(log);
     setIsDetailModalOpen(true);
   };
 
+  // Table configuration
+  const columns: TableColumn<AuditLog>[] = [
+    {
+      key: 'timestamp',
+      label: 'Timestamp',
+      sortable: true,
+      responsive: 'all',
+      render: (value) => new Date(value).toLocaleString(),
+      className: 'text-gray-900 font-medium'
+    },
+    {
+      key: 'userName',
+      label: 'User',
+      sortable: true,
+      responsive: 'md',
+      className: 'text-gray-900'
+    },
+    {
+      key: 'action',
+      label: 'Action',
+      sortable: true,
+      responsive: 'all',
+      className: 'text-gray-900 font-medium'
+    },
+    {
+      key: 'resource',
+      label: 'Resource',
+      sortable: true,
+      responsive: 'lg',
+      className: 'text-gray-600'
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      responsive: 'all',
+      render: (value) => (
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          value === 'success' ? 'bg-green-100 text-green-800' :
+          value === 'failure' ? 'bg-red-100 text-red-800' :
+          'bg-yellow-100 text-yellow-800'
+        }`}>
+          {value === 'success' ? <CheckCircle className="h-3 w-3 mr-1" /> :
+           value === 'failure' ? <XCircle className="h-3 w-3 mr-1" /> :
+           <AlertTriangle className="h-3 w-3 mr-1" />}
+          {value}
+        </span>
+      )
+    },
+    {
+      key: 'category',
+      label: 'Category',
+      sortable: true,
+      responsive: 'lg',
+      render: (value) => (
+        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800 capitalize">
+          {value}
+        </span>
+      )
+    },
+    {
+      key: 'ipAddress',
+      label: 'IP Address',
+      sortable: false,
+      responsive: 'xl',
+      className: 'text-gray-600 font-mono text-xs'
+    }
+  ];
+
+  const actions: TableAction<AuditLog>[] = [
+    {
+      label: 'View Details',
+      icon: Eye,
+      onClick: viewLogDetails,
+      variant: 'secondary'
+    }
+  ];
+
+  const mobileCardRender = (log: AuditLog, _index: number) => (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm font-medium text-gray-900">{log.action}</span>
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+            log.status === 'success' ? 'bg-green-100 text-green-800' :
+            log.status === 'failure' ? 'bg-red-100 text-red-800' :
+            'bg-yellow-100 text-yellow-800'
+          }`}>
+            {log.status}
+          </span>
+        </div>
+        <span className="text-xs text-gray-500">
+          {new Date(log.timestamp).toLocaleDateString()}
+        </span>
+      </div>
+
+      <div className="space-y-1">
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-500">User:</span>
+          <span className="text-gray-900">{log.userName}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-500">Resource:</span>
+          <span className="text-gray-900">{log.resource}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-500">Category:</span>
+          <span className="text-gray-900 capitalize">{log.category}</span>
+        </div>
+      </div>
+
+      {log.details && (
+        <p className="text-sm text-gray-600 truncate">{log.details}</p>
+      )}
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className="p-8">
-        <LoadingSpinner size="large" text="Loading audit logs..." />
-      </div>
+      <ResponsiveAdminLayout>
+        <div className="flex items-center justify-center min-h-96">
+          <LoadingSpinner size="large" text="Loading audit logs..." />
+        </div>
+      </ResponsiveAdminLayout>
     );
   }
 
+  if (error) {
+    return (
+      <ResponsiveAdminLayout>
+        <AdminSection variant="card">
+          <div className="text-center py-12">
+            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Audit Logs</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <EnhancedButton onClick={fetchAuditLogs} loading={loading} icon={RefreshCw}>
+              Try Again
+            </EnhancedButton>
+          </div>
+        </AdminSection>
+      </ResponsiveAdminLayout>
+    );
+  }
+
+  const headerActions = (
+    <div className={`flex items-center ${isMobile ? 'flex-col space-y-2' : 'space-x-2'}`}>
+      <EnhancedButton
+        onClick={exportLogs}
+        icon={Download}
+        variant="outline"
+        size="sm"
+      >
+        {isMobile ? '' : 'Export CSV'}
+      </EnhancedButton>
+      <EnhancedButton
+        onClick={fetchAuditLogs}
+        icon={RefreshCw}
+        variant="outline"
+        size="sm"
+      >
+        {isMobile ? '' : 'Refresh'}
+      </EnhancedButton>
+    </div>
+  );
+
   return (
     <AdminErrorBoundary>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-              <FileText className="h-8 w-8 mr-3 text-indigo-600" />
-              Audit Logs
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Track and monitor all system activities and user actions
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <EnhancedButton
-              onClick={exportLogs}
-              icon={Download}
-              variant="outline"
-            >
-              Export CSV
-            </EnhancedButton>
-            <EnhancedButton
-              onClick={fetchAuditLogs}
-              icon={RefreshCw}
-              variant="outline"
-            >
-              Refresh
-            </EnhancedButton>
-          </div>
-        </div>
+      <ResponsiveAdminLayout>
+        <AdminPageHeader
+          title="Audit Logs"
+          subtitle="Track and monitor all system activities and user actions"
+          icon={FileText}
+          actions={headerActions}
+        />
 
         {/* Filters */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+        <AdminSection title="Filters" variant="card" icon={Filter}>
+          <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2 lg:grid-cols-4 xl:grid-cols-6'} gap-4`}>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
               <input
                 type="date"
                 value={filters.dateFrom}
                 onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
               <input
                 type="date"
                 value={filters.dateTo}
                 onChange={(e) => handleFilterChange('dateTo', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
               <select
                 value={filters.category}
                 onChange={(e) => handleFilterChange('category', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
               >
                 {categories.map(cat => (
                   <option key={cat.value} value={cat.value}>{cat.label}</option>
                 ))}
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
               >
                 {statuses.map(status => (
                   <option key={status.value} value={status.value}>{status.label}</option>
                 ))}
               </select>
             </div>
-            
-            <div className="md:col-span-2">
+
+            <div className={isMobile ? 'col-span-1' : 'md:col-span-2'}>
               <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -385,174 +519,34 @@ export const AuditLogs: React.FC = () => {
                   placeholder="Search logs..."
                   value={filters.searchTerm}
                   onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
                 />
               </div>
             </div>
           </div>
-        </div>
+        </AdminSection>
 
         {/* Logs Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Timestamp
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Action
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Resource
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    IP Address
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {logs.map((log) => (
-                  <React.Fragment key={log.id}>
-                    <tr className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(log.timestamp).toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <User className="h-4 w-4 text-gray-400 mr-2" />
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{log.userName}</div>
-                            <div className="text-sm text-gray-500">{log.userEmail}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          {getCategoryIcon(log.category)}
-                          <span className="ml-2 text-sm text-gray-900">{log.action}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {log.resource}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          {getStatusIcon(log.status)}
-                          <span className="ml-2 text-sm text-gray-900 capitalize">{log.status}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {log.ipAddress}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => toggleRowExpansion(log.id)}
-                            className="text-indigo-600 hover:text-indigo-900"
-                          >
-                            {expandedRows.has(log.id) ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4" />
-                            )}
-                          </button>
-                          <button
-                            onClick={() => viewLogDetails(log)}
-                            className="text-indigo-600 hover:text-indigo-900"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    {expandedRows.has(log.id) && (
-                      <tr>
-                        <td colSpan={7} className="px-6 py-4 bg-gray-50">
-                          <div className="space-y-2">
-                            <div>
-                              <span className="text-sm font-medium text-gray-700">Details: </span>
-                              <span className="text-sm text-gray-900">{log.details}</span>
-                            </div>
-                            <div>
-                              <span className="text-sm font-medium text-gray-700">User Agent: </span>
-                              <span className="text-sm text-gray-900">{log.userAgent}</span>
-                            </div>
-                            {Object.keys(log.metadata).length > 0 && (
-                              <div>
-                                <span className="text-sm font-medium text-gray-700">Metadata: </span>
-                                <pre className="text-sm text-gray-900 bg-gray-100 p-2 rounded mt-1 overflow-x-auto">
-                                  {JSON.stringify(log.metadata, null, 2)}
-                                </pre>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <AdminSection title="Audit Logs" variant="default">
+          <EnhancedAdminTable
+            data={logs}
+            columns={columns}
+            actions={actions}
+            loading={loading}
+            searchable={false} // We have custom filters
+            sortable={true}
+            pagination={{
+              currentPage,
+              totalPages,
+              pageSize,
+              onPageChange: setCurrentPage
+            }}
+            onRowClick={viewLogDetails}
+            emptyMessage="No audit logs found"
+            mobileCardRender={mobileCardRender}
+          />
+        </AdminSection>
 
-          {/* Pagination */}
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Showing <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> to{' '}
-                  <span className="font-medium">{Math.min(currentPage * pageSize, logs.length)}</span> of{' '}
-                  <span className="font-medium">{logs.length}</span> results
-                </p>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                  <button
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </nav>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Log Detail Modal */}
         <Modal
@@ -630,7 +624,7 @@ export const AuditLogs: React.FC = () => {
             </div>
           )}
         </Modal>
-      </div>
+      </ResponsiveAdminLayout>
     </AdminErrorBoundary>
   );
 };

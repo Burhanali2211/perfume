@@ -54,38 +54,75 @@ export const initLogRocket = (config: MonitoringConfig['logRocket']) => {
   console.log('🚀 LogRocket initialized for session replay and user behavior tracking');
 };
 
-// Enhanced error reporting with context
+// Enhanced error reporting with context and XrayWrapper protection
 export const reportError = (error: Error, context?: Record<string, unknown>) => {
-  // Log to console first
-  console.error('Application Error:', error, context);
-
-  // Send to Sentry if initialized
-  if (Sentry.getClient()) {
-    Sentry.captureException(error, {
-      contexts: {
-        app: context
+  try {
+    // Log to console first with safe error handling
+    console.error('Application Error:', error, context);
+  } catch (consoleError) {
+    // Fallback if console is wrapped
+    if (typeof window !== 'undefined' && (window as any).wrappedJSObject?.console) {
+      try {
+        (window as any).wrappedJSObject.console.error('Application Error:', error, context);
+      } catch (wrappedConsoleError) {
+        // Silent fallback
       }
-    });
+    }
   }
 
-  // Send to LogRocket if initialized
-  if ((window as any).LogRocket) {
-    LogRocket.log('Application Error', {
-      message: error.message,
-      stack: error.stack,
-      ...context
-    });
+  // Send to Sentry if initialized with safe error handling
+  try {
+    if (Sentry.getClient()) {
+      // Safely clone context to avoid XrayWrapper issues
+      const safeContext = context ? JSON.parse(JSON.stringify(context)) : {};
+      
+      Sentry.captureException(error, {
+        contexts: {
+          app: safeContext
+        }
+      });
+    }
+  } catch (sentryError) {
+    console.warn('XrayWrapper: Sentry error reporting failed:', sentryError);
+  }
+
+  // Send to LogRocket if initialized with safe error handling
+  try {
+    if ((window as any).LogRocket) {
+      // Safely clone context to avoid XrayWrapper issues
+      const safeData = {
+        message: String(error.message || 'Unknown error'),
+        stack: String(error.stack || 'No stack trace'),
+        ...(context ? JSON.parse(JSON.stringify(context)) : {})
+      };
+      
+      LogRocket.log('Application Error', safeData);
+    }
+  } catch (logRocketError) {
+    console.warn('XrayWrapper: LogRocket error reporting failed:', logRocketError);
   }
 };
 
-// Track user sessions with LogRocket
+// Track user sessions with LogRocket and XrayWrapper protection
 export const identifyUser = (userId: string, userInfo: Record<string, string | number | boolean>) => {
-  if ((window as any).LogRocket) {
-    LogRocket.identify(userId, userInfo);
+  try {
+    if ((window as any).LogRocket) {
+      // Safely clone user info to avoid XrayWrapper issues
+      const safeUserInfo = JSON.parse(JSON.stringify(userInfo));
+      LogRocket.identify(String(userId), safeUserInfo);
+    }
+  } catch (logRocketError) {
+    console.warn('XrayWrapper: LogRocket identify failed:', logRocketError);
   }
   
-  if (Sentry.getClient()) {
-    Sentry.setUser({ id: userId, ...userInfo });
+  try {
+    if (Sentry.getClient()) {
+      // Safely clone user info for Sentry
+      const safeUserInfo = JSON.parse(JSON.stringify(userInfo));
+      Sentry.setUser({ id: String(userId), ...safeUserInfo });
+    }
+  } catch (sentryError) {
+    console.warn('XrayWrapper: Sentry setUser failed:', sentryError);
   }
 };
 
@@ -178,20 +215,44 @@ export const initMonitoring = (config: MonitoringConfig) => {
       initLogRocket(config.logRocket);
     }
     
-    // Set up global error handlers
+    // Set up global error handlers with XrayWrapper protection
     window.addEventListener('error', (event) => {
-      reportError(event.error, {
-        type: 'unhandled-error',
-        filename: event.filename,
-        lineno: event.lineno,
-        colno: event.colno
-      });
+      // Check for XrayWrapper specific errors and handle them specially
+      if (event.error?.message?.includes('XrayWrapper') || 
+          event.error?.message?.includes('cross-origin object')) {
+        console.warn('XrayWrapper error detected and handled:', event.error);
+        // Don't report XrayWrapper errors to external services
+        return;
+      }
+      
+      try {
+        reportError(event.error, {
+          type: 'unhandled-error',
+          filename: String(event.filename || 'unknown'),
+          lineno: Number(event.lineno || 0),
+          colno: Number(event.colno || 0)
+        });
+      } catch (handlerError) {
+        console.warn('Error handler failed:', handlerError);
+      }
     });
     
     window.addEventListener('unhandledrejection', (event) => {
-      reportError(event.reason, {
-        type: 'unhandled-promise-rejection'
-      });
+      // Check for XrayWrapper specific promise rejections
+      if (event.reason?.message?.includes('XrayWrapper') || 
+          event.reason?.message?.includes('cross-origin object')) {
+        console.warn('XrayWrapper promise rejection detected and handled:', event.reason);
+        event.preventDefault();
+        return;
+      }
+      
+      try {
+        reportError(event.reason, {
+          type: 'unhandled-promise-rejection'
+        });
+      } catch (handlerError) {
+        console.warn('Promise rejection handler failed:', handlerError);
+      }
     });
     
     console.log('✅ Monitoring services initialized successfully');

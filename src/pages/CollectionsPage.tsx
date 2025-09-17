@@ -1,21 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  Search, 
-  Filter, 
-  Grid, 
-  List, 
+import {
+  Search,
+  Grid,
+  List,
   ArrowRight,
-  Calendar,
   Tag,
   Star,
   Crown,
   Gift,
   Zap,
   Award,
-  Sparkles,
-  ChevronDown
+  Sparkles
 } from 'lucide-react';
 import { useCollections } from '../contexts/CollectionContext';
 import { Collection } from '../types';
@@ -53,7 +50,7 @@ export const CollectionsPage: React.FC = () => {
 
   // Filter and sort collections
   const filteredCollections = useMemo(() => {
-    let filtered = collections.filter(collection => {
+    const filtered = collections.filter(collection => {
       const matchesSearch = collection.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            collection.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            collection.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));

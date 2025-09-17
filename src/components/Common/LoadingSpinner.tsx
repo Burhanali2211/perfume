@@ -13,8 +13,8 @@ interface LoadingSpinnerProps {
   onRetry?: () => void;
 }
 
-// Backward compatibility
-interface EnhancedLoadingSpinnerProps extends LoadingSpinnerProps {}
+// Backward compatibility - keeping for potential future use
+// interface EnhancedLoadingSpinnerProps extends LoadingSpinnerProps {}
 
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   size = 'medium',

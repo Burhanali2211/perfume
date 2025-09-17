@@ -30,8 +30,8 @@ export const healthCheck = async (): Promise<HealthCheckResponse> => {
       api: 'ok'
     },
     metrics: {
-      uptime: process.uptime ? process.uptime() : Date.now() - (window as any).appStartTime || 0,
-      memoryUsage: (window.performance as any).memory?.usedJSHeapSize || 0
+      uptime: process.uptime ? process.uptime() : Date.now() - ((window as unknown as { appStartTime?: number }).appStartTime || 0),
+      memoryUsage: ((window.performance as unknown as { memory?: { usedJSHeapSize?: number } }).memory?.usedJSHeapSize || 0)
     }
   };
   
@@ -41,7 +41,7 @@ export const healthCheck = async (): Promise<HealthCheckResponse> => {
 // Simple uptime endpoint
 export const uptimeCheck = async (): Promise<{ uptime: number; status: 'ok' }> => {
   return {
-    uptime: process.uptime ? process.uptime() : Date.now() - (window as any).appStartTime || 0,
+    uptime: process.uptime ? process.uptime() : Date.now() - ((window as unknown as { appStartTime?: number }).appStartTime || 0),
     status: 'ok'
   };
 };

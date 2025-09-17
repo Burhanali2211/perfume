@@ -1,25 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
   TrendingUp,
-  TrendingDown,
+  // TrendingDown, // Unused
   DollarSign,
   Users,
   ShoppingCart,
   Package,
-  BarChart3,
-  PieChart,
-  Calendar,
-  Download,
-  Filter,
-  RefreshCw,
-  ArrowUp,
-  ArrowDown,
-  Eye,
-  Clock
+  // Calendar, // Unused
+  RefreshCw
 } from 'lucide-react';
-import { supabase } from '../../../lib/supabase';
+// import { supabase } from '../../../lib/supabase';
 import { LoadingSpinner } from '../../Common/LoadingSpinner';
-import { ErrorFallback } from '../../Common/ErrorFallback';
 
 interface AnalyticsData {
   totalRevenue: number;

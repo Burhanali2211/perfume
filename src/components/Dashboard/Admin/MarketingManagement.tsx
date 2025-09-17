@@ -10,8 +10,8 @@ import {
   BarChart3,
   Plus,
   Search,
-  Filter,
-  Download,
+  // Filter, // Unused
+  // Download, // Unused
   Edit,
   Trash2,
   Eye,
@@ -35,6 +35,14 @@ import { LoadingSpinner } from '../../Common/LoadingSpinner';
 import { EnhancedButton } from '../../Common/EnhancedButton';
 import { Modal } from '../../Common/Modal';
 import { AdminErrorBoundary } from '../../Common/AdminErrorBoundary';
+import {
+  ResponsiveAdminLayout,
+  AdminPageHeader,
+  AdminSection,
+  AdminGrid,
+  MobileOptimizedCard
+} from '../../Common/ResponsiveAdminLayout';
+import { useResponsive } from '../../Common/AdminDesignSystem';
 
 interface Campaign {
   id: string;
@@ -98,7 +106,9 @@ export const MarketingManagement: React.FC = () => {
   const [isCreatePromotionModalOpen, setIsCreatePromotionModalOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [selectedPromotion, setSelectedPromotion] = useState<Promotion | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { showNotification } = useNotification();
+  const { isMobile, isTablet } = useResponsive();
 
   const tabs = [
     { id: 'overview', name: 'Overview', icon: <BarChart3 className="h-5 w-5" /> },
@@ -232,62 +242,36 @@ export const MarketingManagement: React.FC = () => {
   const renderOverviewTab = () => (
     <div className="space-y-6">
       {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Megaphone className="h-6 w-6 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Campaigns</p>
-              <p className="text-2xl font-bold text-gray-900">{metrics?.totalCampaigns || 0}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <DollarSign className="h-6 w-6 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900">
-                ${metrics?.totalRevenue?.toLocaleString() || 0}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Target className="h-6 w-6 text-purple-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Conversion Rate</p>
-              <p className="text-2xl font-bold text-gray-900">{metrics?.averageConversionRate || 0}%</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <TrendingUp className="h-6 w-6 text-orange-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">ROI</p>
-              <p className="text-2xl font-bold text-gray-900">{metrics?.roi || 0}%</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <AdminGrid cols={isMobile ? 1 : isTablet ? 2 : 4}>
+        <MobileOptimizedCard
+          title="Total Campaigns"
+          value={metrics?.totalCampaigns || 0}
+          icon={Megaphone}
+          iconColor="blue"
+        />
+        <MobileOptimizedCard
+          title="Total Revenue"
+          value={`$${metrics?.totalRevenue?.toLocaleString() || 0}`}
+          icon={DollarSign}
+          iconColor="green"
+        />
+        <MobileOptimizedCard
+          title="Conversion Rate"
+          value={`${metrics?.averageConversionRate || 0}%`}
+          icon={Target}
+          iconColor="purple"
+        />
+        <MobileOptimizedCard
+          title="ROI"
+          value={`${metrics?.roi || 0}%`}
+          icon={TrendingUp}
+          iconColor="orange"
+        />
+      </AdminGrid>
 
       {/* Quick Actions */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <AdminSection title="Quick Actions" variant="card">
+        <AdminGrid cols={isMobile ? 1 : isTablet ? 2 : 4}>
           <EnhancedButton
             onClick={() => setIsCreateCampaignModalOpen(true)}
             icon={Plus}
@@ -305,7 +289,7 @@ export const MarketingManagement: React.FC = () => {
           </EnhancedButton>
           <EnhancedButton
             onClick={() => setActiveTab('analytics')}
-            icon={<BarChart3 className="h-4 w-4" />}
+            icon={BarChart3}
             variant="outline"
             className="w-full"
           >
@@ -319,8 +303,8 @@ export const MarketingManagement: React.FC = () => {
           >
             Refresh Data
           </EnhancedButton>
-        </div>
-      </div>
+        </AdminGrid>
+      </AdminSection>
     </div>
   );
 
@@ -565,54 +549,73 @@ export const MarketingManagement: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="p-8">
-        <LoadingSpinner size="large" text="Loading marketing data..." />
-      </div>
+      <ResponsiveAdminLayout>
+        <div className="flex items-center justify-center min-h-96">
+          <LoadingSpinner size="large" text="Loading marketing data..." />
+        </div>
+      </ResponsiveAdminLayout>
     );
   }
 
+  if (error) {
+    return (
+      <ResponsiveAdminLayout>
+        <AdminSection variant="card">
+          <div className="text-center py-12">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Marketing Data</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <EnhancedButton onClick={() => window.location.reload()} icon={RefreshCw}>
+              Try Again
+            </EnhancedButton>
+          </div>
+        </AdminSection>
+      </ResponsiveAdminLayout>
+    );
+  }
+
+  const headerActions = (
+    <div className={`flex items-center ${isMobile ? 'flex-col space-y-2' : 'space-x-2'}`}>
+      <EnhancedButton
+        onClick={() => setIsCreateCampaignModalOpen(true)}
+        icon={Plus}
+        size={isMobile ? 'sm' : 'md'}
+      >
+        {isMobile ? 'Campaign' : 'Create Campaign'}
+      </EnhancedButton>
+      <EnhancedButton
+        onClick={() => setIsCreatePromotionModalOpen(true)}
+        icon={Gift}
+        variant="secondary"
+        size={isMobile ? 'sm' : 'md'}
+      >
+        {isMobile ? 'Promotion' : 'Create Promotion'}
+      </EnhancedButton>
+    </div>
+  );
+
   return (
     <AdminErrorBoundary>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Megaphone className="h-8 w-8 mr-3 text-indigo-600" />
-              Marketing & Promotions
-            </h1>
-            <p className="text-gray-600 mt-1">Manage campaigns, promotions, and marketing analytics</p>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <EnhancedButton
-              onClick={() => setIsCreateCampaignModalOpen(true)}
-              icon={Plus}
-            >
-              Create Campaign
-            </EnhancedButton>
-            <EnhancedButton
-              onClick={() => setIsCreatePromotionModalOpen(true)}
-              icon={Gift}
-              variant="secondary"
-            >
-              Create Promotion
-            </EnhancedButton>
-          </div>
-        </div>
+      <ResponsiveAdminLayout>
+        <AdminPageHeader
+          title="Marketing & Promotions"
+          subtitle="Manage campaigns, promotions, and marketing analytics"
+          icon={Megaphone}
+          actions={headerActions}
+        />
 
         {/* Tabs */}
         <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
+          <nav className={`-mb-px flex ${isMobile ? 'space-x-4 overflow-x-auto' : 'space-x-8'}`}>
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id as 'campaigns' | 'analytics' | 'automation' | 'content')}
                 className={`${
                   activeTab === tab.id
-                    ? 'border-indigo-500 text-indigo-600'
+                    ? 'border-primary-500 text-primary-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center`}
+                } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center ${isMobile ? 'flex-shrink-0' : ''}`}
               >
                 {tab.icon}
                 <span className="ml-2">{tab.name}</span>
@@ -622,12 +625,12 @@ export const MarketingManagement: React.FC = () => {
         </div>
 
         {/* Tab Content */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <AdminSection variant="card">
           {activeTab === 'overview' && renderOverviewTab()}
           {activeTab === 'campaigns' && renderCampaignsTab()}
           {activeTab === 'promotions' && renderPromotionsTab()}
           {activeTab === 'analytics' && renderAnalyticsTab()}
-        </div>
+        </AdminSection>
 
         {/* Create Campaign Modal */}
         <Modal
@@ -786,7 +789,7 @@ export const MarketingManagement: React.FC = () => {
             </div>
           </div>
         </Modal>
-      </div>
+      </ResponsiveAdminLayout>
     </AdminErrorBoundary>
   );
 };

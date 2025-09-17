@@ -152,7 +152,7 @@ class ServiceWorkerManager implements ServiceWorkerAPI {
   }
 
   /**
-   * Send message to service worker
+   * Send message to service worker with XrayWrapper protection
    */
   private async sendMessage(type: string, payload?: any): Promise<any> {
     if (!navigator.serviceWorker.controller) {
@@ -160,20 +160,50 @@ class ServiceWorkerManager implements ServiceWorkerAPI {
     }
 
     return new Promise((resolve, reject) => {
-      const messageChannel = new MessageChannel();
-      
-      messageChannel.port1.onmessage = (event) => {
-        if (event.data.error) {
-          reject(new Error(event.data.error));
-        } else {
-          resolve(event.data);
-        }
-      };
+      try {
+        const messageChannel = new MessageChannel();
+        
+        messageChannel.port1.onmessage = (event) => {
+          try {
+            if (event.data?.error) {
+              reject(new Error(event.data.error));
+            } else {
+              resolve(event.data);
+            }
+          } catch (error) {
+            console.warn('XrayWrapper: Message handling error:', error);
+            resolve(null);
+          }
+        };
 
-      navigator.serviceWorker.controller.postMessage(
-        { type, payload },
-        [messageChannel.port2]
-      );
+        // Safely clone the message data to avoid XrayWrapper issues
+        const safeMessage = {
+          type: String(type),
+          payload: payload ? JSON.parse(JSON.stringify(payload)) : undefined
+        };
+
+        // Use try-catch for postMessage to handle XrayWrapper errors
+        try {
+          navigator.serviceWorker.controller.postMessage(
+            safeMessage,
+            [messageChannel.port2]
+          );
+        } catch (postError) {
+          // Fallback for Firefox XrayWrapper issues
+          if (navigator.userAgent.includes('Firefox') && 
+              (navigator.serviceWorker.controller as any).wrappedJSObject) {
+            (navigator.serviceWorker.controller as any).wrappedJSObject.postMessage(
+              safeMessage,
+              [messageChannel.port2]
+            );
+          } else {
+            throw postError;
+          }
+        }
+      } catch (error) {
+        console.warn('XrayWrapper: Service worker message failed:', error);
+        reject(error);
+      }
     });
   }
 
@@ -387,24 +417,43 @@ export class CacheManager {
 export const serviceWorkerManager = new ServiceWorkerManager();
 export const cacheManager = new CacheManager(serviceWorkerManager);
 
-// Auto-register service worker when module loads
+// Auto-register service worker when module loads - optimized for performance
 if (typeof window !== 'undefined') {
-  // Wait for page load to avoid blocking initial render
+  // Delay service worker registration to not block initial page load
+  const registerServiceWorker = () => {
+    // Only register in production to avoid development conflicts
+    if (import.meta.env.PROD) {
+      serviceWorkerManager.register().then((registration) => {
+        if (registration) {
+          console.log('🎯 Service Worker registration completed');
+
+          // Prefetch critical resources after a delay to not block UI
+          setTimeout(() => {
+            cacheManager.prefetchCriticalResources().catch(console.error);
+          }, 5000);
+        }
+      }).catch(console.error);
+    } else {
+      console.log('🔧 Service Worker registration skipped in development');
+    }
+  };
+
+  // Wait for page load and then add additional delay to ensure UI is ready
   window.addEventListener('load', () => {
-    serviceWorkerManager.register().then((registration) => {
-      if (registration) {
-        console.log('🎯 Service Worker registration completed');
-        
-        // Prefetch critical resources after registration
-        cacheManager.prefetchCriticalResources().catch(console.error);
-      }
-    }).catch(console.error);
+    setTimeout(registerServiceWorker, 3000); // 3 second delay after load
   });
 
-  // Listen for network status changes
+  // Listen for network status changes with throttling
+  let networkChangeTimeout: NodeJS.Timeout;
+
   window.addEventListener('online', () => {
-    console.log('🌐 Back online - checking for updates');
-    serviceWorkerManager.update().catch(console.error);
+    clearTimeout(networkChangeTimeout);
+    networkChangeTimeout = setTimeout(() => {
+      console.log('🌐 Back online - checking for updates');
+      if (import.meta.env.PROD) {
+        serviceWorkerManager.update().catch(console.error);
+      }
+    }, 1000);
   });
 
   window.addEventListener('offline', () => {

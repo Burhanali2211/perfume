@@ -30,6 +30,14 @@ import { useNotification } from '../../../contexts/NotificationContext';
 import { LoadingSpinner } from '../../Common/LoadingSpinner';
 import { EnhancedButton } from '../../Common/EnhancedButton';
 import { AdminErrorBoundary } from '../../Common/AdminErrorBoundary';
+import {
+  ResponsiveAdminLayout,
+  AdminPageHeader,
+  AdminSection,
+  AdminGrid,
+  MobileOptimizedCard
+} from '../../Common/ResponsiveAdminLayout';
+import { useResponsive } from '../../Common/AdminDesignSystem';
 
 interface SystemMetrics {
   cpu: {
@@ -92,7 +100,9 @@ export const SystemHealthMonitoring: React.FC = () => {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(30); // seconds
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [error, setError] = useState<string | null>(null);
   const { showNotification } = useNotification();
+  const { isMobile, isTablet } = useResponsive();
 
   const fetchSystemMetrics = useCallback(async () => {
     try {
@@ -212,6 +222,7 @@ export const SystemHealthMonitoring: React.FC = () => {
 
   const refreshData = useCallback(async () => {
     setRefreshing(true);
+    setError(null);
     try {
       await Promise.all([
         fetchSystemMetrics(),
@@ -220,10 +231,12 @@ export const SystemHealthMonitoring: React.FC = () => {
       ]);
       setLastUpdate(new Date());
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to refresh system health data';
+      setError(errorMessage);
       showNotification({
         type: 'error',
         title: 'Refresh Failed',
-        message: 'Failed to refresh system health data'
+        message: errorMessage
       });
     } finally {
       setRefreshing(false);
@@ -280,219 +293,252 @@ export const SystemHealthMonitoring: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="p-8">
-        <LoadingSpinner size="large" text="Loading system health data..." />
-      </div>
+      <ResponsiveAdminLayout>
+        <div className="flex items-center justify-center min-h-96">
+          <LoadingSpinner size="large" text="Loading system health data..." />
+        </div>
+      </ResponsiveAdminLayout>
     );
   }
 
-  return (
-    <AdminErrorBoundary>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Activity className="h-8 w-8 mr-3 text-indigo-600" />
-              System Health Monitoring
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Real-time monitoring of system performance and health metrics
-            </p>
-            <p className="text-sm text-gray-500 mt-1">
-              Last updated: {lastUpdate.toLocaleTimeString()}
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600">Auto-refresh:</label>
-              <button
-                onClick={() => setAutoRefresh(!autoRefresh)}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
-                  autoRefresh ? 'bg-indigo-600' : 'bg-gray-200'
-                }`}
-              >
-                <span
-                  className={`${
-                    autoRefresh ? 'translate-x-5' : 'translate-x-0'
-                  } pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
-                />
-              </button>
-            </div>
-            
-            <select
-              value={refreshInterval}
-              onChange={(e) => setRefreshInterval(Number(e.target.value))}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-            >
-              <option value={10}>10s</option>
-              <option value={30}>30s</option>
-              <option value={60}>1m</option>
-              <option value={300}>5m</option>
-            </select>
-            
-            <EnhancedButton
-              onClick={refreshData}
-              loading={refreshing}
-              icon={RefreshCw}
-              variant="outline"
-              size="sm"
-            >
-              Refresh
+  if (error) {
+    return (
+      <ResponsiveAdminLayout>
+        <AdminSection variant="card">
+          <div className="text-center py-12">
+            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading System Health</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <EnhancedButton onClick={refreshData} loading={refreshing} icon={RefreshCw}>
+              Try Again
             </EnhancedButton>
           </div>
+        </AdminSection>
+      </ResponsiveAdminLayout>
+    );
+  }
+
+  const headerActions = (
+    <div className={`flex items-center ${isMobile ? 'flex-col space-y-2' : 'space-x-2'}`}>
+      {!isMobile && (
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-gray-600">Auto-refresh:</label>
+          <button
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+              autoRefresh ? 'bg-primary-600' : 'bg-gray-200'
+            }`}
+            aria-label={`Auto-refresh ${autoRefresh ? 'enabled' : 'disabled'}`}
+          >
+            <span
+              className={`${
+                autoRefresh ? 'translate-x-5' : 'translate-x-0'
+              } pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+            />
+          </button>
         </div>
+      )}
+
+      <select
+        value={refreshInterval}
+        onChange={(e) => setRefreshInterval(Number(e.target.value))}
+        className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+        aria-label="Refresh interval"
+      >
+        <option value={10}>10s</option>
+        <option value={30}>30s</option>
+        <option value={60}>1m</option>
+        <option value={300}>5m</option>
+      </select>
+
+      <EnhancedButton
+        onClick={refreshData}
+        loading={refreshing}
+        icon={RefreshCw}
+        variant="outline"
+        size="sm"
+      >
+        {isMobile ? '' : 'Refresh'}
+      </EnhancedButton>
+    </div>
+  );
+
+  return (
+    <AdminErrorBoundary>
+      <ResponsiveAdminLayout>
+        <AdminPageHeader
+          title="System Health Monitoring"
+          subtitle="Real-time monitoring of system performance and health metrics"
+          icon={Activity}
+          actions={headerActions}
+        />
+
+        {lastUpdate && (
+          <div className="text-sm text-gray-500 mb-6">
+            Last updated: {lastUpdate.toLocaleTimeString()}
+          </div>
+        )}
 
         {/* System Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-          {/* CPU Metrics */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <Cpu className="h-8 w-8 text-blue-600" />
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600">CPU</p>
-                  <p className="text-2xl font-bold text-gray-900">{metrics?.cpu.usage.toFixed(1)}%</p>
+        <AdminSection title="System Metrics" variant="default">
+          <AdminGrid variant="metrics">
+            {/* CPU Metrics */}
+            <MobileOptimizedCard>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Cpu className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-600">CPU</p>
+                    <p className="text-2xl font-bold text-gray-900">{metrics?.cpu.usage.toFixed(1)}%</p>
+                  </div>
+                </div>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(metrics?.cpu.status || 'healthy')}`}>
+                  {getStatusIcon(metrics?.cpu.status || 'healthy')}
+                  <span className="ml-1 capitalize">{metrics?.cpu.status}</span>
+                </span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Cores:</span>
+                  <span className="text-gray-900">{metrics?.cpu.cores}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Temp:</span>
+                  <span className="text-gray-900">{metrics?.cpu.temperature.toFixed(1)}°C</span>
                 </div>
               </div>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(metrics?.cpu.status || 'healthy')}`}>
-                {getStatusIcon(metrics?.cpu.status || 'healthy')}
-                <span className="ml-1">{metrics?.cpu.status}</span>
-              </span>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Cores:</span>
-                <span className="text-gray-900">{metrics?.cpu.cores}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Temp:</span>
-                <span className="text-gray-900">{metrics?.cpu.temperature.toFixed(1)}°C</span>
-              </div>
-            </div>
-          </div>
+            </MobileOptimizedCard>
 
-          {/* Memory Metrics */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <MemoryStick className="h-8 w-8 text-green-600" />
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600">Memory</p>
-                  <p className="text-2xl font-bold text-gray-900">{metrics?.memory.percentage.toFixed(1)}%</p>
+            {/* Memory Metrics */}
+            <MobileOptimizedCard>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <MemoryStick className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-600">Memory</p>
+                    <p className="text-2xl font-bold text-gray-900">{metrics?.memory.percentage.toFixed(1)}%</p>
+                  </div>
+                </div>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(metrics?.memory.status || 'healthy')}`}>
+                  {getStatusIcon(metrics?.memory.status || 'healthy')}
+                  <span className="ml-1 capitalize">{metrics?.memory.status}</span>
+                </span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Used:</span>
+                  <span className="text-gray-900">{metrics?.memory.used}GB</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Total:</span>
+                  <span className="text-gray-900">{metrics?.memory.total}GB</span>
                 </div>
               </div>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(metrics?.memory.status || 'healthy')}`}>
-                {getStatusIcon(metrics?.memory.status || 'healthy')}
-                <span className="ml-1">{metrics?.memory.status}</span>
-              </span>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Used:</span>
-                <span className="text-gray-900">{metrics?.memory.used}GB</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Total:</span>
-                <span className="text-gray-900">{metrics?.memory.total}GB</span>
-              </div>
-            </div>
-          </div>
+            </MobileOptimizedCard>
 
-          {/* Disk Metrics */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <HardDrive className="h-8 w-8 text-purple-600" />
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600">Disk</p>
-                  <p className="text-2xl font-bold text-gray-900">{metrics?.disk.percentage.toFixed(1)}%</p>
+            {/* Disk Metrics */}
+            <MobileOptimizedCard>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <HardDrive className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-600">Disk</p>
+                    <p className="text-2xl font-bold text-gray-900">{metrics?.disk.percentage.toFixed(1)}%</p>
+                  </div>
+                </div>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(metrics?.disk.status || 'healthy')}`}>
+                  {getStatusIcon(metrics?.disk.status || 'healthy')}
+                  <span className="ml-1 capitalize">{metrics?.disk.status}</span>
+                </span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Used:</span>
+                  <span className="text-gray-900">{metrics?.disk.used}GB</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Total:</span>
+                  <span className="text-gray-900">{metrics?.disk.total}GB</span>
                 </div>
               </div>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(metrics?.disk.status || 'healthy')}`}>
-                {getStatusIcon(metrics?.disk.status || 'healthy')}
-                <span className="ml-1">{metrics?.disk.status}</span>
-              </span>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Used:</span>
-                <span className="text-gray-900">{metrics?.disk.used}GB</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Total:</span>
-                <span className="text-gray-900">{metrics?.disk.total}GB</span>
-              </div>
-            </div>
-          </div>
+            </MobileOptimizedCard>
 
-          {/* Network Metrics */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <Wifi className="h-8 w-8 text-orange-600" />
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600">Network</p>
-                  <p className="text-2xl font-bold text-gray-900">{metrics?.network.latency.toFixed(0)}ms</p>
+            {/* Network Metrics */}
+            <MobileOptimizedCard>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <Wifi className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-600">Network</p>
+                    <p className="text-2xl font-bold text-gray-900">{metrics?.network.latency.toFixed(0)}ms</p>
+                  </div>
+                </div>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(metrics?.network.status || 'healthy')}`}>
+                  {getStatusIcon(metrics?.network.status || 'healthy')}
+                  <span className="ml-1 capitalize">{metrics?.network.status}</span>
+                </span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Bandwidth:</span>
+                  <span className="text-gray-900">{metrics?.network.bandwidth.toFixed(0)}Mbps</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Latency:</span>
+                  <span className="text-gray-900">{metrics?.network.latency.toFixed(0)}ms</span>
                 </div>
               </div>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(metrics?.network.status || 'healthy')}`}>
-                {getStatusIcon(metrics?.network.status || 'healthy')}
-                <span className="ml-1">{metrics?.network.status}</span>
-              </span>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Bandwidth:</span>
-                <span className="text-gray-900">{metrics?.network.bandwidth.toFixed(0)}Mbps</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Latency:</span>
-                <span className="text-gray-900">{metrics?.network.latency.toFixed(0)}ms</span>
-              </div>
-            </div>
-          </div>
+            </MobileOptimizedCard>
 
-          {/* Database Metrics */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <Database className="h-8 w-8 text-red-600" />
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600">Database</p>
-                  <p className="text-2xl font-bold text-gray-900">{metrics?.database.connections}</p>
+            {/* Database Metrics */}
+            <MobileOptimizedCard>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <div className="p-2 bg-red-100 rounded-lg">
+                    <Database className="h-6 w-6 text-red-600" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-600">Database</p>
+                    <p className="text-2xl font-bold text-gray-900">{metrics?.database.connections}</p>
+                  </div>
+                </div>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(metrics?.database.status || 'healthy')}`}>
+                  {getStatusIcon(metrics?.database.status || 'healthy')}
+                  <span className="ml-1 capitalize">{metrics?.database.status}</span>
+                </span>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Connections:</span>
+                  <span className="text-gray-900">{metrics?.database.connections}/{metrics?.database.maxConnections}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Query Time:</span>
+                  <span className="text-gray-900">{metrics?.database.queryTime.toFixed(0)}ms</span>
                 </div>
               </div>
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(metrics?.database.status || 'healthy')}`}>
-                {getStatusIcon(metrics?.database.status || 'healthy')}
-                <span className="ml-1">{metrics?.database.status}</span>
-              </span>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Connections:</span>
-                <span className="text-gray-900">{metrics?.database.connections}/{metrics?.database.maxConnections}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Query Time:</span>
-                <span className="text-gray-900">{metrics?.database.queryTime.toFixed(0)}ms</span>
-              </div>
-            </div>
-          </div>
-        </div>
+            </MobileOptimizedCard>
+          </AdminGrid>
+        </AdminSection>
 
         {/* Service Status */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Service Status</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <AdminSection title="Service Status" variant="card">
+          <AdminGrid variant="dashboard">
             {services.map((service) => (
-              <div key={service.id} className="border border-gray-200 rounded-lg p-4">
+              <MobileOptimizedCard key={service.id} padding="sm">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-medium text-gray-900">{service.name}</h3>
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(service.status)}`}>
                     {getStatusIcon(service.status)}
-                    <span className="ml-1">{service.status}</span>
+                    <span className="ml-1 capitalize">{service.status}</span>
                   </span>
                 </div>
                 <div className="space-y-2 text-sm">
@@ -509,27 +555,32 @@ export const SystemHealthMonitoring: React.FC = () => {
                     <span className="text-gray-900">{service.errorRate.toFixed(2)}%</span>
                   </div>
                 </div>
-              </div>
+              </MobileOptimizedCard>
             ))}
-          </div>
-        </div>
+          </AdminGrid>
+        </AdminSection>
 
         {/* Recent Alerts */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-medium text-gray-900">Recent Alerts</h2>
+        <AdminSection
+          title="Recent Alerts"
+          variant="card"
+          actions={
             <EnhancedButton
               onClick={() => {}}
               icon={Bell}
               variant="outline"
               size="sm"
             >
-              View All
+              {isMobile ? '' : 'View All'}
             </EnhancedButton>
-          </div>
+          }
+        >
           <div className="space-y-3">
             {alerts.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No recent alerts</p>
+              <div className="text-center py-8">
+                <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">No recent alerts</p>
+              </div>
             ) : (
               alerts.map((alert) => (
                 <div key={alert.id} className={`border-l-4 p-4 rounded-r-lg ${
@@ -537,13 +588,13 @@ export const SystemHealthMonitoring: React.FC = () => {
                   alert.type === 'warning' ? 'border-yellow-400 bg-yellow-50' :
                   'border-blue-400 bg-blue-50'
                 }`}>
-                  <div className="flex items-start justify-between">
+                  <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'items-start justify-between'}`}>
                     <div className="flex-1">
-                      <div className="flex items-center">
+                      <div className={`flex ${isMobile ? 'flex-col space-y-1' : 'items-center'}`}>
                         <h3 className="text-sm font-medium text-gray-900">{alert.title}</h3>
-                        <span className="ml-2 text-xs text-gray-500">({alert.service})</span>
+                        <span className={`text-xs text-gray-500 ${isMobile ? '' : 'ml-2'}`}>({alert.service})</span>
                         {alert.resolved && (
-                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 ${isMobile ? 'self-start' : 'ml-2'}`}>
                             Resolved
                           </span>
                         )}
@@ -553,12 +604,18 @@ export const SystemHealthMonitoring: React.FC = () => {
                         {new Date(alert.timestamp).toLocaleString()}
                       </p>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <button className="text-gray-400 hover:text-gray-600">
+                    <div className={`flex items-center space-x-2 ${isMobile ? 'self-end' : ''}`}>
+                      <button
+                        className="text-gray-400 hover:text-gray-600 p-1 rounded-md transition-colors"
+                        aria-label="View alert details"
+                      >
                         <Eye className="h-4 w-4" />
                       </button>
                       {!alert.resolved && (
-                        <button className="text-green-600 hover:text-green-800">
+                        <button
+                          className="text-green-600 hover:text-green-800 p-1 rounded-md transition-colors"
+                          aria-label="Mark as resolved"
+                        >
                           <CheckCircle className="h-4 w-4" />
                         </button>
                       )}
@@ -568,8 +625,8 @@ export const SystemHealthMonitoring: React.FC = () => {
               ))
             )}
           </div>
-        </div>
-      </div>
+        </AdminSection>
+      </ResponsiveAdminLayout>
     </AdminErrorBoundary>
   );
 };

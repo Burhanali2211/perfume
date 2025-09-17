@@ -310,7 +310,7 @@ export const BulkProductImport: React.FC = () => {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {previewData.slice(0, 10).map((product, index) => (
-                        <tr key={index}>
+                        <tr key={product.sku || product.name || `preview-${index}`}>
                           <td className="px-4 py-2 text-sm text-gray-900">{product.name}</td>
                           <td className="px-4 py-2 text-sm text-gray-900">${product.price}</td>
                           <td className="px-4 py-2 text-sm text-gray-900">{product.category}</td>

@@ -16,12 +16,13 @@ import { AuthModalProvider } from './contexts/AuthModalContext';
 import { MonitoringProvider } from './contexts/MonitoringContext';
 import { Layout } from './components/Layout/Layout';
 import { DatabaseErrorOverlay } from './components/Common/DatabaseErrorOverlay';
-import { ErrorBoundary } from './components/Common/ErrorBoundary';
+import { ErrorBoundary, DevErrorDisplay } from './components/Common/ErrorBoundary';
 import { ScrollToTop } from './components/Common/ScrollToTop';
 import { LoadingSpinner } from './components/Common/LoadingSpinner';
 import { PerformanceOptimizer } from './components/Performance/LCPOptimizer';
 import { GlobalMediaErrorHandler } from './components/Common/MediaErrorHandler';
 import { SkipLink } from './utils/accessibilityEnhancements';
+import { initXrayWrapperFixes } from './utils/xrayWrapperFix';
 
 // Lazy-loaded pages for code splitting
 const HomePage = React.lazy(() => import('./pages/HomePage.tsx'));
@@ -40,9 +41,7 @@ const CategoriesPage = React.lazy(() => import('./pages/CategoriesPage.tsx'));
 const CollectionsPage = React.lazy(() => import('./pages/CollectionsPage.tsx'));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage.tsx'));
 const AuthPage = React.lazy(() => import('./pages/AuthPage.tsx'));
-const HealthPage = React.lazy(() => import('./pages/HealthPage.tsx'));
-const TestPage = React.lazy(() => import('./pages/TestPage.tsx'));
-const DirectLoginTest = React.lazy(() => import('./pages/DirectLoginTest.tsx'));
+
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage.tsx'));
 
 // Loading fallback component
@@ -78,37 +77,48 @@ function App() {
     };
   }, []);
 
-  // Initialize accessibility features
+  // Initialize critical fixes immediately
   useEffect(() => {
-    // This will add skip links and other accessibility features
-    const initializeAccessibility = async () => {
-      const { initializeAccessibility } = await import('./utils/accessibilityEnhancements');
-      initializeAccessibility();
-    };
-    
-    initializeAccessibility();
+    initXrayWrapperFixes();
   }, []);
 
-  // Initialize monitoring
+  // Initialize non-critical features after a delay to not block rendering
   useEffect(() => {
-    const initializeMonitoring = async () => {
-      const { initMonitoring } = await import('./utils/monitoring');
-      
-      // Initialize monitoring with configuration
-      initMonitoring({
-        sentry: {
-          dsn: import.meta.env.VITE_SENTRY_DSN || '',
-          environment: import.meta.env.MODE || 'development',
-          release: import.meta.env.VITE_APP_VERSION || '1.0.0',
-          tracesSampleRate: import.meta.env.MODE === 'development' ? 1.0 : 0.1
-        },
-        logRocket: {
-          appId: import.meta.env.VITE_LOGROCKET_APP_ID || ''
+    const initializeNonCriticalFeatures = async () => {
+      // Delay to ensure UI is rendered first
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      try {
+        // Initialize accessibility features
+        const { initializeAccessibility } = await import('./utils/accessibilityEnhancements');
+        initializeAccessibility();
+      } catch (error) {
+        console.warn('Failed to initialize accessibility features:', error);
+      }
+
+      try {
+        // Initialize monitoring only in production
+        if (import.meta.env.PROD) {
+          const { initMonitoring } = await import('./utils/monitoring');
+
+          initMonitoring({
+            sentry: {
+              dsn: import.meta.env.VITE_SENTRY_DSN || '',
+              environment: import.meta.env.MODE || 'development',
+              release: import.meta.env.VITE_APP_VERSION || '1.0.0',
+              tracesSampleRate: 0.1 // Reduced for production
+            },
+            logRocket: {
+              appId: import.meta.env.VITE_LOGROCKET_APP_ID || ''
+            }
+          });
         }
-      });
+      } catch (error) {
+        console.warn('Failed to initialize monitoring:', error);
+      }
     };
-    
-    initializeMonitoring();
+
+    initializeNonCriticalFeatures();
   }, []);
 
   return (
@@ -118,71 +128,75 @@ function App() {
         preloadResources={[]}
         criticalImages={[]}
       >
+        {/* Core providers - load immediately */}
         <ErrorProvider>
           <ThemeProvider>
-            <AuthProvider>
-              <NotificationProvider>
-                <AuthModalProvider>
-                  <ProductProvider>
-                    <CollectionProvider>
-                      <RecommendationsProvider>
+            <MonitoringProvider>
+              <AuthProvider>
+                <NotificationProvider>
+                  <AuthModalProvider>
+                    {/* Data providers - load after auth */}
+                    <ProductProvider>
+                      <CollectionProvider>
+                        {/* User-specific providers - load on demand */}
                         <CartProvider>
-                        <WishlistProvider>
-                          <CompareProvider>
-                            <OrderProvider>
-                              <AddressProvider>
-                                <MonitoringProvider>
-                                  <Router>
-                                    <GlobalMediaErrorHandler />
-                                    <ScrollToTop />
-                                    <SkipLink href="#main-content">Skip to main content</SkipLink>
-                                    <Layout>
-                                      <main id="main-content" className="focus:outline-none">
-                                        <Suspense fallback={<PageLoadingFallback />}>
-                                          <Routes>
-                                            <Route path="/" element={<HomePage />} />
-                                            <Route path="/products" element={<ProductsPage />} />
-                                            <Route path="/products/:id" element={<ProductDetailPage />} />
-                                            <Route path="/search" element={<SearchPage />} />
-                                            <Route path="/compare" element={<ComparePage />} />
-                                            <Route path="/dashboard" element={<DashboardPage />} />
-                                            <Route path="/profile" element={<ProfilePage />} />
-                                            <Route path="/wishlist" element={<WishlistPage />} />
-                                            <Route path="/orders" element={<OrdersPage />} />
-                                            <Route path="/checkout" element={<CheckoutPage />} />
-                                            <Route path="/settings" element={<SettingsPage />} />
-                                            <Route path="/new-arrivals" element={<NewArrivalsPage />} />
-                                            <Route path="/deals" element={<DealsPage />} />
-                                            <Route path="/categories" element={<CategoriesPage />} />
-                                            <Route path="/categories/:slug" element={<ProductsPage />} />
-                                            <Route path="/collections" element={<CollectionsPage />} />
-                                            <Route path="/collections/:slug" element={<ProductsPage />} />
-                                            <Route path="/auth" element={<AuthPage />} />
-                                            <Route path="/health" element={<HealthPage />} />
-                                            <Route path="/test" element={<TestPage />} />
-                                            <Route path="/direct-login-test" element={<DirectLoginTest />} />
-                                            <Route path="*" element={<NotFoundPage />} />
-                                          </Routes>
-                                        </Suspense>
-                                      </main>
-                                    </Layout>
-                                    <DatabaseErrorOverlay />
-                                  </Router>
-                                </MonitoringProvider>
-                              </AddressProvider>
-                            </OrderProvider>
-                          </CompareProvider>
-                        </WishlistProvider>
-                      </CartProvider>
-                    </RecommendationsProvider>
-                  </CollectionProvider>
-                </ProductProvider>
-                </AuthModalProvider>
-              </NotificationProvider>
-            </AuthProvider>
+                          <WishlistProvider>
+                            <CompareProvider>
+                              <OrderProvider>
+                                <AddressProvider>
+                                  <RecommendationsProvider>
+                                    <Router>
+                                      <GlobalMediaErrorHandler />
+                                      <ScrollToTop />
+                                      <SkipLink href="#main-content">Skip to main content</SkipLink>
+                                      <Layout>
+                                        <main id="main-content" className="focus:outline-none">
+                                          <Suspense fallback={<PageLoadingFallback />}>
+                                            <Routes>
+                                              <Route path="/" element={<HomePage />} />
+                                              <Route path="/products" element={<ProductsPage />} />
+                                              <Route path="/products/:id" element={<ProductDetailPage />} />
+                                              <Route path="/search" element={<SearchPage />} />
+                                              <Route path="/compare" element={<ComparePage />} />
+                                              <Route path="/dashboard" element={<DashboardPage />} />
+                                              <Route path="/profile" element={<ProfilePage />} />
+                                              <Route path="/wishlist" element={<WishlistPage />} />
+                                              <Route path="/orders" element={<OrdersPage />} />
+                                              <Route path="/checkout" element={<CheckoutPage />} />
+                                              <Route path="/settings" element={<SettingsPage />} />
+                                              <Route path="/new-arrivals" element={<NewArrivalsPage />} />
+                                              <Route path="/deals" element={<DealsPage />} />
+                                              <Route path="/categories" element={<CategoriesPage />} />
+                                              <Route path="/categories/:slug" element={<ProductsPage />} />
+                                              <Route path="/collections" element={<CollectionsPage />} />
+                                              <Route path="/collections/:slug" element={<ProductsPage />} />
+                                              <Route path="/auth" element={<AuthPage />} />
+
+                                              <Route path="*" element={<NotFoundPage />} />
+                                            </Routes>
+                                          </Suspense>
+                                        </main>
+                                      </Layout>
+                                      <DatabaseErrorOverlay />
+                                    </Router>
+                                  </RecommendationsProvider>
+                                </AddressProvider>
+                              </OrderProvider>
+                            </CompareProvider>
+                          </WishlistProvider>
+                        </CartProvider>
+                      </CollectionProvider>
+                    </ProductProvider>
+                  </AuthModalProvider>
+                </NotificationProvider>
+              </AuthProvider>
+            </MonitoringProvider>
           </ThemeProvider>
         </ErrorProvider>
       </PerformanceOptimizer>
+
+      {/* Development-only error display */}
+      <DevErrorDisplay />
     </ErrorBoundary>
   );
 }

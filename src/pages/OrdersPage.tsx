@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Package, Truck, CheckCircle, Clock, ChevronDown, Edit } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Order } from '../types';
+// import { Order } from '../types'; // Unused import
 import { OrderTracking } from '../components/Order/OrderTracking';
 import { useOrders } from '../contexts/OrderContext';
 import { LoadingSpinner } from '../components/Common/LoadingSpinner';

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Collection } from '../types';
 import { useNotification } from './NotificationContext';
+import { supabase } from '../lib/supabase';
 
 interface CollectionContextType {
   collections: Collection[];
@@ -157,27 +158,76 @@ export const CollectionProvider: React.FC<CollectionProviderProps> = ({ children
   const [error, setError] = useState<string | null>(null);
   const { showNotification } = useNotification();
 
+  // Fetch collections from database
+  const fetchCollections = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // If direct login is enabled, use mock data instead of trying to connect to database
+      const directLoginEnabled = import.meta.env.VITE_DIRECT_LOGIN_ENABLED === 'true';
+      if (directLoginEnabled) {
+        console.log('🔧 Direct login mode: Using mock collections');
+        setCollections(mockCollections);
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('collections')
+        .select(`
+          *,
+          collection_products(
+            product_id,
+            products(id, name, price, images)
+          )
+        `)
+        .order('sort_order', { ascending: true });
+
+      if (error) throw error;
+
+      // Transform database data to match Collection interface
+      const transformedCollections: Collection[] = (data || []).map(collection => ({
+        id: collection.id,
+        name: collection.name,
+        slug: collection.slug,
+        description: collection.description,
+        shortDescription: collection.short_description,
+        image: collection.image_url || '',
+        bannerImage: collection.banner_image_url,
+        type: collection.type,
+        status: collection.status,
+        price: collection.price,
+        originalPrice: collection.original_price,
+        discount: collection.discount_percentage,
+        productIds: collection.collection_products?.map((cp: any) => cp.product_id) || [],
+        productCount: collection.collection_products?.length || 0,
+        featured: collection.featured,
+        isExclusive: collection.is_exclusive,
+        launchDate: collection.launch_date ? new Date(collection.launch_date) : undefined,
+        endDate: collection.end_date ? new Date(collection.end_date) : undefined,
+        sortOrder: collection.sort_order,
+        tags: collection.tags || [],
+        metaTitle: collection.meta_title,
+        metaDescription: collection.meta_description,
+        createdAt: new Date(collection.created_at),
+        updatedAt: new Date(collection.updated_at)
+      }));
+
+      setCollections(transformedCollections);
+    } catch (err) {
+      setError('Failed to load collections');
+      console.error('Error loading collections:', err);
+      // Fallback to mock data if database fails
+      setCollections(mockCollections);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Initialize collections
   useEffect(() => {
-    const initializeCollections = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // In a real app, this would be an API call
-        setCollections(mockCollections);
-      } catch (err) {
-        setError('Failed to load collections');
-        console.error('Error loading collections:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initializeCollections();
+    fetchCollections();
   }, []);
 
   // Computed values
@@ -196,27 +246,92 @@ export const CollectionProvider: React.FC<CollectionProviderProps> = ({ children
   // CRUD operations
   const addCollection = async (collectionData: Omit<Collection, 'id' | 'productCount' | 'createdAt' | 'updatedAt'>): Promise<Collection> => {
     try {
-      const newCollection: Collection = {
-        ...collectionData,
-        id: Date.now().toString(),
-        productCount: collectionData.productIds.length,
-        createdAt: new Date(),
-        updatedAt: new Date()
+      // Transform Collection data to database format
+      const dbData = {
+        name: collectionData.name,
+        slug: collectionData.slug || collectionData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        description: collectionData.description,
+        short_description: collectionData.shortDescription,
+        image_url: collectionData.image,
+        banner_image_url: collectionData.bannerImage,
+        type: collectionData.type,
+        status: collectionData.status,
+        price: collectionData.price,
+        original_price: collectionData.originalPrice,
+        discount_percentage: collectionData.discount,
+        featured: collectionData.featured,
+        is_exclusive: collectionData.isExclusive,
+        launch_date: collectionData.launchDate?.toISOString(),
+        end_date: collectionData.endDate?.toISOString(),
+        sort_order: collectionData.sortOrder || 0,
+        tags: collectionData.tags,
+        meta_title: collectionData.metaTitle,
+        meta_description: collectionData.metaDescription
       };
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const { data, error } = await supabase
+        .from('collections')
+        .insert(dbData)
+        .select()
+        .single();
 
-      setCollections(prev => [...prev, newCollection]);
-      
+      if (error) throw error;
+
+      // Add products to collection if any
+      if (collectionData.productIds.length > 0) {
+        const collectionProducts = collectionData.productIds.map((productId, index) => ({
+          collection_id: data.id,
+          product_id: productId,
+          sort_order: index
+        }));
+
+        const { error: productsError } = await supabase
+          .from('collection_products')
+          .insert(collectionProducts);
+
+        if (productsError) throw productsError;
+      }
+
       showNotification({
         type: 'success',
         title: 'Collection Created',
-        message: `${newCollection.name} has been successfully created.`
+        message: `${data.name} has been successfully created.`
       });
 
+      // Refresh collections
+      await fetchCollections();
+
+      // Return the created collection
+      const newCollection: Collection = {
+        id: data.id,
+        name: data.name,
+        slug: data.slug,
+        description: data.description,
+        shortDescription: data.short_description,
+        image: data.image_url || '',
+        bannerImage: data.banner_image_url,
+        type: data.type,
+        status: data.status,
+        price: data.price,
+        originalPrice: data.original_price,
+        discount: data.discount_percentage,
+        productIds: collectionData.productIds,
+        productCount: collectionData.productIds.length,
+        featured: data.featured,
+        isExclusive: data.is_exclusive,
+        launchDate: data.launch_date ? new Date(data.launch_date) : undefined,
+        endDate: data.end_date ? new Date(data.end_date) : undefined,
+        sortOrder: data.sort_order,
+        tags: data.tags || [],
+        metaTitle: data.meta_title,
+        metaDescription: data.meta_description,
+        createdAt: new Date(data.created_at),
+        updatedAt: new Date(data.updated_at)
+      };
+
       return newCollection;
-    } catch (err) {
+    } catch (error) {
+      console.error('Error creating collection:', error);
       const errorMessage = 'Failed to create collection';
       setError(errorMessage);
       showNotification({
@@ -298,32 +413,7 @@ export const CollectionProvider: React.FC<CollectionProviderProps> = ({ children
   };
 
   const refreshCollections = async (): Promise<void> => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // In a real app, this would refetch from the API
-      setCollections([...mockCollections]);
-
-      showNotification({
-        type: 'success',
-        title: 'Collections Refreshed',
-        message: 'Collection data has been refreshed successfully.'
-      });
-    } catch (err) {
-      const errorMessage = 'Failed to refresh collections';
-      setError(errorMessage);
-      showNotification({
-        type: 'error',
-        title: 'Refresh Failed',
-        message: errorMessage
-      });
-    } finally {
-      setLoading(false);
-    }
+    await fetchCollections();
   };
 
   const value: CollectionContextType = {
