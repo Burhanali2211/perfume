@@ -21,9 +21,11 @@ const preloadImage = (src: string) => {
 // Convert to optimized image component with better loading strategy
 const OptimizedLogo = React.memo(() => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [logoSrc, setLogoSrc] = useState('');
   
   useEffect(() => {
     preloadImage(logo);
+    setLogoSrc(logo);
     setIsLoaded(true);
   }, []);
 
@@ -36,13 +38,12 @@ const OptimizedLogo = React.memo(() => {
   }
 
   return (
-    <img 
-      src={logo} 
+    <img
+      src={logoSrc}
       alt="S.Essences Logo" 
       width={40}
       height={40}
       loading="eager"
-      fetchPriority="high"
       decoding="async"
       className="object-contain w-10 h-10 transition-all duration-300 md:w-8 md:h-8"
     />

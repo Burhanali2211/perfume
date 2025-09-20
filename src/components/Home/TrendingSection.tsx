@@ -13,7 +13,7 @@ export const TrendingSection: React.FC = () => {
   const { products } = useProducts();
   const { isMobile } = useMobileDetection();
 
-  const trendingProducts = products.filter(p => p.tags.includes('trending')).slice(0, 6);
+  const trendingProducts = products.filter(p => p.tags && Array.isArray(p.tags) && p.tags.includes('trending')).slice(0, 6);
 
   return (
     <section className="py-8 sm:py-12 md:py-16 bg-gradient-to-br from-blue-600 via-purple-700 to-indigo-800 text-white">

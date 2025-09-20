@@ -149,14 +149,14 @@ export const MobileProductCard: React.FC<MobileProductCardProps> = ({
           >
             <img
               key={currentImageIndex}
-              src={product.images[currentImageIndex] || product.images[0]}
+              src={(product.images && product.images.length > 0 ? product.images[currentImageIndex] || product.images[0] : '') || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2Y5ZmFmYiIvPgogIDx0ZXh0IHg9IjIwMCIgeT0iMjAwIiBmb250LXNpemU9IjE2IiBmaWxsPSIjNjM3MzgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+SW1hZ2UgTm90IEZvdW5kPC90ZXh0Pgo8L3N2Zz4='}
               alt={product.name}
               className="w-full h-full object-cover transition-transform duration-300"
               loading="lazy"
             />
             
             {/* Image indicators for multiple images */}
-            {product.images.length > 1 && (
+            {product.images && product.images.length > 1 && (
               <div className="absolute bottom-1.5 left-1/2 transform -translate-x-1/2 flex space-x-1">
                 {product.images.map((_, index) => (
                   <button

@@ -140,9 +140,9 @@ export const RecentlyViewedCompact: React.FC<{
               className="group flex items-center space-x-3 p-3 rounded-lg hover:bg-neutral-50 transition-colors"
             >
               <img
-                src={product.images[0]}
+                src={(product.images && product.images.length > 0 ? product.images[0] : '') || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2Y5ZmFmYiIvPgogIDx0ZXh0IHg9IjIwMCIgeT0iMjAwIiBmb250LXNpemU9IjE2IiBmaWxsPSIjNjM3MzgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+SW1hZ2UgTm90IEZvdW5kPC90ZXh0Pgo8L3N2Zz4='}
                 alt={product.name}
-                className="w-12 h-12 object-cover rounded-lg"
+                className="w-10 h-10 object-cover rounded-lg"
               />
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-neutral-900 text-sm truncate group-hover:text-primary-600 transition-colors">

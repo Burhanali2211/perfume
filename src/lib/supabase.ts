@@ -1228,6 +1228,7 @@ export const getProductsBasic = async (filters?: {
         featured,
         rating,
         review_count,
+        tags,
         categories!inner(name, slug)
       `)
       .eq('active', true);
@@ -1277,7 +1278,8 @@ export const getProductsMinimal = async (limit?: number) => {
         name,
         price,
         image_url,
-        slug
+        slug,
+        tags
       `)
       .eq('active', true);
 

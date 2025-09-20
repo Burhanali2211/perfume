@@ -86,7 +86,7 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose })
                       onClick={onClose}
                       className="flex items-center space-x-4 p-4 rounded-xl transition-all duration-200 hover:bg-neutral-50 hover:shadow-md luxury-hover-lift"
                     >
-                      <img src={product.images[0]} alt={product.name} className="w-14 h-14 object-cover rounded-lg shadow-sm" />
+                      <img src={(product.images && product.images.length > 0 ? product.images[0] : '') || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2Y5ZmFmYiIvPgogIDx0ZXh0IHg9IjIwMCIgeT0iMjAwIiBmb250LXNpemU9IjE2IiBmaWxsPSIjNjM3MzgwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+SW1hZ2UgTm90IEZvdW5kPC90ZXh0Pgo8L3N2Zz4='} alt={product.name} className="w-14 h-14 object-cover rounded-lg shadow-sm" />
                       <div className="flex-1">
                         <p className="font-semibold text-neutral-900">{product.name}</p>
                         <p className="text-lg font-bold text-neutral-700">₹{product.price.toLocaleString('en-IN')}</p>
