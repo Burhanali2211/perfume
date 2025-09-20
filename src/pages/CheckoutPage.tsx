@@ -1,25 +1,36 @@
 import React, { useState } from 'react';
-import { CreditCard, MapPin, Package, ArrowLeft, CheckCircle } from 'lucide-react';
+import { CreditCard, MapPin, Package, ArrowLeft, Lock, CheckCircle } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
-// Removed OrderContext import
+import { useOrders } from '../contexts/OrderContext';
 import { createGuestOrder } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import { useNotification } from '../contexts/NotificationContext';
 import { Link } from 'react-router-dom';
-// Removed Trust components import
-// Removed Mobile components import
-// Removed Mobile checkout forms import
-// Removed mobile detection hook import
+import {
+  SecurityGuarantee,
+  PaymentBadges,
+  CheckoutTrustSignals,
+  TrustBadges
+} from '../components/Trust';
+import {
+  MobileCheckoutLayout,
+  MobilePaymentSelector,
+  MobileStepNavigation
+} from '../components/Mobile/MobileCheckout';
+import {
+  MobileShippingForm,
+  MobilePaymentForm,
+  MobileOrderSummary
+} from '../components/Mobile/MobileCheckoutForms';
+import { useMobileDetection } from '../hooks/useMobileGestures';
 
 export const CheckoutPage: React.FC = () => {
   const { items, total, clearCart } = useCart();
   const { user } = useAuth();
-  // Simplified order creation
-  const createOrder = async () => ({ id: 'test-order-id' });
+  const { createOrder } = useOrders();
   const { showNotification } = useNotification();
-  // Simplified mobile detection
-  const isMobile = false;
+  const { isMobile } = useMobileDetection();
   const [step, setStep] = useState(1);
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -546,7 +557,11 @@ export const CheckoutPage: React.FC = () => {
                   Payment Information
                 </h2>
 
-                {/* Payment Trust Badges removed */}
+                {/* Payment Trust Badges */}
+                <div className="mb-6">
+                  <PaymentBadges className="mb-4" />
+                  <TrustBadges variant="compact" showLabels={false} className="justify-center" />
+                </div>
 
                 <div className="space-y-6">
                   <div>
@@ -706,7 +721,8 @@ export const CheckoutPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Checkout Trust Signals removed */}
+              {/* Checkout Trust Signals */}
+              <CheckoutTrustSignals />
             </div>
           </div>
         </div>

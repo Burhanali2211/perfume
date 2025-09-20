@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Eye, ArrowRight, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
-// Removed RecommendationsContext import
+import { useRecommendations } from '../../contexts/RecommendationsContext';
 import { ProductRecommendations } from '../Product/ProductRecommendations';
 
 interface RecentlyViewedProps {
@@ -18,10 +18,11 @@ export const RecentlyViewed: React.FC<RecentlyViewedProps> = ({
   className = '',
   layout = 'horizontal'
 }) => {
-  // Simplified recommendations functionality
-  const recommendations: any[] = [];
-  const clearRecentlyViewed = () => {};
-  const getRecentlyViewed = (max: number) => [];
+  const { 
+    recommendations, 
+    clearRecentlyViewed, 
+    getRecentlyViewed 
+  } = useRecommendations();
 
   const recentlyViewedProducts = getRecentlyViewed(maxItems);
 
@@ -90,9 +91,7 @@ export const RecentlyViewedCompact: React.FC<{
   maxItems?: number;
   className?: string;
 }> = ({ maxItems = 3, className = '' }) => {
-  // Simplified recommendations functionality
-  const getRecentlyViewed = (max: number) => [];
-  const removeFromRecentlyViewed = () => {};
+  const { getRecentlyViewed, removeFromRecentlyViewed } = useRecommendations();
   const recentlyViewedProducts = getRecentlyViewed(maxItems);
 
   if (recentlyViewedProducts.length === 0) {
@@ -186,9 +185,7 @@ export const RecentlyViewedCompact: React.FC<{
 export const RecentlyViewedWidget: React.FC<{
   className?: string;
 }> = ({ className = '' }) => {
-  // Simplified recommendations functionality
-  const getRecentlyViewed = (max: number) => [];
-  const getRecommendationAnalytics = () => ({ totalViewed: 0, categoriesViewed: 0, averageViewTime: 0 });
+  const { getRecentlyViewed, getRecommendationAnalytics } = useRecommendations();
   const recentlyViewedProducts = getRecentlyViewed(5);
   const analytics = getRecommendationAnalytics();
 

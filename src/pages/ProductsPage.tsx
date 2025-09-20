@@ -5,13 +5,13 @@ import { Grid, List, X, AlertCircle, RefreshCw } from 'lucide-react';
 import { ProductCard } from '../components/Product/ProductCard';
 import { ProductListCard } from '../components/Product/ProductListCard';
 import { AttrFilters, AttrFilterState } from '../components/Product/AttrFilters';
-// Removed Mobile component import
+import { MobileProductGrid } from '../components/Mobile/MobileProductCarousel';
 import { useProducts } from '../contexts/ProductContext';
-// Removed ErrorContext import
+import { useError } from '../contexts/ErrorContext';
 import { LoadingSpinner, ProgressiveLoading } from '../components/Common/LoadingSpinner';
 import { ProductGridError, NetworkStatus } from '../components/Common/ErrorFallback';
-// Removed useNetworkStatus hook import
-// Removed Trust components import
+import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { ProductPageTrustSignals, RecentPurchaseNotification } from '../components/Trust';
 
 // Legacy FiltersSidebar component removed - now using enhanced ProductFilters component
 
@@ -19,9 +19,7 @@ export const ProductsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { slug } = useParams<{ slug?: string }>();
   const { products, categories, loading, basicLoading, detailsLoading, fetchProducts } = useProducts();
-  // Simplified error handling
-  const error = null;
-  const clearError = () => {};
+  const { error, clearError } = useError();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
@@ -384,6 +382,7 @@ export const ProductsPage: React.FC = () => {
     
     // Also clear URL parameters
     setSearchParams({});
+    setSearchQuery('');
   };
 
   return (
@@ -563,7 +562,7 @@ export const ProductsPage: React.FC = () => {
                   <MobileProductGrid
                     products={filteredProducts}
                     columns={viewMode === 'list' ? 1 : 2}
-                    variant="default"
+                    variant="luxury"
                   />
                 </div>
 
@@ -578,7 +577,7 @@ export const ProductsPage: React.FC = () => {
                     {filteredProducts && filteredProducts.length > 0 ? (
                       filteredProducts.map((product, index) => (
                         <motion.div
-                          key={`product-${product.id}`}
+                          key={product.id}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{

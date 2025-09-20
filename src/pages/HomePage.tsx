@@ -2,15 +2,13 @@ import React from 'react';
 import { Hero } from '../components/Home/Hero';
 import { CategorySection } from '../components/Home/CategorySection';
 import { FeaturedProducts } from '../components/Home/FeaturedProducts';
-import { NewArrivalsSection } from '../components/Home/NewArrivalsSection';
-import { SpecialOffersSection } from '../components/Home/SpecialOffersSection';
-import { FeaturedCollectionsSection } from '../components/Home/FeaturedCollectionsSection';
 import { TrendingSection } from '../components/Home/TrendingSection';
 import { Testimonials } from '../components/Home/Testimonials';
 import { RecentlyViewed } from '../components/Home/RecentlyViewed';
 import { useProducts } from '../contexts/ProductContext';
+import { LoadingSpinner } from '../components/Common/LoadingSpinner';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ShoppingBag, Star, ShieldCheck, Headphones, Zap, Award, Users, CheckCircle, Globe, Sparkles, Crown } from 'lucide-react';
+import { ArrowRight, ShoppingBag, Star, Truck, ShieldCheck, Clock, Headphones, Zap, Award, Users, Heart, CheckCircle, Gift, Globe, Sparkles, Crown } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 // Import banner images
@@ -160,8 +158,71 @@ const PromotionalBanners: React.FC = () => {
   );
 };
 
-// Special Offers Section with consistent blue theme - currently unused
-// (Commented out to avoid parsing issues)
+// Special Offers Section with consistent blue theme
+const SpecialOffers: React.FC = () => {
+  return (
+    <section className="py-8 sm:py-12 md:py-16 lg:py-20 bg-gradient-to-r from-blue-600 to-purple-700 text-white relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='m0 40l40-40h-40v40zm40 0v-40h-40l40 40z'/%3E%3C/g%3E%3C/svg%3E")`,
+        }}></div>
+      </div>
+      
+      <div className="container-luxury relative px-4 sm:px-6 lg:px-8">
+        <div className="text-center px-4 sm:px-6">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="flex items-center justify-center space-x-2 mb-4 sm:mb-6"
+          >
+            <Gift className="h-5 w-5 sm:h-6 sm:w-6 text-blue-200" />
+            <span className="text-sm sm:text-base lg:text-lg font-semibold text-blue-100">Special Offers</span>
+          </motion.div>
+          
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 leading-tight"
+          >
+            Exclusive Member Benefits
+          </motion.h2>
+          
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-sm sm:text-base lg:text-lg opacity-90 mb-4 sm:mb-6 max-w-2xl mx-auto leading-relaxed"
+          >
+            Join our community and unlock premium features, early access, and exclusive discounts
+          </motion.p>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center"
+          >
+            <Link to="/products">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="bg-white text-purple-600 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full font-semibold text-sm sm:text-base shadow-lg hover:shadow-xl transition-all duration-300 flex items-center space-x-2 w-full sm:w-auto justify-center active:bg-gray-100 touch-manipulation"
+              >
+                <span>Shop Collection</span>
+                <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
+              </motion.button>
+            </Link>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+};
 
 // Brand Story Section with enhanced mobile responsiveness
 const BrandStory: React.FC = () => {
@@ -322,62 +383,50 @@ const EnhancedValueProposition: React.FC = () => {
 };
 
 export const HomePage: React.FC = () => {
-  const { categories, loading, isUsingMockData } = useProducts();
+  const { categories, loading } = useProducts();
 
-  const retryAction = () => {
-    window.location.reload();
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   return (
-    <LoadingOptimizer
-      isLoading={loading}
-      error={isUsingMockData ? 'Unable to connect to database. Please check your connection.' : null}
-      retryAction={retryAction}
-      timeout={12000} // 12 second timeout for homepage
-    >
-      <div className="space-y-0">
-        {/* Luxury Perfume Hero Section */}
-        <Hero />
+    <div className="space-y-0">
+      {/* Luxury Perfume Hero Section */}
+      <Hero />
+      
+      {/* Categories Section */}
+      {categories && categories.length > 0 && (
+        <CategorySection categories={categories} />
+      )}
 
-        {/* Categories Section */}
-        {categories && categories.length > 0 && (
-          <CategorySection categories={categories} />
-        )}
+      {/* Promotional Banners */}
+      <PromotionalBanners />
 
-        {/* Promotional Banners */}
-        <PromotionalBanners />
+      {/* Featured Products */}
+      <FeaturedProducts />
+      
+      {/* Brand Story */}
+      <BrandStory />
 
-        {/* Featured Products */}
-        <FeaturedProducts />
+      {/* Trending Section */}
+      <TrendingSection />
+      
+      {/* Recently Viewed (if user has viewed products) */}
+      <RecentlyViewed maxItems={6} className="bg-gray-50" />
 
-        {/* New Arrivals Section */}
-        <NewArrivalsSection />
+      {/* Enhanced Value Proposition */}
+      <EnhancedValueProposition />
+      
+      {/* Testimonials */}
+      <Testimonials />
 
-        {/* Special Offers Section */}
-        <SpecialOffersSection />
-
-        {/* Featured Collections Section */}
-        <FeaturedCollectionsSection />
-
-        {/* Brand Story */}
-        <BrandStory />
-
-        {/* Trending Section */}
-        <TrendingSection />
-
-        {/* Recently Viewed (if user has viewed products) */}
-        <RecentlyViewed maxItems={6} className="bg-gray-50" />
-
-        {/* Enhanced Value Proposition */}
-        <EnhancedValueProposition />
-
-        {/* Testimonials */}
-        <Testimonials />
-
-        {/* Newsletter */}
-        {/* <SimpleNewsletter /> */}
-      </div>
-    </LoadingOptimizer>
+      {/* Newsletter */}
+      {/* <SimpleNewsletter /> */}
+    </div>
   );
 };
 

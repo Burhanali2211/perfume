@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { User, AuthContextType } from '../types';
 import { supabase, getProfileForUser, createUserProfile, updateUserProfile } from '../lib/supabase';
 import { AuthChangeEvent, Session } from '@supabase/supabase-js';
+import { useError } from './ErrorContext';
+
 import { MobileAuthView } from '../components/Auth/MobileAuthView';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,8 +27,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLocked, setIsLocked] = useState(false);
   const [isMobileAuthOpen, setIsMobileAuthOpen] = useState(false);
   const [mobileAuthMode, setMobileAuthMode] = useState<'login' | 'signup' | 'profile'>('login');
-  // Simplified error handling
-  const setError = (error: string) => console.error(error);
+  const { setError } = useError();
   
 
 

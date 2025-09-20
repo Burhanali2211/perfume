@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { X, Star, Heart, ShoppingCart, Minus, Plus, Share2, Shield, Truck, RotateCcw } from 'lucide-react';
 import { Product } from '../../types';
 import { useCart } from '../../contexts/CartContext';
-// Removed auth hooks imports
+import { useAddToCartWithAuth } from '../../hooks/useAddToCartWithAuth';
+import { useAddToWishlistWithAuth } from '../../hooks/useAddToWishlistWithAuth';
 
 interface ProductDetailsProps {
   product: Product;
@@ -12,9 +13,8 @@ interface ProductDetailsProps {
 }
 
 export const ProductDetails: React.FC<ProductDetailsProps> = ({ product, isOpen, onClose }) => {
-  // Simplified auth handlers
-  const handleAddToCart = () => {};
-  const handleAddToWishlist = () => {};
+  const { handleAddToCart } = useAddToCartWithAuth();
+  const { handleAddToWishlist } = useAddToWishlistWithAuth();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
 

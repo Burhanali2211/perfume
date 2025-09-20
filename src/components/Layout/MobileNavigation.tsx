@@ -8,7 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 import { useWishlist } from '../../contexts/WishlistContext';
 
-// Removed mobile gestures hook import
+import { useSwipeGesture } from '../../hooks/useMobileGestures';
 
 interface MobileNavigationProps {
   isOpen: boolean;
@@ -68,8 +68,10 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
     { name: 'About', href: '/about', icon: <User className="h-5 w-5" /> },
   ];
 
-  // Simplified swipe gesture support
-  const bindGestures = {};
+  // Handle swipe to close
+  const { bindGestures } = useSwipeGesture({
+    onSwipeLeft: () => onClose(),
+  });
 
   // Close dropdown when route changes
   useEffect(() => {

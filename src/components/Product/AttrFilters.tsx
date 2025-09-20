@@ -199,8 +199,8 @@ export const AttrFilters: React.FC<AttrFiltersProps> = ({
       className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
         isActive
           ? premium
-            ? 'bg-amber-50 text-amber-700 border border-amber-300 shadow-sm'
-            : 'bg-neutral-100 text-neutral-700 border border-neutral-300 shadow-sm'
+            ? 'bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 border border-amber-300 shadow-sm'
+            : 'bg-gradient-to-r from-neutral-100 to-neutral-200 text-neutral-700 border border-neutral-300 shadow-sm'
           : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50 hover:border-neutral-300'
       }`}
     >
@@ -330,8 +330,8 @@ export const AttrFilters: React.FC<AttrFiltersProps> = ({
                   All Categories
                 </span>
               </label>
-              {categories.map((category, index) => (
-                <label key={`category-${category.id}-${index}`} className="flex items-center space-x-3 cursor-pointer group">
+              {categories.map((category) => (
+                <label key={category.id} className="flex items-center space-x-3 cursor-pointer group">
                   <input
                     type="radio"
                     name="category"
@@ -390,9 +390,9 @@ export const AttrFilters: React.FC<AttrFiltersProps> = ({
                   { range: [5000, 10000], label: '₹5K - ₹10K', desc: 'Luxury' },
                   { range: [10000, 15000], label: '₹10K - ₹15K', desc: 'Elite' },
                   { range: [15000, 25000], label: '₹15K+', desc: 'Royal' }
-                ].map(({ range, label, desc }, index) => (
+                ].map(({ range, label, desc }) => (
                   <button
-                    key={`price-range-${index}`}
+                    key={label}
                     onClick={() => updateFilter('priceRange', range)}
                     className="px-3 py-3 text-xs border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-all text-left"
                   >
@@ -412,8 +412,8 @@ export const AttrFilters: React.FC<AttrFiltersProps> = ({
             premium
           >
             <div className="space-y-3 max-h-40 overflow-y-auto pr-2">
-              {longevityOptions.map((option, index) => (
-                <label key={`longevity-${option.value}-${index}`} className="flex items-center space-x-3 cursor-pointer group">
+              {longevityOptions.map((option) => (
+                <label key={option.value} className="flex items-center space-x-3 cursor-pointer group">
                   <input
                     type="checkbox"
                     checked={filters.longevity.includes(option.value)}
@@ -443,8 +443,8 @@ export const AttrFilters: React.FC<AttrFiltersProps> = ({
             premium
           >
             <div className="space-y-3 max-h-40 overflow-y-auto pr-2">
-              {sillageOptions.map((option, index) => (
-                <label key={`sillage-${option.value}-${index}`} className="flex items-center space-x-3 cursor-pointer group">
+              {sillageOptions.map((option) => (
+                <label key={option.value} className="flex items-center space-x-3 cursor-pointer group">
                   <input
                     type="checkbox"
                     checked={filters.sillage.includes(option.value)}
@@ -474,8 +474,8 @@ export const AttrFilters: React.FC<AttrFiltersProps> = ({
             premium
           >
             <div className="space-y-3 max-h-40 overflow-y-auto pr-2">
-              {concentrationOptions.map((option, index) => (
-                <label key={`concentration-${option.value}-${index}`} className="flex items-center space-x-3 cursor-pointer group">
+              {concentrationOptions.map((option) => (
+                <label key={option.value} className="flex items-center space-x-3 cursor-pointer group">
                   <input
                     type="checkbox"
                     checked={filters.concentration.includes(option.value)}
@@ -508,8 +508,8 @@ export const AttrFilters: React.FC<AttrFiltersProps> = ({
             sectionKey="origins"
           >
             <div className="space-y-3 max-h-40 overflow-y-auto pr-2">
-              {originOptions.map((option, index) => (
-                <label key={`origin-${option.value}-${index}`} className="flex items-center space-x-3 cursor-pointer group">
+              {originOptions.map((option) => (
+                <label key={option.value} className="flex items-center space-x-3 cursor-pointer group">
                   <input
                     type="checkbox"
                     checked={filters.origins.includes(option.value)}
@@ -538,9 +538,9 @@ export const AttrFilters: React.FC<AttrFiltersProps> = ({
             sectionKey="fragranceFamily"
           >
             <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-2 pb-2">
-              {fragranceFamilyOptions.map((option, index) => (
+              {fragranceFamilyOptions.map((option) => (
                 <button
-                  key={`fragrance-family-${option.value}-${index}`}
+                  key={option.value}
                   onClick={() => {
                     if (filters.fragranceFamily.includes(option.value)) {
                       updateFilter('fragranceFamily', filters.fragranceFamily.filter(f => f !== option.value));

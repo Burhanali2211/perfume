@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Upload, X, Image as ImageIcon, Link, CheckCircle } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Link, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StorageService, UploadProgress } from '../../services/storageService';
 import { useNotification } from '../../contexts/NotificationContext';

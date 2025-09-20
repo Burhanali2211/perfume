@@ -41,31 +41,33 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm"
+          className="fixed inset-0 z-50 overflow-y-auto backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-title"
         >
-          <div
-            className="fixed inset-0"
-            onClick={onClose}
-            aria-hidden="true"
-          />
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div
+              className="fixed inset-0 bg-black bg-opacity-60"
+              onClick={onClose}
+              aria-hidden="true"
+            />
 
-          <div className={`relative bg-white rounded-2xl shadow-2xl w-full mx-4 border border-neutral-200 max-h-[90vh] overflow-y-auto ${sizeClasses[size]}`}>
-            <div className="flex items-center justify-between p-6 border-b border-neutral-200">
-              <h2 id="modal-title" className="text-xl font-semibold text-neutral-900 font-luxury">{title}</h2>
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-neutral-100 rounded-lg transition-colors duration-200"
-                aria-label="Close modal"
-              >
-                <X className="h-5 w-5 text-neutral-600" />
-              </button>
-            </div>
+            <div className={`relative bg-white rounded-2xl shadow-2xl w-full mx-4 border border-neutral-200 ${sizeClasses[size]}`}>
+              <div className="flex items-center justify-between p-6 border-b border-neutral-200">
+                <h2 id="modal-title" className="text-xl font-semibold text-neutral-900 font-luxury">{title}</h2>
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-neutral-100 rounded-lg transition-colors duration-200"
+                  aria-label="Close modal"
+                >
+                  <X className="h-5 w-5 text-neutral-600" />
+                </button>
+              </div>
 
-            <div className="p-6">
-              {children}
+              <div className="p-6">
+                {children}
+              </div>
             </div>
           </div>
         </div>

@@ -144,7 +144,7 @@ export class AdminErrorBoundary extends Component<Props, State> {
 
 // Hook version for functional components
 export const useErrorHandler = () => {
-  const handleError = (error: Error, errorInfo?: Record<string, unknown>) => {
+  const handleError = (error: Error, errorInfo?: any) => {
     console.error('Error caught by error handler:', error, errorInfo);
     
     // In production, send to error reporting service

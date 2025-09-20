@@ -4,13 +4,13 @@ import { ProductCard } from '../Product/ProductCard';
 import { ProductDetails } from '../Product/ProductDetails';
 import { useProducts } from '../../contexts/ProductContext';
 import { LoadingSpinner } from '../Common/LoadingSpinner';
-// Removed Mobile components and hooks imports
+import { MobileFeaturedCarousel } from '../Mobile/MobileProductCarousel';
+import { useMobileDetection } from '../../hooks/useMobileGestures';
 
 export const FeaturedProducts: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { featuredProducts, featuredLoading, fetchFeaturedProducts } = useProducts();
-  // Simplified mobile detection
-  const isMobile = false;
+  const { isMobile } = useMobileDetection();
 
   useEffect(() => {
     fetchFeaturedProducts(8);
@@ -40,7 +40,7 @@ export const FeaturedProducts: React.FC = () => {
             />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
-              {featuredProducts.map((product) => (
+              {featuredProducts.map((product, index) => (
                 <div
                   key={product.id}
                   className="touch-manipulation"

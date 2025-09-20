@@ -123,7 +123,7 @@ export const EnhancedSearch: React.FC<EnhancedSearchProps> = ({
       }));
 
     // Brand suggestions (extract from products)
-    const brands = [...new Set(products.map(p => (p as any).brand).filter(Boolean))];
+    const brands = [...new Set(products.map(p => p.brand).filter(Boolean))];
     const brandMatches = brands
       .filter(brand => brand && brand.toLowerCase().includes(searchTerm))
       .slice(0, 2)
@@ -244,9 +244,9 @@ export const EnhancedSearch: React.FC<EnhancedSearchProps> = ({
                   <div className="p-4 border-b border-neutral-100">
                     <h4 className="text-sm font-medium text-neutral-700 mb-3">Products</h4>
                     <div className="space-y-2">
-                      {suggestions.filter(s => s.type === 'product').map((suggestion, index) => (
+                      {suggestions.filter(s => s.type === 'product').map((suggestion) => (
                         <Link
-                          key={`product-suggestion-${suggestion.id}-${index}`}
+                          key={suggestion.id}
                           to={suggestion.url}
                           onClick={() => setIsOpen(false)}
                           className="flex items-center space-x-3 p-2 rounded-lg hover:bg-neutral-50 transition-colors"
@@ -282,9 +282,9 @@ export const EnhancedSearch: React.FC<EnhancedSearchProps> = ({
                   <div className="p-4">
                     <h4 className="text-sm font-medium text-neutral-700 mb-3">Categories & Brands</h4>
                     <div className="space-y-1">
-                      {suggestions.filter(s => s.type === 'category' || s.type === 'brand').map((suggestion, index) => (
+                      {suggestions.filter(s => s.type === 'category' || s.type === 'brand').map((suggestion) => (
                         <Link
-                          key={`category-brand-suggestion-${suggestion.id}-${index}`}
+                          key={suggestion.id}
                           to={suggestion.url}
                           onClick={() => setIsOpen(false)}
                           className="flex items-center justify-between p-2 rounded-lg hover:bg-neutral-50 transition-colors"
@@ -322,7 +322,7 @@ export const EnhancedSearch: React.FC<EnhancedSearchProps> = ({
                     <div className="space-y-1">
                       {recentSearches.map((search, index) => (
                         <button
-                          key={`recent-search-${index}`}
+                          key={index}
                           onClick={() => {
                             onChange(search);
                             handleSearch(search);
@@ -343,9 +343,9 @@ export const EnhancedSearch: React.FC<EnhancedSearchProps> = ({
                     Trending Searches
                   </h4>
                   <div className="flex flex-wrap gap-2">
-                    {trendingSearches.map((search, index) => (
+                    {trendingSearches.map((search) => (
                       <button
-                        key={`trending-search-${index}`}
+                        key={search}
                         onClick={() => {
                           onChange(search);
                           handleSearch(search);

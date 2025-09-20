@@ -21,7 +21,7 @@ export const SearchPage: React.FC = () => {
       const filtered = products.filter(product =>
         product.name.toLowerCase().includes(query.toLowerCase()) ||
         product.description.toLowerCase().includes(query.toLowerCase()) ||
-        (product.category && product.category.toLowerCase().includes(query.toLowerCase())) ||
+        product.category.toLowerCase().includes(query.toLowerCase()) ||
         (product.tags && product.tags.some(tag => tag.toLowerCase().includes(query.toLowerCase())))
       );
       setFilteredProducts(filtered);
@@ -137,7 +137,7 @@ export const SearchPage: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
-              <div key={`search-product-${product.id}`}>
+              <div key={product.id}>
                 <ProductCard
                   product={product}
                 />

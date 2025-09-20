@@ -2,15 +2,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Category } from '../../types';
 import { ArrowRight } from 'lucide-react';
-// Removed mobile detection hook import
+import { useMobileDetection } from '../../hooks/useMobileGestures';
 
 interface CategoryDisplayCardProps {
   category: Category;
 }
 
 export const CategoryDisplayCard: React.FC<CategoryDisplayCardProps> = ({ category }) => {
-  // Simplified mobile detection
-  const isMobile = false;
+  const { isMobile } = useMobileDetection();
 
   // Mobile-specific styling
   const cardClasses = isMobile 

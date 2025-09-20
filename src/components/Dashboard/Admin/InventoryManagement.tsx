@@ -208,7 +208,7 @@ export const InventoryManagement: React.FC = () => {
       key: 'actions',
       title: 'Actions',
       width: 100,
-      render: (value: unknown, record: InventoryItem) => (
+      render: (value: any, record: InventoryItem) => (
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -369,7 +369,7 @@ export const InventoryManagement: React.FC = () => {
             </label>
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as 'all' | 'in_stock' | 'low_stock' | 'out_of_stock')}
+              onChange={(e) => setFilterStatus(e.target.value as any)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="all">All Statuses</option>

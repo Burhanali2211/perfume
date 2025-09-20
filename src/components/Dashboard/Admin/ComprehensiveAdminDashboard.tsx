@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import {
   Database,
   Users,
@@ -25,7 +25,9 @@ import {
   ArrowUp,
   ArrowDown,
   Minus,
-  Bell
+  Bell,
+  Calendar,
+  FileText
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { LoadingSpinner } from '../../Common/LoadingSpinner';
@@ -33,7 +35,6 @@ import { ErrorFallback } from '../../Common/ErrorFallback';
 import { UniversalTableManager } from './UniversalTableManager';
 import { AdvancedAnalytics } from './AdvancedAnalytics';
 import { DatabaseSchemaViewer } from './DatabaseSchemaViewer';
-// Removed CRUDTestRunner import
 
 interface TableInfo {
   name: string;
@@ -91,7 +92,7 @@ export const ComprehensiveAdminDashboard: React.FC = () => {
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const [currentView, setCurrentView] = useState<'overview' | 'table' | 'analytics' | 'schema' | 'testing'>('overview');
+  const [currentView, setCurrentView] = useState<'overview' | 'table' | 'analytics' | 'schema'>('overview');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
@@ -522,10 +523,6 @@ export const ComprehensiveAdminDashboard: React.FC = () => {
     return <DatabaseSchemaViewer />;
   }
 
-  if (currentView === 'testing') {
-    return <div className="p-6"><h2 className="text-xl font-bold">CRUD Testing</h2><p>CRUD testing functionality will be available soon.</p></div>;
-  }
-
   if (loading) {
     return (
       <div className="p-8">
@@ -589,13 +586,6 @@ export const ComprehensiveAdminDashboard: React.FC = () => {
           >
             <GitBranch className="h-4 w-4 mr-2" />
             Schema
-          </button>
-          <button
-            onClick={() => setCurrentView('testing')}
-            className="flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-          >
-            <Activity className="h-4 w-4 mr-2" />
-            CRUD Tests
           </button>
           <button
             onClick={handleExportData}
@@ -786,7 +776,7 @@ export const ComprehensiveAdminDashboard: React.FC = () => {
             <div className="space-y-3">
               {/* Display real top products data */}
               {metrics && metrics.topProducts && metrics.topProducts.length > 0 ? (
-                metrics.topProducts.slice(0, 3).map((product: Record<string, unknown>, index: number) => (
+                metrics.topProducts.slice(0, 3).map((product: any, index: number) => (
                   <div key={index} className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">{product.name || `Product ${index + 1}`}</span>
                     <span className="text-sm font-semibold text-gray-900">
@@ -821,8 +811,8 @@ export const ComprehensiveAdminDashboard: React.FC = () => {
             <div className="space-y-3">
               {/* Display real recent orders data */}
               {metrics && metrics.recentOrders && metrics.recentOrders.length > 0 ? (
-                metrics.recentOrders.slice(0, 3).map((order: Record<string, unknown>, index: number) => (
-                  <div key={order.id || `order-${index}`} className="flex items-center justify-between">
+                metrics.recentOrders.slice(0, 3).map((order: any, index: number) => (
+                  <div key={index} className="flex items-center justify-between">
                     <div>
                       <span className="text-sm font-medium text-gray-900">
                         Order #{order.order_number || `ORD-${index + 1}`}
@@ -866,7 +856,7 @@ export const ComprehensiveAdminDashboard: React.FC = () => {
             <div className="space-y-3">
               {/* Display real low stock data */}
               {metrics && metrics.lowStockProducts && metrics.lowStockProducts.length > 0 ? (
-                metrics.lowStockProducts.slice(0, 3).map((product: Record<string, unknown>, index: number) => (
+                metrics.lowStockProducts.slice(0, 3).map((product: any, index: number) => (
                   <div key={index} className="flex items-center justify-between">
                     <div>
                       <span className="text-sm font-medium text-gray-900">

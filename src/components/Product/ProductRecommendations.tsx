@@ -16,7 +16,8 @@ import { useProducts } from '../../contexts/ProductContext';
 import { useCart } from '../../contexts/CartContext';
 import { useWishlist } from '../../contexts/WishlistContext';
 import { useNotification } from '../../contexts/NotificationContext';
-// Removed Mobile components and hooks imports
+import { MobileCompactCarousel } from '../Mobile/MobileProductCarousel';
+import { useMobileDetection } from '../../hooks/useMobileGestures';
 
 interface ProductRecommendationsProps {
   currentProduct?: Product;
@@ -48,8 +49,7 @@ export const ProductRecommendations: React.FC<ProductRecommendationsProps> = ({
   const { addItem: addToCart } = useCart();
   const { addItem: addToWishlist, isInWishlist } = useWishlist();
   const { showNotification } = useNotification();
-  // Simplified mobile detection
-  const isMobile = false;
+  const { isMobile } = useMobileDetection();
   const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 

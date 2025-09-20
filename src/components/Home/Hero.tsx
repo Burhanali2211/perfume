@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import heroBackground from '../../assets/images/homepage/hero-background.jpg';
 
 export const Hero: React.FC = () => {
-  const [, setIsLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Initialize after component loads
@@ -108,8 +108,8 @@ export const Hero: React.FC = () => {
             transition={{ duration: 1, delay: 0.9 }}
           >
             <Link to="/products" className="w-full sm:w-auto">
-              <motion.button
-                className="primary-cta w-full sm:w-auto px-4 sm:px-5 py-2 sm:py-2.5 md:py-3 bg-neutral-900 text-white font-semibold text-sm sm:text-base rounded-full shadow-lg hover:shadow-xl hover:bg-neutral-800 touch-manipulation"
+              <motion.button 
+                className="primary-cta w-full sm:w-auto px-4 sm:px-5 py-2 sm:py-2.5 md:py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold text-sm sm:text-base rounded-full shadow-lg hover:shadow-xl active:from-purple-700 active:to-purple-800 touch-manipulation"
                 style={{
                   fontFamily: 'Inter, sans-serif',
                   letterSpacing: '0.01em',

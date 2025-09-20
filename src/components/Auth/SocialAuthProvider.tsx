@@ -81,23 +81,10 @@ export const SocialAuthProvider: React.FC<SocialAuthProviderProps> = ({
 
   const handleSocialAuth = async (provider: SocialProvider['provider']) => {
     try {
-      // Safely get window location to avoid XrayWrapper issues
-      let redirectUrl: string;
-      try {
-        redirectUrl = `${window.location.origin}/auth/callback`;
-      } catch {
-        // Fallback for XrayWrapper issues with window.location
-        if (window.wrappedJSObject?.location) {
-          redirectUrl = `${window.wrappedJSObject.location.origin}/auth/callback`;
-        } else {
-          redirectUrl = '/auth/callback'; // Relative fallback
-        }
-      }
-
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: redirectUrl,
+          redirectTo: `${window.location.origin}/auth/callback`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -113,16 +100,9 @@ export const SocialAuthProvider: React.FC<SocialAuthProviderProps> = ({
       showNotification(`Redirecting to ${provider}...`, 'info');
       onSuccess?.();
     } catch (error: unknown) {
-      // Handle XrayWrapper specific errors
-      if (error instanceof Error && 
-          (error.message.includes('XrayWrapper') || error.message.includes('cross-origin'))) {
-        console.warn('XrayWrapper error in social auth, using fallback:', error);
-        showNotification('Authentication temporarily unavailable. Please try again.', 'warning');
-      } else {
-        const errorMessage = error instanceof Error ? error.message : `Failed to authenticate with ${provider}`;
-        showNotification(errorMessage, 'error');
-        onError?.(errorMessage);
-      }
+      const errorMessage = error instanceof Error ? error.message : `Failed to authenticate with ${provider}`;
+      showNotification(errorMessage, 'error');
+      onError?.(errorMessage);
     }
   };
 

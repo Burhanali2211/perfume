@@ -93,36 +93,6 @@ export const DESIGN_TOKENS = {
   }
 };
 
-// Responsive Grid Classes
-export const RESPONSIVE_GRID_CLASSES = {
-  container: 'w-full mx-auto px-4 sm:px-6 lg:px-8',
-  heading: 'text-2xl font-bold leading-tight text-gray-900 sm:text-3xl',
-  subheading: 'text-lg font-medium leading-6 text-gray-900',
-  dashboardCards: 'grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
-  metricsGrid: 'grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4',
-  tableGrid: 'grid grid-cols-1 gap-6',
-  formGrid: 'grid grid-cols-1 gap-6',
-  settingsGrid: 'grid grid-cols-1 gap-6',
-  
-  // Enhanced responsive classes for better mobile experience
-  mobileOptimized: 'w-full max-w-full overflow-x-hidden',
-  tabletOptimized: 'w-full max-w-full',
-  desktopOptimized: 'max-w-7xl mx-auto',
-  
-  // Breakpoint-specific classes
-  xs: 'max-w-xs mx-auto',
-  sm: 'max-w-sm mx-auto',
-  md: 'max-w-md mx-auto',
-  lg: 'max-w-lg mx-auto',
-  xl: 'max-w-xl mx-auto',
-  '2xl': 'max-w-2xl mx-auto',
-  '3xl': 'max-w-3xl mx-auto',
-  '4xl': 'max-w-4xl mx-auto',
-  '5xl': 'max-w-5xl mx-auto',
-  '6xl': 'max-w-6xl mx-auto',
-  '7xl': 'max-w-7xl mx-auto'
-};
-
 // Standardized Component Interfaces
 export interface AdminCardProps {
   children: React.ReactNode;
@@ -406,25 +376,23 @@ export const getAriaLabel = (key: keyof typeof ARIA_LABELS): string => {
 
 // Responsive Design Utilities
 export const BREAKPOINTS = {
-  xs: 0,      // 0px and up
-  sm: 640,    // 640px and up
-  md: 768,    // 768px and up
-  lg: 1024,   // 1024px and up
-  xl: 1280,   // 1280px and up
-  '2xl': 1536 // 1536px and up
+  sm: '640px',
+  md: '768px',
+  lg: '1024px',
+  xl: '1280px',
+  '2xl': '1536px'
 };
 
 export const useResponsive = () => {
-  const [screenSize, setScreenSize] = React.useState<'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl'>('lg');
+  const [screenSize, setScreenSize] = React.useState<'sm' | 'md' | 'lg' | 'xl' | '2xl'>('lg');
 
   React.useEffect(() => {
     const checkScreenSize = () => {
       const width = window.innerWidth;
-      if (width < 640) setScreenSize('xs');
-      else if (width < 768) setScreenSize('sm');
-      else if (width < 1024) setScreenSize('md');
-      else if (width < 1280) setScreenSize('lg');
-      else if (width < 1536) setScreenSize('xl');
+      if (width < 640) setScreenSize('sm');
+      else if (width < 768) setScreenSize('md');
+      else if (width < 1024) setScreenSize('lg');
+      else if (width < 1280) setScreenSize('xl');
       else setScreenSize('2xl');
     };
 
@@ -433,19 +401,7 @@ export const useResponsive = () => {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  // Helper functions for checking screen sizes
-  const isMobile = screenSize === 'xs' || screenSize === 'sm';
-  const isTablet = screenSize === 'md' || screenSize === 'lg';
-  const isDesktop = screenSize === 'xl' || screenSize === '2xl';
-
-  return {
-    screenSize,
-    isMobile,
-    isTablet,
-    isDesktop,
-    isSmallScreen: screenSize === 'xs' || screenSize === 'sm' || screenSize === 'md',
-    isLargeScreen: screenSize === 'lg' || screenSize === 'xl' || screenSize === '2xl'
-  };
+  return screenSize;
 };
 
 // Animation Utilities

@@ -32,18 +32,7 @@ export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }
     setLoading(true);
 
     try {
-      // If direct login is enabled, use empty wishlist
-      const directLoginEnabled = import.meta.env.VITE_DIRECT_LOGIN_ENABLED === 'true';
-      if (directLoginEnabled) {
-        console.log('🔧 Direct login mode: Using empty wishlist');
-        setItems([]);
-        setLoading(false);
-        return;
-      }
-
-      // @ts-ignore - Missing userId parameter
-      const wishlistItems = await getWishlistItems(user.id);
-      // @ts-ignore - Type mismatch
+      const wishlistItems = await getWishlistItems();
       setItems(wishlistItems);
     } catch (error) {
       console.error('Error fetching wishlist:', error);
@@ -77,16 +66,7 @@ export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }
       showNotification({ type: 'info', title: 'Removed from Wishlist', message: `${product.name} removed from your wishlist.` });
     } else {
       try {
-        // If direct login is enabled, simulate adding to wishlist
-        const directLoginEnabled = import.meta.env.VITE_DIRECT_LOGIN_ENABLED === 'true';
-        if (directLoginEnabled) {
-          console.log('🔧 Direct login mode: Simulating add to wishlist');
-          showNotification({ type: 'success', title: 'Added to Wishlist', message: `${product.name} added to your wishlist.` });
-          return;
-        }
-
-        // @ts-ignore - Missing userId parameter
-        const success = await addToWishlistDB(user.id, product.id);
+        const success = await addToWishlistDB(product.id);
         if (success) {
           await fetchWishlist();
           showNotification({ type: 'success', title: 'Added to Wishlist', message: `${product.name} added to your wishlist.` });
@@ -104,15 +84,7 @@ export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (!user) return;
 
     try {
-      // If direct login is enabled, simulate removing from wishlist
-      const directLoginEnabled = import.meta.env.VITE_DIRECT_LOGIN_ENABLED === 'true';
-      if (directLoginEnabled) {
-        console.log('🔧 Direct login mode: Simulating remove from wishlist');
-        return;
-      }
-
-      // @ts-ignore - Missing userId parameter
-      const success = await removeFromWishlistDB(user.id, productId);
+      const success = await removeFromWishlistDB(productId);
       if (success) {
         await fetchWishlist();
       } else {
@@ -130,17 +102,8 @@ export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (!user) return;
 
     try {
-      // If direct login is enabled, simulate clearing wishlist
-      const directLoginEnabled = import.meta.env.VITE_DIRECT_LOGIN_ENABLED === 'true';
-      if (directLoginEnabled) {
-        console.log('🔧 Direct login mode: Simulating clear wishlist');
-        setItems([]);
-        return;
-      }
-
       // Clear all items one by one using the removeFromWishlist function
-      // @ts-ignore - Missing userId parameter
-      const promises = items.map(item => removeFromWishlistDB(user.id, item.product.id));
+      const promises = items.map(item => removeFromWishlistDB(item.product.id));
       await Promise.all(promises);
       setItems([]);
     } catch (error) {

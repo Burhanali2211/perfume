@@ -5,13 +5,13 @@ import { Product } from '../../types';
 import { ProductCard } from '../Product/ProductCard';
 import { ProductDetails } from '../Product/ProductDetails';
 import { useProducts } from '../../contexts/ProductContext';
-// Removed Mobile components and hooks imports
+import { MobileCompactCarousel } from '../Mobile/MobileProductCarousel';
+import { useMobileDetection } from '../../hooks/useMobileGestures';
 
 export const TrendingSection: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { products } = useProducts();
-  // Simplified mobile detection
-  const isMobile = false;
+  const { isMobile } = useMobileDetection();
 
   const trendingProducts = products.filter(p => p.tags && Array.isArray(p.tags) && p.tags.includes('trending')).slice(0, 6);
 

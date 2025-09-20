@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Heart, ShieldCheck, Truck, RotateCcw, Plus, Minus, MessageSquare, Edit } from 'lucide-react';
+import { Star, Heart, ShieldCheck, Truck, RotateCcw, Plus, Minus, MessageSquare, Edit } from 'lucide-react';
 import { useProducts } from '../contexts/ProductContext';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
-// Removed RecommendationsContext import
+import { useRecommendations } from '../contexts/RecommendationsContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
@@ -14,7 +14,15 @@ import { ProductRecommendations } from '../components/Product/ProductRecommendat
 import { Modal } from '../components/Common/Modal';
 import { LoadingSpinner } from '../components/Common/LoadingSpinner';
 import { Review } from '../types';
-// Removed Trust components import
+import {
+  SocialProof,
+  ReviewSummary,
+  TrendingIndicator,
+  StockUrgency,
+  TrustBadges,
+  ProductTrustSignals,
+  MiniTrustIndicators
+} from '../components/Trust';
 
 export const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,8 +32,7 @@ export const ProductDetailPage: React.FC = () => {
 
   const { addItem: addToCart } = useCart();
   const { addItem: toggleWishlistItem, isInWishlist } = useWishlist();
-  // Simplified recommendations
-  const addToRecentlyViewed = () => {};
+  const { addToRecentlyViewed, getRelatedProducts, getFrequentlyBoughtTogether } = useRecommendations();
   const { showNotification } = useNotification();
   
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -121,7 +128,12 @@ export const ProductDetailPage: React.FC = () => {
               <div className="flex items-center justify-between mb-2">
                 <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
                 <div className="flex items-center space-x-2">
-                  {/* Trust indicators removed */}
+                  <TrendingIndicator isHot={product.is_featured} salesIncrease={15} />
+                  <MiniTrustIndicators
+                    freeShipping={product.price >= 50}
+                    warranty={true}
+                    returns={true}
+                  />
                 </div>
               </div>
 
@@ -173,7 +185,10 @@ export const ProductDetailPage: React.FC = () => {
               ))}
             </div>
 
-            {/* Trust Badges removed */}
+            {/* Trust Badges */}
+            <div className="pt-6">
+              <TrustBadges variant="compact" className="justify-start" />
+            </div>
           </motion.div>
         </div>
 
@@ -185,7 +200,13 @@ export const ProductDetailPage: React.FC = () => {
           className="mt-8"
         >
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Social proof and trust signals removed */}
+            <SocialProof
+              productId={product.id}
+              showRecentPurchases={true}
+              showViewingCount={true}
+              showCustomerCount={true}
+            />
+            <ProductTrustSignals />
           </div>
         </motion.div>
 

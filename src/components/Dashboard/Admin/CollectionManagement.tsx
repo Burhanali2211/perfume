@@ -1,18 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNotification } from '../../../contexts/NotificationContext';
-// Removed CollectionContext import
+import { useCollections } from '../../../contexts/CollectionContext';
 import { Collection } from '../../../types';
 import { LoadingSpinner } from '../../Common/LoadingSpinner';
 import { Modal } from '../../Common/Modal';
 import { ImageUpload } from '../../Common/ImageUpload';
-// Removed storageService import
-// import { adminService, adminOperations } from '../../../services/adminService';
-import { collectionService } from '../../../services/backendService';
+import { StorageService } from '../../../services/storageService';
 import {
   Plus,
   Search,
-  // Filter, // Unused
-  // Download, // Unused
+  Filter,
+  Download,
   Edit,
   Trash2,
   Eye,
@@ -26,21 +24,10 @@ import {
   Sparkles,
   Gift,
   Star,
-  Layers,
-  // MoreHorizontal, // Unused
+  MoreHorizontal,
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
-import { EnhancedButton } from '../../Common/EnhancedButton';
-import { AdminErrorBoundary } from '../../Common/AdminErrorBoundary';
-import {
-  ResponsiveAdminLayout,
-  AdminPageHeader,
-  AdminSection
-  // AdminGrid, // Unused
-  // MobileOptimizedCard // Unused
-} from '../../Common/ResponsiveAdminLayout';
-import { useResponsive } from '../../Common/AdminDesignSystem';
 
 
 
@@ -48,12 +35,15 @@ interface CollectionManagementProps {
   className?: string;
 }
 
-export const CollectionManagement: React.FC<CollectionManagementProps> = ({ className: _className = '' }) => {
-  // Simplified collections functionality
-  const collections: Collection[] = [];
-  const contextLoading = false;
-  const error = null;
-  const refreshCollections = () => {};
+export const CollectionManagement: React.FC<CollectionManagementProps> = ({ className = '' }) => {
+  const {
+    collections,
+    loading: contextLoading,
+    addCollection,
+    updateCollection,
+    deleteCollection,
+    refreshCollections
+  } = useCollections();
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
@@ -63,7 +53,7 @@ export const CollectionManagement: React.FC<CollectionManagementProps> = ({ clas
   const [sortBy, setSortBy] = useState<string>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [refreshing, setRefreshing] = useState(false);
-  // const [isExporting, setIsExporting] = useState(false); // Unused
+  const [isExporting, setIsExporting] = useState(false);
   const { showNotification } = useNotification();
 
   // Form state
@@ -85,14 +75,19 @@ export const CollectionManagement: React.FC<CollectionManagementProps> = ({ clas
     sortOrder: 0,
     tags: []
   });
-  // const [imagePath, setImagePath] = useState<string>(''); // Unused
-  // const [bannerImagePath, setBannerImagePath] = useState<string>(''); // Unused
-  // const [error, setError] = useState<string | null>(null); // Unused
-  const { isMobile } = useResponsive(); // isTablet unused
+  const [imagePath, setImagePath] = useState<string>('');
+  const [bannerImagePath, setBannerImagePath] = useState<string>('');
 
-  // Simplified storage initialization
+  // Initialize storage bucket on component mount
   useEffect(() => {
-    console.log('Storage initialization skipped');
+    const initStorage = async () => {
+      try {
+        await StorageService.initializeBucket();
+      } catch (error) {
+        console.error('Failed to initialize storage bucket:', error);
+      }
+    };
+    initStorage();
   }, []);
 
   // Generate slug from name
@@ -118,7 +113,7 @@ export const CollectionManagement: React.FC<CollectionManagementProps> = ({ clas
 
   // Filtered and sorted collections
   const filteredCollections = useMemo(() => {
-    const filtered = collections.filter(collection => {
+    let filtered = collections.filter(collection => {
       const matchesSearch = collection.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            collection.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            collection.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -130,7 +125,7 @@ export const CollectionManagement: React.FC<CollectionManagementProps> = ({ clas
 
     // Sort collections
     filtered.sort((a, b) => {
-      let aValue: unknown, bValue: unknown;
+      let aValue: any, bValue: any;
       
       switch (sortBy) {
         case 'name':
@@ -233,18 +228,9 @@ export const CollectionManagement: React.FC<CollectionManagementProps> = ({ clas
 
     try {
       setLoading(true);
-      await collectionService.delete(id);
-      showNotification({
-        type: 'success',
-        title: 'Collection Deleted',
-        message: 'Collection has been deleted successfully.'
-      });
+      await deleteCollection(id);
     } catch (error) {
-      showNotification({
-        type: 'error',
-        title: 'Error',
-        message: error instanceof Error ? error.message : 'Failed to delete collection. Please try again.'
-      });
+      // Error handling is done in the context
     } finally {
       setLoading(false);
     }
@@ -266,30 +252,16 @@ export const CollectionManagement: React.FC<CollectionManagementProps> = ({ clas
       setLoading(true);
 
       if (editingCollection) {
-        // Update existing collection using enhanced service
-        await collectionService.update(editingCollection.id, formData);
-        showNotification({
-          type: 'success',
-          title: 'Collection Updated',
-          message: `${formData.name} has been updated successfully.`
-        });
+        // Update existing collection
+        await updateCollection(editingCollection.id, formData);
       } else {
-        // Add new collection using enhanced service
-        await collectionService.create(formData);
-        showNotification({
-          type: 'success',
-          title: 'Collection Created',
-          message: `${formData.name} has been created successfully.`
-        });
+        // Add new collection
+        await addCollection(formData);
       }
 
       setIsModalOpen(false);
     } catch (error) {
-      showNotification({
-        type: 'error',
-        title: 'Error',
-        message: error instanceof Error ? error.message : 'Failed to save collection. Please try again.'
-      });
+      // Error handling is done in the context
     } finally {
       setLoading(false);
     }
@@ -317,33 +289,33 @@ export const CollectionManagement: React.FC<CollectionManagementProps> = ({ clas
     setRefreshing(true);
     try {
       await refreshCollections();
-    } catch (_error) {
+    } catch (error) {
       // Error handling is done in the context
     } finally {
       setRefreshing(false);
     }
   };
 
-  // const handleExport = async () => {
-  //   setIsExporting(true);
-  //   try {
-  //     // TODO: Implement actual export functionality
-  //     await new Promise(resolve => setTimeout(resolve, 2000));
-  //     showNotification({
-  //       type: 'success',
-  //       title: 'Export Complete',
-  //       message: 'Collections data has been exported successfully.'
-  //     });
-  //   } catch (error) {
-  //     showNotification({
-  //       type: 'error',
-  //       title: 'Export Failed',
-  //       message: 'Failed to export data. Please try again.'
-  //     });
-  //   } finally {
-  //     setIsExporting(false);
-  //   }
-  // };
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      // TODO: Implement actual export functionality
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      showNotification({
+        type: 'success',
+        title: 'Export Complete',
+        message: 'Collections data has been exported successfully.'
+      });
+    } catch (error) {
+      showNotification({
+        type: 'error',
+        title: 'Export Failed',
+        message: 'Failed to export data. Please try again.'
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const getTypeIcon = (type: Collection['type']) => {
     switch (type) {
@@ -369,90 +341,53 @@ export const CollectionManagement: React.FC<CollectionManagementProps> = ({ clas
 
   if (contextLoading && collections.length === 0) {
     return (
-      <ResponsiveAdminLayout>
-        <div className="flex items-center justify-center min-h-96">
-          <LoadingSpinner size="large" text="Loading collections..." />
-        </div>
-      </ResponsiveAdminLayout>
+      <div className="flex justify-center items-center h-64">
+        <LoadingSpinner size="lg" />
+      </div>
     );
   }
-
-  if (error) {
-    return (
-      <ResponsiveAdminLayout>
-        <AdminSection variant="card">
-          <div className="text-center py-12">
-            <Layers className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Collections</h3>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <EnhancedButton onClick={refreshCollections} icon={RefreshCw}>
-              Try Again
-            </EnhancedButton>
-          </div>
-        </AdminSection>
-      </ResponsiveAdminLayout>
-    );
-  }
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      slug: '',
-      description: '',
-      shortDescription: '',
-      image: '',
-      bannerImage: '',
-      type: 'modern',
-      status: 'active',
-      price: 0,
-      originalPrice: 0,
-      discount: 0,
-      productIds: [],
-      featured: false,
-      isExclusive: false,
-      sortOrder: 0,
-      tags: []
-    });
-    setImagePath('');
-    setBannerImagePath('');
-  };
-
-  const headerActions = (
-    <div className={`flex items-center ${isMobile ? 'flex-col space-y-2' : 'space-x-2'}`}>
-      <EnhancedButton
-        onClick={() => {
-          resetForm();
-          setIsModalOpen(true);
-        }}
-        icon={Plus}
-        size={isMobile ? 'sm' : 'md'}
-      >
-        {isMobile ? 'Add' : 'Add Collection'}
-      </EnhancedButton>
-      <EnhancedButton
-        onClick={handleRefresh}
-        icon={RefreshCw}
-        variant="outline"
-        size={isMobile ? 'sm' : 'md'}
-        loading={refreshing}
-      >
-        {isMobile ? '' : 'Refresh'}
-      </EnhancedButton>
-    </div>
-  );
 
   return (
-    <AdminErrorBoundary>
-      <ResponsiveAdminLayout>
-        <AdminPageHeader
-          title="Collection Management"
-          subtitle={`Manage special collections (${filteredCollections.length} of ${collections.length} collections)`}
-          icon={Layers}
-          actions={headerActions}
-        />
+    <div className={`space-y-6 ${className}`}>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Collection Management</h2>
+          <p className="text-gray-600">Manage special collections ({filteredCollections.length} of {collections.length} collections)</p>
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center space-x-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+          
+          <button
+            onClick={handleExport}
+            disabled={isExporting}
+            className="flex items-center space-x-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+          >
+            <Download className="h-4 w-4" />
+            <span>{isExporting ? 'Exporting...' : 'Export'}</span>
+          </button>
+          
+          <button
+            onClick={handleAddCollection}
+            className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add Collection</span>
+          </button>
+        </div>
+      </div>
 
-        <AdminSection title="Filters and Search" variant="card">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+      {/* Filters and Search */}
+      <div className="bg-white p-4 rounded-lg border border-gray-200">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
           {/* Search */}
           <div className="flex-1">
             <div className="relative">
@@ -516,10 +451,11 @@ export const CollectionManagement: React.FC<CollectionManagementProps> = ({ clas
               {sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
           </div>
-          </div>
-        </AdminSection>
+        </div>
+      </div>
 
-        <AdminSection title="Collections" variant="card">
+      {/* Collections Table */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -694,10 +630,10 @@ export const CollectionManagement: React.FC<CollectionManagementProps> = ({ clas
             )}
           </div>
         )}
-        </AdminSection>
+      </div>
 
-        {/* Add/Edit Collection Modal */}
-        <Modal
+      {/* Add/Edit Collection Modal */}
+      <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingCollection ? 'Edit Collection' : 'Add New Collection'}
@@ -979,8 +915,7 @@ export const CollectionManagement: React.FC<CollectionManagementProps> = ({ clas
             </button>
           </div>
         </form>
-        </Modal>
-      </ResponsiveAdminLayout>
-    </AdminErrorBoundary>
+      </Modal>
+    </div>
   );
 };

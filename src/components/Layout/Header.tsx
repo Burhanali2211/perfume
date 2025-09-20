@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Search, ShoppingCart, User, Menu, Heart, LogOut, Settings, Package,
-  ChevronDown, Sparkles
-  // X, // Unused
-  // Zap, // Unused
-  // RefreshCw, // Unused
+  Search, ShoppingCart, User, Menu, X, Heart, LogOut, Settings, Package,
+  ChevronDown, Zap, RefreshCw, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
@@ -70,7 +67,7 @@ interface NavigationItem {
   dropdownItems?: DropdownItem[];
 }
 
-export const Header: React.FC<HeaderProps> = ({ onAuthClick: _onAuthClick, onCartClick }) => {
+export const Header: React.FC<HeaderProps> = ({ onAuthClick, onCartClick }) => {
   const { user, logout } = useAuth();
   const { itemCount } = useCart();
   const { items: wishlistItems } = useWishlist();
@@ -150,7 +147,7 @@ export const Header: React.FC<HeaderProps> = ({ onAuthClick: _onAuthClick, onCar
     if (isCategoriesOpen) setIsCategoriesOpen(false);
 
     if (isSearchOpen) setIsSearchOpen(false);
-  }, [location.pathname, isUserMenuOpen, isCategoriesOpen, isSearchOpen]);
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {

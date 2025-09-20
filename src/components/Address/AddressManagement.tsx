@@ -1,17 +1,13 @@
 import React, { useState } from 'react';
 import { Plus, Edit, Trash2, MapPin, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
-// Removed AddressContext import
+import { useAddresses } from '../../contexts/AddressContext';
 import { Address } from '../../types';
 import { Modal } from '../Common/Modal';
 import { AddressForm } from './AddressForm';
 
 export const AddressManagement: React.FC = () => {
-  // Simplified address management
-  const addresses: Address[] = [];
-  const deleteAddress = () => {};
-  const setDefaultAddress = () => {};
-  const loading = false;
+  const { addresses, deleteAddress, setDefaultAddress, loading } = useAddresses();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
 

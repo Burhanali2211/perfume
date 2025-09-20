@@ -44,9 +44,9 @@ export const ProductManagement: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [stockFilter, setStockFilter] = useState<'all' | 'in-stock' | 'low-stock' | 'out-of-stock'>('all');
   const [priceRange, setPriceRange] = useState<{ min: number; max: number }>({ min: 0, max: 1000 });
-  const [refreshing, setRefreshing] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [isExporting, setIsExporting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const categories = ['all', ...Array.from(new Set(products.map(p => p.category)))];
 

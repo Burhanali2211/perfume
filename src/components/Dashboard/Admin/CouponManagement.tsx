@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useProducts } from '../../../contexts/ProductContext';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { LoadingSpinner } from '../../Common/LoadingSpinner';
 import { Modal } from '../../Common/Modal';
@@ -8,15 +9,30 @@ import {
   Plus,
   Search,
   Tag,
+  Calendar,
   Percent,
   Hash,
+  Download,
+  RefreshCw,
+  CheckSquare,
+  Square,
+  Eye,
+  Copy,
+  Archive,
+  SortAsc,
+  SortDesc,
+  DollarSign,
+  Users,
+  BarChart3,
+  Clock,
   AlertCircle,
   CheckCircle,
-  XCircle,
-  Clock
+  XCircle
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../../lib/supabase';
+import { AdminErrorBoundary } from '../../Common/AdminErrorBoundary';
+import { AdminLoadingState, EmptyState } from '../../Common/EnhancedLoadingStates';
 
 interface Coupon {
   id: string;
@@ -50,6 +66,9 @@ export const CouponManagement: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState<'all' | 'percentage' | 'fixed'>('all');
   const [validityFilter, setValidityFilter] = useState<'all' | 'valid' | 'expired' | 'upcoming'>('all');
   const [usageFilter, setUsageFilter] = useState<'all' | 'unused' | 'partial' | 'exhausted'>('all');
+  const [refreshing, setRefreshing] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
 
   const { showNotification } = useNotification();
 
@@ -83,7 +102,7 @@ export const CouponManagement: React.FC = () => {
 
       if (error) throw error;
 
-      const couponsData: Coupon[] = data?.map((coupon: any) => ({
+      const couponsData: Coupon[] = data?.map(coupon => ({
         id: coupon.id,
         code: coupon.code,
         name: coupon.name,
@@ -172,120 +191,120 @@ export const CouponManagement: React.FC = () => {
   };
 
   // Bulk operations
-  // const handleSelectCoupon = (couponId: string) => {
-  //   setSelectedCoupons(prev =>
-  //     prev.includes(couponId)
-  //       ? prev.filter(id => id !== couponId)
-  //       : [...prev, couponId]
-  //   );
-  // };
+  const handleSelectCoupon = (couponId: string) => {
+    setSelectedCoupons(prev =>
+      prev.includes(couponId)
+        ? prev.filter(id => id !== couponId)
+        : [...prev, couponId]
+    );
+  };
 
-  // const handleSelectAll = () => {
-  //   if (selectedCoupons.length === filteredCoupons.length) {
-  //     setSelectedCoupons([]);
-  //   } else {
-  //     setSelectedCoupons(filteredCoupons.map(c => c.id));
-  //   }
-  // };
+  const handleSelectAll = () => {
+    if (selectedCoupons.length === filteredCoupons.length) {
+      setSelectedCoupons([]);
+    } else {
+      setSelectedCoupons(filteredCoupons.map(c => c.id));
+    }
+  };
 
-  // const handleBulkDelete = async () => {
-  //   if (selectedCoupons.length === 0) return;
+  const handleBulkDelete = async () => {
+    if (selectedCoupons.length === 0) return;
 
-  //   if (window.confirm(`Are you sure you want to delete ${selectedCoupons.length} coupons? This action cannot be undone.`)) {
-  //     try {
-  //       const { error } = await supabase
-  //         .from('coupons')
-  //         .delete()
-  //         .in('id', selectedCoupons);
+    if (window.confirm(`Are you sure you want to delete ${selectedCoupons.length} coupons? This action cannot be undone.`)) {
+      try {
+        const { error } = await supabase
+          .from('coupons')
+          .delete()
+          .in('id', selectedCoupons);
 
-  //       if (error) throw error;
+        if (error) throw error;
 
-  //       setSelectedCoupons([]);
-  //       fetchCoupons();
-  //       showNotification({
-  //         type: 'success',
-  //         title: 'Coupons Deleted',
-  //         message: `${selectedCoupons.length} coupons have been deleted successfully.`
-  //       });
-  //     } catch (error) {
-  //       console.error('Error deleting coupons:', error);
-  //       showNotification({
-  //         type: 'error',
-  //         title: 'Delete Failed',
-  //         message: 'Failed to delete coupons. Please try again.'
-  //       });
-  //     }
-  //   }
-  // };
+        setSelectedCoupons([]);
+        fetchCoupons();
+        showNotification({
+          type: 'success',
+          title: 'Coupons Deleted',
+          message: `${selectedCoupons.length} coupons have been deleted successfully.`
+        });
+      } catch (error) {
+        console.error('Error deleting coupons:', error);
+        showNotification({
+          type: 'error',
+          title: 'Delete Failed',
+          message: 'Failed to delete coupons. Please try again.'
+        });
+      }
+    }
+  };
 
-  // const handleBulkStatusUpdate = async (isActive: boolean) => {
-  //   if (selectedCoupons.length === 0) return;
+  const handleBulkStatusUpdate = async (isActive: boolean) => {
+    if (selectedCoupons.length === 0) return;
 
-  //   try {
-  //     const { error } = await supabase
-  //       .from('coupons')
-  //       .update({ is_active: isActive })
-  //       .in('id', selectedCoupons);
+    try {
+      const { error } = await supabase
+        .from('coupons')
+        .update({ is_active: isActive })
+        .in('id', selectedCoupons);
 
-  //     if (error) throw error;
+      if (error) throw error;
 
-  //     setSelectedCoupons([]);
-  //     fetchCoupons();
-  //     showNotification({
-  //       type: 'success',
-  //       title: 'Coupons Updated',
-  //       message: `${selectedCoupons.length} coupons have been ${isActive ? 'activated' : 'deactivated'}.`
-  //     });
-  //   } catch (error) {
-  //     console.error('Error updating coupons:', error);
-  //     showNotification({
-  //       type: 'error',
-  //       title: 'Update Failed',
-  //       message: 'Failed to update coupons. Please try again.'
-  //     });
-  //   }
-  // };
+      setSelectedCoupons([]);
+      fetchCoupons();
+      showNotification({
+        type: 'success',
+        title: 'Coupons Updated',
+        message: `${selectedCoupons.length} coupons have been ${isActive ? 'activated' : 'deactivated'}.`
+      });
+    } catch (error) {
+      console.error('Error updating coupons:', error);
+      showNotification({
+        type: 'error',
+        title: 'Update Failed',
+        message: 'Failed to update coupons. Please try again.'
+      });
+    }
+  };
 
-  // const handleRefresh = async () => {
-  //   setRefreshing(true);
-  //   await fetchCoupons();
-  //   setRefreshing(false);
-  //   showNotification({
-  //     type: 'success',
-  //     title: 'Refreshed',
-  //     message: 'Coupon data has been refreshed.'
-  //   });
-  // };
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchCoupons();
+    setRefreshing(false);
+    showNotification({
+      type: 'success',
+      title: 'Refreshed',
+      message: 'Coupon data has been refreshed.'
+    });
+  };
 
-  // const handleExport = async () => {
-  //   setIsExporting(true);
-  //   try {
-  //     // Mock export functionality
-  //     await new Promise(resolve => setTimeout(resolve, 2000));
-  //     showNotification({
-  //       type: 'success',
-  //       title: 'Export Complete',
-  //       message: 'Coupons have been exported successfully.'
-  //     });
-  //   } catch (_error) {
-  //     showNotification({
-  //       type: 'error',
-  //       title: 'Export Failed',
-  //       message: 'Failed to export coupons. Please try again.'
-  //     });
-  //   } finally {
-  //     setIsExporting(false);
-  //   }
-  // };
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      // Mock export functionality
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      showNotification({
+        type: 'success',
+        title: 'Export Complete',
+        message: 'Coupons have been exported successfully.'
+      });
+    } catch (error) {
+      showNotification({
+        type: 'error',
+        title: 'Export Failed',
+        message: 'Failed to export coupons. Please try again.'
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
-  // const toggleSort = (field: typeof sortBy) => {
-  //   if (sortBy === field) {
-  //     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-  //   } else {
-  //     setSortBy(field);
-  //     setSortOrder('asc');
-  //   }
-  // };
+  const toggleSort = (field: typeof sortBy) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+  };
 
   const getCouponStatus = (coupon: Coupon) => {
     const now = new Date();
@@ -353,19 +372,19 @@ export const CouponManagement: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-
+    
     if (type === 'checkbox' && e.target instanceof HTMLInputElement) {
-      setFormData((prev: typeof formData) => ({
+      setFormData(prev => ({
         ...prev,
         [name]: e.target.checked
       }));
     } else if (type === 'number') {
-      setFormData((prev: typeof formData) => ({
+      setFormData(prev => ({
         ...prev,
         [name]: value ? parseFloat(value) : 0
       }));
     } else {
-      setFormData((prev: typeof formData) => ({
+      setFormData(prev => ({
         ...prev,
         [name]: value
       }));
@@ -374,7 +393,7 @@ export const CouponManagement: React.FC = () => {
 
   // Enhanced filtering and sorting logic
   const filteredCoupons = useMemo(() => {
-    const filtered = coupons.filter((coupon: Coupon) => {
+    const filtered = coupons.filter(coupon => {
       const matchesSearch =
         coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
         coupon.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -397,7 +416,7 @@ export const CouponManagement: React.FC = () => {
       if (validityFilter === 'valid') {
         matchesValidity = coupon.isActive && now >= validFrom && (!validUntil || now <= validUntil);
       } else if (validityFilter === 'expired') {
-        matchesValidity = validUntil !== null && now > validUntil;
+        matchesValidity = validUntil && now > validUntil;
       } else if (validityFilter === 'upcoming') {
         matchesValidity = now < validFrom;
       }
@@ -409,15 +428,15 @@ export const CouponManagement: React.FC = () => {
       } else if (usageFilter === 'partial') {
         matchesUsage = coupon.usedCount > 0 && (!coupon.usageLimit || coupon.usedCount < coupon.usageLimit);
       } else if (usageFilter === 'exhausted') {
-        matchesUsage = coupon.usageLimit !== undefined && coupon.usedCount >= coupon.usageLimit;
+        matchesUsage = coupon.usageLimit && coupon.usedCount >= coupon.usageLimit;
       }
 
       return matchesSearch && matchesStatus && matchesType && matchesValidity && matchesUsage;
     });
 
     // Sorting
-    filtered.sort((a: Coupon, b: Coupon) => {
-      let aValue: string | number, bValue: string | number;
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any;
 
       switch (sortBy) {
         case 'code':
@@ -506,7 +525,7 @@ export const CouponManagement: React.FC = () => {
             </label>
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as 'all' | 'active' | 'inactive' | 'expired')}
+              onChange={(e) => setFilterStatus(e.target.value as any)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="all">All Statuses</option>
@@ -561,7 +580,7 @@ export const CouponManagement: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                filteredCoupons.map((coupon: Coupon) => (
+                filteredCoupons.map((coupon) => (
                   <motion.tr
                     key={coupon.id}
                     initial={{ opacity: 0 }}

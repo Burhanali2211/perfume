@@ -4,13 +4,13 @@
  */
 
 import { supabase } from '../lib/supabase';
-import { User, Product, Category } from '../types';
+import { User, Product, Category, CartItem, WishlistItem, Order, Review, Address, Coupon } from '../types';
 
 // ==========================================
 // UTILITY FUNCTIONS
 // ==========================================
 
-export const handleDatabaseError = (error: unknown, operation: string) => {
+export const handleDatabaseError = (error: any, operation: string) => {
   console.error(`Database error in ${operation}:`, error);
   
   if (error.message?.includes('infinite recursion')) {
@@ -28,43 +28,10 @@ export const handleDatabaseError = (error: unknown, operation: string) => {
   throw new Error(`${operation} failed: ${error.message || 'Unknown error'}`);
 };
 
-export const validateRequired = (data: Record<string, unknown>, fields: string[]) => {
+export const validateRequired = (data: any, fields: string[]) => {
   const missing = fields.filter(field => !data[field]);
   if (missing.length > 0) {
     throw new Error(`Missing required fields: ${missing.join(', ')}`);
-  }
-};
-
-// Enhanced validation functions
-export const validateEmail = (email: string) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    throw new Error('Invalid email format');
-  }
-};
-
-export const validatePrice = (price: number) => {
-  if (price < 0) {
-    throw new Error('Price cannot be negative');
-  }
-  if (price > 1000000) {
-    throw new Error('Price is too high');
-  }
-};
-
-export const validateStock = (stock: number) => {
-  if (stock < 0) {
-    throw new Error('Stock cannot be negative');
-  }
-  if (stock > 100000) {
-    throw new Error('Stock quantity is too high');
-  }
-};
-
-export const validateSlug = (slug: string) => {
-  const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-  if (!slugRegex.test(slug)) {
-    throw new Error('Slug must contain only lowercase letters, numbers, and hyphens');
   }
 };
 
@@ -133,19 +100,7 @@ export const userService = {
   async create(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) {
     try {
       validateRequired(userData, ['email', 'name']);
-      validateEmail(userData.email);
-
-      // Check if user already exists
-      const existingUser = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', userData.email)
-        .single();
-
-      if (existingUser.data) {
-        throw new Error('User with this email already exists');
-      }
-
+      
       const { data, error } = await supabase
         .from('profiles')
         .insert({
@@ -172,7 +127,7 @@ export const userService = {
 
   async update(id: string, updates: Partial<User>) {
     try {
-      const updateData: Record<string, unknown> = {
+      const updateData: any = {
         updated_at: new Date().toISOString()
       };
 
@@ -219,7 +174,7 @@ export const userService = {
     }
   },
 
-  mapFromDB(data: Record<string, unknown>): User {
+  mapFromDB(data: any): User {
     return {
       id: data.id,
       name: data.full_name || '',
@@ -317,7 +272,7 @@ export const categoryService = {
 
   async update(id: string, updates: Partial<Category>) {
     try {
-      const updateData: Record<string, unknown> = {
+      const updateData: any = {
         updated_at: new Date().toISOString()
       };
 
@@ -367,7 +322,7 @@ export const categoryService = {
     }
   },
 
-  mapFromDB(data: Record<string, unknown>): Category {
+  mapFromDB(data: any): Category {
     return {
       id: data.id,
       name: data.name,
@@ -467,29 +422,12 @@ export const productService = {
   async create(productData: Omit<Product, 'id' | 'createdAt' | 'reviews' | 'rating' | 'reviewCount'>) {
     try {
       validateRequired(productData, ['name', 'price', 'categoryId']);
-      validatePrice(productData.price);
-      if (productData.stock !== undefined) validateStock(productData.stock);
-
-      // Generate slug if not provided
-      const slug = productData.slug || productData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      validateSlug(slug);
-
-      // Check if product with same slug already exists
-      const existingProduct = await supabase
-        .from('products')
-        .select('id')
-        .eq('slug', slug)
-        .single();
-
-      if (existingProduct.data) {
-        throw new Error('Product with this slug already exists');
-      }
 
       const { data, error } = await supabase
         .from('products')
         .insert({
           name: productData.name,
-          slug: slug,
+          slug: productData.slug || productData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
           description: productData.description || '',
           short_description: productData.shortDescription || null,
           price: productData.price,
@@ -523,7 +461,7 @@ export const productService = {
 
   async update(id: string, updates: Partial<Product>) {
     try {
-      const updateData: Record<string, unknown> = {
+      const updateData: any = {
         updated_at: new Date().toISOString()
       };
 
@@ -576,7 +514,7 @@ export const productService = {
     }
   },
 
-  mapFromDB(data: Record<string, unknown>): Product {
+  mapFromDB(data: any): Product {
     const sanitizeImageUrls = (images: unknown): string[] => {
       const placeholderSvg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600"><rect width="100%25" height="100%25" fill="%23f3f4f6"/><text x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-size="32" fill="%23999">No Image</text></svg>';
       const arr = Array.isArray(images) ? images : [];
@@ -608,7 +546,7 @@ export const productService = {
       dimensions: data.dimensions,
       rating: parseFloat(data.rating) || 0,
       reviewCount: data.review_count || 0,
-      reviews: data.reviews?.map((review: Record<string, unknown>) => ({
+      reviews: data.reviews?.map((review: any) => ({
         id: review.id,
         productId: review.product_id,
         userId: review.user_id,
@@ -640,484 +578,8 @@ export const productService = {
   }
 };
 
-// ==========================================
-// COLLECTIONS MANAGEMENT
-// ==========================================
-
-export const collectionService = {
-  async getAll() {
-    try {
-      const { data, error } = await supabase
-        .from('collections')
-        .select(`
-          *,
-          collection_products(
-            product_id,
-            sort_order,
-            products(id, name, price, images)
-          )
-        `)
-        .eq('is_active', true)
-        .order('sort_order');
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      handleDatabaseError(error, 'Get collections');
-    }
-  },
-
-  async create(collectionData: Record<string, unknown>) {
-    try {
-      validateRequired(collectionData, ['name', 'slug']);
-      validateSlug(collectionData.slug);
-
-      const { data, error } = await supabase
-        .from('collections')
-        .insert({
-          name: collectionData.name,
-          slug: collectionData.slug,
-          description: collectionData.description || '',
-          image_url: collectionData.imageUrl || null,
-          is_active: collectionData.isActive !== undefined ? collectionData.isActive : true,
-          sort_order: collectionData.sortOrder || 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      handleDatabaseError(error, 'Create collection');
-    }
-  },
-
-  async update(id: string, collectionData: Record<string, unknown>) {
-    try {
-      if (collectionData.slug) validateSlug(collectionData.slug);
-
-      const { data, error } = await supabase
-        .from('collections')
-        .update({
-          ...collectionData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      handleDatabaseError(error, 'Update collection');
-    }
-  },
-
-  async delete(id: string) {
-    try {
-      const { error } = await supabase
-        .from('collections')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      return true;
-    } catch (error) {
-      handleDatabaseError(error, 'Delete collection');
-    }
-  },
-
-  async addProduct(collectionId: string, productId: string, sortOrder = 0) {
-    try {
-      const { data, error } = await supabase
-        .from('collection_products')
-        .insert({
-          collection_id: collectionId,
-          product_id: productId,
-          sort_order: sortOrder
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      handleDatabaseError(error, 'Add product to collection');
-    }
-  },
-
-  async removeProduct(collectionId: string, productId: string) {
-    try {
-      const { error } = await supabase
-        .from('collection_products')
-        .delete()
-        .eq('collection_id', collectionId)
-        .eq('product_id', productId);
-
-      if (error) throw error;
-      return true;
-    } catch (error) {
-      handleDatabaseError(error, 'Remove product from collection');
-    }
-  }
-};
-
-// ==========================================
-// NEW ARRIVALS MANAGEMENT
-// ==========================================
-
-export const newArrivalsService = {
-  async getAll() {
-    try {
-      const { data, error } = await supabase
-        .from('new_arrivals')
-        .select(`
-          *,
-          products(id, name, price, images, slug)
-        `)
-        .eq('is_active', true)
-        .order('sort_order');
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      handleDatabaseError(error, 'Get new arrivals');
-    }
-  },
-
-  async create(newArrivalData: Record<string, unknown>) {
-    try {
-      validateRequired(newArrivalData, ['productId']);
-
-      const { data, error } = await supabase
-        .from('new_arrivals')
-        .insert({
-          product_id: newArrivalData.productId,
-          featured_until: newArrivalData.featuredUntil || null,
-          sort_order: newArrivalData.sortOrder || 0,
-          is_active: newArrivalData.isActive !== undefined ? newArrivalData.isActive : true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      handleDatabaseError(error, 'Create new arrival');
-    }
-  },
-
-  async update(id: string, newArrivalData: Record<string, unknown>) {
-    try {
-      const { data, error } = await supabase
-        .from('new_arrivals')
-        .update({
-          ...newArrivalData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      handleDatabaseError(error, 'Update new arrival');
-    }
-  },
-
-  async delete(id: string) {
-    try {
-      const { error } = await supabase
-        .from('new_arrivals')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      return true;
-    } catch (error) {
-      handleDatabaseError(error, 'Delete new arrival');
-    }
-  }
-};
-
-// ==========================================
-// OFFERS MANAGEMENT
-// ==========================================
-
-export const offersService = {
-  async getAll() {
-    try {
-      const { data, error } = await supabase
-        .from('offers')
-        .select(`
-          *,
-          offer_products(
-            product_id,
-            products(id, name, price, images)
-          )
-        `)
-        .eq('is_active', true)
-        .order('sort_order');
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      handleDatabaseError(error, 'Get offers');
-    }
-  },
-
-  async create(offerData: Record<string, unknown>) {
-    try {
-      validateRequired(offerData, ['title', 'discountType', 'discountValue']);
-
-      const { data, error } = await supabase
-        .from('offers')
-        .insert({
-          title: offerData.title,
-          description: offerData.description || '',
-          discount_type: offerData.discountType,
-          discount_value: offerData.discountValue,
-          valid_from: offerData.validFrom || new Date().toISOString(),
-          valid_until: offerData.validUntil || null,
-          applicable_to: offerData.applicableTo || 'all_products',
-          is_active: offerData.isActive !== undefined ? offerData.isActive : true,
-          sort_order: offerData.sortOrder || 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      handleDatabaseError(error, 'Create offer');
-    }
-  },
-
-  async update(id: string, offerData: Record<string, unknown>) {
-    try {
-      const { data, error } = await supabase
-        .from('offers')
-        .update({
-          ...offerData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      handleDatabaseError(error, 'Update offer');
-    }
-  },
-
-  async delete(id: string) {
-    try {
-      const { error } = await supabase
-        .from('offers')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      return true;
-    } catch (error) {
-      handleDatabaseError(error, 'Delete offer');
-    }
-  }
-};
-
-// ==========================================
-// ORDER MANAGEMENT
-// ==========================================
-
-export const orderService = {
-  async getAll(options: {
-    limit?: number;
-    offset?: number;
-    searchTerm?: string;
-    statusFilter?: string;
-    userId?: string;
-  } = {}) {
-    try {
-      const { limit = 50, offset = 0, searchTerm, statusFilter, userId } = options;
-
-      let query = supabase
-        .from('orders')
-        .select(`
-          *,
-          profiles(id, full_name, email),
-          order_items(
-            id,
-            quantity,
-            price,
-            products(id, name, images)
-          )
-        `, { count: 'exact' })
-        .order('created_at', { ascending: false });
-
-      if (searchTerm) {
-        query = query.or(`order_number.ilike.%${searchTerm}%,profiles.email.ilike.%${searchTerm}%`);
-      }
-
-      if (statusFilter) {
-        query = query.eq('status', statusFilter);
-      }
-
-      if (userId) {
-        query = query.eq('user_id', userId);
-      }
-
-      query = query.range(offset, offset + limit - 1);
-
-      const { data, error, count } = await query;
-
-      if (error) throw error;
-
-      return {
-        orders: data?.map(this.mapFromDB) || [],
-        total: count || 0
-      };
-    } catch (error) {
-      handleDatabaseError(error, 'Get orders');
-    }
-  },
-
-  async getById(id: string) {
-    try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          profiles(id, full_name, email),
-          order_items(
-            id,
-            quantity,
-            price,
-            products(id, name, images, slug)
-          )
-        `)
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-      return data ? this.mapFromDB(data) : null;
-    } catch (error) {
-      handleDatabaseError(error, 'Get order by ID');
-    }
-  },
-
-  async updateStatus(id: string, status: string) {
-    try {
-      const { data, error } = await supabase
-        .from('orders')
-        .update({
-          status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return this.mapFromDB(data);
-    } catch (error) {
-      handleDatabaseError(error, 'Update order status');
-    }
-  },
-
-  async updatePaymentStatus(id: string, paymentStatus: string) {
-    try {
-      const { data, error } = await supabase
-        .from('orders')
-        .update({
-          payment_status: paymentStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return this.mapFromDB(data);
-    } catch (error) {
-      handleDatabaseError(error, 'Update order payment status');
-    }
-  },
-
-  async delete(id: string) {
-    try {
-      // First delete order items
-      await supabase.from('order_items').delete().eq('order_id', id);
-
-      // Then delete the order
-      const { error } = await supabase
-        .from('orders')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      return true;
-    } catch (error) {
-      handleDatabaseError(error, 'Delete order');
-    }
-  },
-
-  mapFromDB(data: Record<string, unknown>) {
-    return {
-      id: data.id,
-      orderNumber: data.order_number,
-      userId: data.user_id,
-      status: data.status,
-      paymentStatus: data.payment_status,
-      paymentMethod: data.payment_method,
-      total: parseFloat(data.total_amount || 0),
-      subtotal: parseFloat(data.subtotal || 0),
-      taxAmount: parseFloat(data.tax_amount || 0),
-      shippingAmount: parseFloat(data.shipping_amount || 0),
-      discountAmount: parseFloat(data.discount_amount || 0),
-      currency: data.currency || 'USD',
-      shippingAddress: data.shipping_address,
-      billingAddress: data.billing_address,
-      notes: data.notes,
-      trackingNumber: data.tracking_number,
-      estimatedDelivery: data.estimated_delivery ? new Date(data.estimated_delivery) : undefined,
-      createdAt: new Date(data.created_at),
-      updatedAt: data.updated_at ? new Date(data.updated_at) : undefined,
-      user: data.profiles ? {
-        id: data.profiles.id,
-        name: data.profiles.full_name || '',
-        email: data.profiles.email || ''
-      } : undefined,
-      items: data.order_items?.map((item: Record<string, unknown>) => ({
-        id: item.id,
-        productId: item.product_id,
-        quantity: item.quantity,
-        price: parseFloat(item.price),
-        product: item.products ? {
-          id: item.products.id,
-          name: item.products.name,
-          images: item.products.images || [],
-          slug: item.products.slug
-        } : undefined
-      })) || []
-    };
-  }
-};
-
 export default {
   user: userService,
   category: categoryService,
-  product: productService,
-  collection: collectionService,
-  newArrivals: newArrivalsService,
-  offers: offersService,
-  order: orderService
+  product: productService
 };

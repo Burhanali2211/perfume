@@ -1,76 +1,85 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Star, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-// Removed mobile gestures hook import
-// Removed MediaErrorHandler import
+import { useSwipeGesture } from '../../hooks/useMobileGestures';
+import { SafeImage } from '../Common/MediaErrorHandler';
 
-// Real testimonials interface
-interface Testimonial {
-  id: string;
-  quote: string;
-  name: string;
-  role: string;
-  location: string;
-  avatar: string;
-  rating: number;
-  product: string;
-  verified: boolean;
-  createdAt: Date;
-}
+// Use placeholder avatar images from a reliable source
+const generateAvatarUrl = (name: string, size: number = 80) => {
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=${size}&background=6366f1&color=ffffff&bold=true`;
+};
 
-// Default fallback testimonials (replace with real data from database)
-const defaultTestimonials: Testimonial[] = [
+// Fallback avatar URLs
+const sarahMitchellAvatar = generateAvatarUrl('Sarah Johnson');
+const davidKimAvatar = generateAvatarUrl('Michael Chen');
+const lisaThompsonAvatar = generateAvatarUrl('Lisa Thompson');
+const jamesWilsonAvatar = generateAvatarUrl('James Wilson');
+
+const testimonialsData = [
   {
-    id: '1',
-    quote: "Absolutely incredible service! The product quality exceeded my expectations, and the shipping was lightning fast.",
+    quote: "Absolutely incredible service! The product quality exceeded my expectations, and the shipping was lightning fast. I've never had such a seamless online shopping experience.",
     name: 'Sarah Johnson',
     role: 'Fashion Entrepreneur',
     location: 'New York, NY',
-    avatar: '/images/testimonials/sarah-johnson.jpg',
+    avatar: sarahMitchellAvatar,
     rating: 5,
-    product: 'Premium Attar Collection',
-    verified: true,
-    createdAt: new Date('2024-01-15')
+    product: 'Premium Handbag Collection',
+    verified: true
   },
   {
-    id: '2',
-    quote: "The attention to detail is remarkable. Every interaction, from browsing to checkout to delivery, felt premium.",
+    quote: "The attention to detail is remarkable. Every interaction, from browsing to checkout to delivery, felt premium. This is how online shopping should be done.",
     name: 'Michael Chen',
-    role: 'Business Owner',
+    role: 'Tech Executive',
     location: 'San Francisco, CA',
-    avatar: '/images/testimonials/michael-chen.jpg',
+    avatar: davidKimAvatar,
     rating: 5,
-    product: 'Oudh Collection',
-    verified: true,
-    createdAt: new Date('2024-01-10')
+    product: 'Smart Home Electronics',
+    verified: true
+  },
+  {
+    quote: "I was hesitant to shop online for luxury items, but this platform changed my mind completely. Authentic products, excellent packaging, and outstanding customer support.",
+    name: 'Emily Rodriguez',
+    role: 'Interior Designer',
+    location: 'Miami, FL',
+    avatar: generateAvatarUrl('Emily Rodriguez'),
+    rating: 5,
+    product: 'Home Décor & Furniture',
+    verified: true
+  },
+  {
+    quote: "The personalized recommendations are spot-on! It's like having a personal shopper who really understands my style. Five stars all the way!",
+    name: 'David Kim',
+    role: 'Creative Director',
+    location: 'Los Angeles, CA',
+    avatar: davidKimAvatar,
+    rating: 5,
+    product: 'Fashion & Accessories',
+    verified: true
+  },
+  {
+    quote: "Fast, reliable, and trustworthy. I've made multiple purchases and every single one has been perfect. This is my go-to shopping destination now.",
+    name: 'Lisa Thompson',
+    role: 'Marketing Manager',
+    location: 'Chicago, IL',
+    avatar: lisaThompsonAvatar,
+    rating: 5,
+    product: 'Beauty & Wellness',
+    verified: true
+  },
+  {
+    quote: "The quality control is impressive. Every product arrives exactly as described, often better than expected. Truly a premium shopping experience.",
+    name: 'James Wilson',
+    role: 'Business Owner',
+    location: 'Austin, TX',
+    avatar: jamesWilsonAvatar,
+    rating: 5,
+    product: 'Sports & Outdoor Gear',
+    verified: true
   }
 ];
 
-// Function to fetch real testimonials from database
-const fetchTestimonials = async (): Promise<Testimonial[]> => {
-  try {
-    // TODO: Replace with actual API call to fetch testimonials
-    // const { data, error } = await supabase
-    //   .from('testimonials')
-    //   .select('*')
-    //   .eq('is_approved', true)
-    //   .order('created_at', { ascending: false })
-    //   .limit(6);
-    // 
-    // if (error) throw error;
-    // return data || defaultTestimonials;
-    
-    return defaultTestimonials;
-  } catch (error) {
-    console.error('Error fetching testimonials:', error);
-    return defaultTestimonials;
-  }
-};
-
-
-
 // Testimonial Card Component
-const TestimonialCard: React.FC<{ testimonial: Testimonial, isFeatured?: boolean }> = ({ 
+const TestimonialCard: React.FC<{ testimonial: typeof testimonialsData[0], isFeatured?: boolean }> = ({ 
   testimonial, 
   isFeatured = false 
 }) => {
@@ -96,7 +105,7 @@ const TestimonialCard: React.FC<{ testimonial: Testimonial, isFeatured?: boolean
       
       <div className={`border-t border-gray-100 pt-2.5 sm:pt-3 ${isFeatured ? 'sm:pt-4' : ''}`}>
         <div className="flex items-center">
-          <img
+          <SafeImage
             src={testimonial.avatar}
             alt={testimonial.name}
             className={`rounded-full object-cover ${isFeatured ? 'h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 border-2 sm:border-4 border-white/20' : 'h-8 w-8 sm:h-10 sm:w-10'}`}
@@ -118,7 +127,7 @@ const TestimonialCard: React.FC<{ testimonial: Testimonial, isFeatured?: boolean
 };
 
 // Testimonial Carousel Component
-const TestimonialCarousel: React.FC<{ testimonials: Testimonial[] }> = ({ testimonials }) => {
+const TestimonialCarousel: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
   const autoPlayRef = useRef<NodeJS.Timeout>();
@@ -126,7 +135,7 @@ const TestimonialCarousel: React.FC<{ testimonials: Testimonial[] }> = ({ testim
   // Auto-play functionality
   useEffect(() => {
     autoPlayRef.current = setInterval(() => {
-      setCurrentIndex(prev => (prev >= testimonials.length - 1 ? 0 : prev + 1));
+      setCurrentIndex(prev => (prev >= testimonialsData.length - 1 ? 0 : prev + 1));
     }, 5000);
     
     return () => {
@@ -134,7 +143,7 @@ const TestimonialCarousel: React.FC<{ testimonials: Testimonial[] }> = ({ testim
         clearInterval(autoPlayRef.current);
       }
     };
-  }, [testimonials.length]);
+  }, []);
   
   // Pause auto-play on user interaction
   const pauseAutoPlay = () => {
@@ -145,12 +154,12 @@ const TestimonialCarousel: React.FC<{ testimonials: Testimonial[] }> = ({ testim
   
   const goToNext = () => {
     pauseAutoPlay();
-    setCurrentIndex(prev => (prev >= testimonials.length - 1 ? 0 : prev + 1));
+    setCurrentIndex(prev => (prev >= testimonialsData.length - 1 ? 0 : prev + 1));
   };
   
   const goToPrevious = () => {
     pauseAutoPlay();
-    setCurrentIndex(prev => (prev <= 0 ? testimonials.length - 1 : prev - 1));
+    setCurrentIndex(prev => (prev <= 0 ? testimonialsData.length - 1 : prev - 1));
   };
   
   const goToSlide = (index: number) => {
@@ -158,10 +167,14 @@ const TestimonialCarousel: React.FC<{ testimonials: Testimonial[] }> = ({ testim
     setCurrentIndex(index);
   };
   
-  // Simplified swipe gesture support
-  const onTouchStart = () => {};
-  const onTouchMove = () => {};
-  const onTouchEnd = () => {};
+  // Swipe gesture support
+  const { onTouchStart, onTouchMove, onTouchEnd } = useSwipeGesture({
+    onSwipeLeft: goToNext,
+    onSwipeRight: goToPrevious,
+  }, {
+    minSwipeDistance: 50,
+    preventDefaultTouchmove: false,
+  });
   
   // Calculate item width and translateX for carousel
   const itemWidth = 100; // 100% for 1 item per view
@@ -181,12 +194,12 @@ const TestimonialCarousel: React.FC<{ testimonials: Testimonial[] }> = ({ testim
           className="flex transition-transform duration-500 ease-out"
           style={{ 
             transform: `translateX(${translateX}%)`,
-            width: `${testimonials.length * 100}%`
+            width: `${testimonialsData.length * 100}%`
           }}
         >
-          {testimonials.map((testimonial, index) => (
+          {testimonialsData.map((testimonial, index) => (
             <div
-              key={testimonial.id || index}
+              key={index}
               className="flex-shrink-0 w-full px-1"
             >
               <TestimonialCard testimonial={testimonial} />
@@ -231,7 +244,7 @@ const TestimonialCarousel: React.FC<{ testimonials: Testimonial[] }> = ({ testim
       
       {/* Indicators */}
       <div className="flex justify-center mt-4 space-x-1.5">
-        {testimonials.map((_, index) => (
+        {testimonialsData.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
@@ -249,24 +262,6 @@ const TestimonialCarousel: React.FC<{ testimonials: Testimonial[] }> = ({ testim
 };
 
 export const Testimonials: React.FC = () => {
-  const [testimonialsData, setTestimonialsData] = useState<Testimonial[]>(defaultTestimonials);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadTestimonials = async () => {
-      try {
-        const data = await fetchTestimonials();
-        setTestimonialsData(data);
-      } catch (error) {
-        console.error('Failed to load testimonials:', error);
-        // Keep default testimonials on error
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadTestimonials();
-  }, []);
   return (
     <section className="py-8 sm:py-12 md:py-16 bg-white">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
@@ -314,24 +309,24 @@ export const Testimonials: React.FC = () => {
           <div className="relative bg-gradient-to-br from-blue-600 to-purple-700 rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 text-white">
             <Quote className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-blue-200 mb-3 sm:mb-4 md:mb-6" />
             <blockquote className="text-base sm:text-lg md:text-xl font-medium leading-relaxed mb-4 sm:mb-6">
-              "{testimonialsData[0]?.quote || "Exceptional quality and service!"}"
+              "{testimonialsData[0].quote}"
             </blockquote>
             <div className="flex items-center">
-              <img
-                src={testimonialsData[0]?.avatar || "/images/placeholder-avatar.jpg"}
-                alt={testimonialsData[0]?.name || "Customer"}
+              <SafeImage
+                src={testimonialsData[0].avatar}
+                alt={testimonialsData[0].name}
                 className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-full border-2 sm:border-4 border-white/20 object-cover"
                 width={56}
                 height={56}
               />
               <div className="ml-2.5 sm:ml-3 md:ml-4">
                 <div className="flex items-center space-x-1.5 mb-0.5 sm:mb-1">
-                  <p className="font-bold text-sm sm:text-base md:text-lg">{testimonialsData[0]?.name || "Customer"}</p>
+                  <p className="font-bold text-sm sm:text-base md:text-lg">{testimonialsData[0].name}</p>
                   <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full"></div>
                   <span className="text-[10px] sm:text-xs text-blue-200">Verified Buyer</span>
                 </div>
-                <p className="text-[10px] sm:text-xs text-blue-200">{testimonialsData[0]?.role || "Customer"} • {testimonialsData[0]?.location || "Location"}</p>
-                <p className="text-[10px] text-blue-100 mt-1 line-clamp-1">Purchased: {testimonialsData[0]?.product || "Product"}</p>
+                <p className="text-[10px] sm:text-xs text-blue-200">{testimonialsData[0].role} • {testimonialsData[0].location}</p>
+                <p className="text-[10px] text-blue-100 mt-1 line-clamp-1">Purchased: {testimonialsData[0].product}</p>
               </div>
             </div>
             
@@ -346,7 +341,7 @@ export const Testimonials: React.FC = () => {
 
         {/* Testimonials Carousel */}
         <div className="mb-6 sm:mb-8 md:mb-10">
-          <TestimonialCarousel testimonials={testimonialsData} />
+          <TestimonialCarousel />
         </div>
         
         {/* Stats Section */}
