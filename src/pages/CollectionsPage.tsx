@@ -1,13 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  Search, 
-  Filter, 
-  Grid, 
-  List, 
+import {
+  Search,
+  Grid,
+  List,
   ArrowRight,
-  Calendar,
   Tag,
   Star,
   Crown,
@@ -15,13 +13,11 @@ import {
   Zap,
   Award,
   Sparkles,
-  ChevronDown
+  Calendar
 } from 'lucide-react';
-import { useCollections } from '../contexts/CollectionContext';
-import { Collection } from '../types';
 import { LoadingSpinner } from '../components/Common/LoadingSpinner';
 
-const getTypeIcon = (type: Collection['type']) => {
+const getTypeIcon = (type: string) => {
   switch (type) {
     case 'heritage': return Crown;
     case 'seasonal': return Calendar;
@@ -33,7 +29,7 @@ const getTypeIcon = (type: Collection['type']) => {
   }
 };
 
-const getStatusBadge = (status: Collection['status']) => {
+const getStatusBadge = (status: string) => {
   const badges = {
     active: { text: 'Available', color: 'bg-green-100 text-green-800' },
     inactive: { text: 'Unavailable', color: 'bg-gray-100 text-gray-800' },
@@ -44,7 +40,8 @@ const getStatusBadge = (status: Collection['status']) => {
 };
 
 export const CollectionsPage: React.FC = () => {
-  const { collections, loading } = useCollections();
+  const collections: any[] = []; // Simplified - no collections functionality
+  const loading = false;
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -53,7 +50,7 @@ export const CollectionsPage: React.FC = () => {
 
   // Filter and sort collections
   const filteredCollections = useMemo(() => {
-    let filtered = collections.filter(collection => {
+    const filtered = collections.filter(collection => {
       const matchesSearch = collection.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            collection.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            collection.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));

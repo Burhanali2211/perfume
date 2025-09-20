@@ -24,7 +24,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   src, 
   alt, 
   className = '', 
-  placeholder = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2VlZSIvPgogIDx0ZXh0IHg9IjEwMCIgeT0iMTAwIiBmb250LXNpemU9IjIwIiBmaWxsPSIjYWFhIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+TG9hZGluZy4uLjwvdGV4dD4KPC9zdmc+',
+  // placeholder = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2VlZSIvPgogIDx0ZXh0IHg9IjEwMCIgeT0iMTAwIiBmb250LXNpemU9IjIwIiBmaWxsPSIjYWFhIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+TG9hZGluZy4uLjwvdGV4dD4KPC9zdmc+',
   width,
   height,
   responsive = false,
@@ -96,8 +96,8 @@ export const LazyImage: React.FC<LazyImageProps> = ({
       return baseSrc;
     }
 
-    const baseUrl = baseSrc.split('.').slice(0, -1).join('.');
-    const extension = baseSrc.split('.').pop();
+    // const baseUrl = baseSrc.split('.').slice(0, -1).join('.');
+    // const extension = baseSrc.split('.').pop();
     
     // For now, return optimized format - in production you'd have different sizes
     return getOptimalImageFormat(baseSrc);

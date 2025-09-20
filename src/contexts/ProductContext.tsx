@@ -15,8 +15,8 @@ import {
   updateCategory,
   deleteCategory
 } from '../lib/supabase';
-import { useError } from './ErrorContext';
-import { productCache, categoryCache, generateCacheKey, invalidateProductCache, invalidateCategoryCache } from '../utils/cache';
+// Removed ErrorContext import
+// Removed cache, admin service, backend service, and API optimizer imports
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
@@ -35,29 +35,43 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [featuredLoading, setFeaturedLoading] = useState(true);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
-  const { setError } = useError();
+  // Simplified error handling
+  const setError = (error: string) => console.error(error);
 
-  // Debug: Log initial state
+  // Initialize provider with optimized loading
   useEffect(() => {
     console.log('ProductProvider initialized');
-  }, []);
 
-  // Debug: Log when products/categories change
-  useEffect(() => {
-    console.log('Products state updated:', products.length);
-  }, [products]);
+    // Only set up subscriptions after initial load to prevent conflicts
+    let subscriptionsInitialized = false;
 
-  useEffect(() => {
-    console.log('Categories state updated:', categories.length);
-  }, [categories]);
+    const initializeSubscriptions = () => {
+      if (subscriptionsInitialized) return;
+      subscriptionsInitialized = true;
 
-  useEffect(() => {
-    console.log('Loading state updated:', { loading, basicLoading, detailsLoading });
-  }, [loading, basicLoading, detailsLoading]);
+      // Set up real-time subscriptions for products and categories
+      const productSubscription = adminService.subscribeToUpdates('products', (payload) => {
+        console.log('Real-time product update:', payload);
+        // Debounce refresh to prevent excessive calls
+        setTimeout(() => fetchProducts(true), 1000);
+      });
 
-  useEffect(() => {
-    console.log('Using mock data state updated:', isUsingMockData);
-  }, [isUsingMockData]);
+      const categorySubscription = adminService.subscribeToUpdates('categories', (payload) => {
+        console.log('Real-time category update:', payload);
+        // Debounce refresh to prevent excessive calls
+        setTimeout(() => fetchCategories(), 1000);
+      });
+    };
+
+    // Initialize subscriptions after a delay to prevent blocking initial load
+    const subscriptionTimer = setTimeout(initializeSubscriptions, 3000);
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      clearTimeout(subscriptionTimer);
+      adminService.cleanup();
+    };
+  }, []); // Empty dependency array to prevent re-initialization
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -90,22 +104,16 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   const fetchFeaturedProducts = useCallback(async (limit: number = 8) => {
     try {
       setFeaturedLoading(true);
-      const cacheKey = generateCacheKey('featured-products', { limit });
-      const cached = productCache.get(cacheKey);
 
-      if (cached) {
-        console.log('Using cached featured products');
-        setFeaturedProducts(cached as Product[]);
-        setFeaturedLoading(false);
-        return;
-      }
+      // Use API optimizer to deduplicate requests
+      const featuredData = await deduplicateRequest(
+        `featured-products-${limit}`,
+        () => getFeaturedProducts(limit)
+      );
 
-      const featuredData = await getFeaturedProducts(limit);
-
-      console.log('Using database featured products:', featuredData.length);
+      console.log('Using featured products:', featuredData.length);
       setFeaturedProducts(featuredData);
       setIsUsingMockData(false);
-      productCache.set(cacheKey, featuredData);
     } catch (error) {
       console.error('Error fetching featured products:', error);
       setError('Failed to load featured products from database');
@@ -116,8 +124,14 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [setError]);
 
-  // Optimized loading: fetch products and categories in parallel
+  // Optimized loading: fetch products and categories with better error handling
   const fetchProducts = useCallback(async (forceRefresh = false) => {
+    // Prevent multiple simultaneous calls
+    if (loading && !forceRefresh) {
+      console.log('Fetch already in progress, skipping...');
+      return;
+    }
+
     setLoading(true);
     setBasicLoading(true);
 
@@ -135,95 +149,291 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
         setCategories(cachedCategories as Category[]);
         setBasicLoading(false);
         setLoading(false);
+        setIsUsingMockData(false);
         return;
       }
 
-      // Try to fetch from database first
+      // If direct login is enabled, use mock data instead of trying to connect to database
+      const directLoginEnabled = import.meta.env.VITE_DIRECT_LOGIN_ENABLED === 'true';
+      if (directLoginEnabled) {
+        console.log('🔧 Direct login mode: Using mock data');
+        const mockProducts: Product[] = [
+          {
+            id: '1',
+            name: 'Oudh Attar',
+            slug: 'oudh-attar',
+            description: 'Premium Cambodian Oudh attar with long-lasting fragrance',
+            shortDescription: 'Luxury Oudh fragrance',
+            price: 85.99,
+            originalPrice: 99.99,
+            images: ['/images/products/oudh-attar.jpg'],
+            stock: 25,
+            minStockLevel: 5,
+            sku: 'ATT-OUDH-001',
+            weight: 0.03,
+            dimensions: { length: 5, width: 3, height: 3 },
+            rating: 4.8,
+            reviewCount: 42,
+            reviews: [],
+            categoryId: 'oudh',
+            category: 'Oudh Attars',
+            sellerId: 'seller-1',
+            sellerName: 'Sufi Essences',
+            tags: ['oudh', 'luxury', 'long-lasting'],
+            specifications: {
+              concentration: '100% Natural',
+              bottleSize: '30ml',
+              origin: 'Cambodia'
+            },
+            featured: true,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          },
+          {
+            id: '2',
+            name: 'Rose Attar',
+            slug: 'rose-attar',
+            description: 'Pure Bulgarian rose attar with delicate floral notes',
+            shortDescription: 'Delicate floral fragrance',
+            price: 65.50,
+            originalPrice: 75.00,
+            images: ['/images/products/rose-attar.jpg'],
+            stock: 30,
+            minStockLevel: 5,
+            sku: 'ATT-ROSE-001',
+            weight: 0.03,
+            dimensions: { length: 5, width: 3, height: 3 },
+            rating: 4.6,
+            reviewCount: 28,
+            reviews: [],
+            categoryId: 'floral',
+            category: 'Floral Attars',
+            sellerId: 'seller-1',
+            sellerName: 'Sufi Essences',
+            tags: ['rose', 'floral', 'delicate'],
+            specifications: {
+              concentration: '100% Natural',
+              bottleSize: '30ml',
+              origin: 'Bulgaria'
+            },
+            featured: true,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          },
+          {
+            id: '3',
+            name: 'Sandalwood Attar',
+            slug: 'sandalwood-attar',
+            description: 'Rich Indian sandalwood attar with warm, woody notes',
+            shortDescription: 'Warm woody fragrance',
+            price: 72.99,
+            originalPrice: 82.99,
+            images: ['/images/products/sandalwood-attar.jpg'],
+            stock: 20,
+            minStockLevel: 5,
+            sku: 'ATT-SANDAL-001',
+            weight: 0.03,
+            dimensions: { length: 5, width: 3, height: 3 },
+            rating: 4.7,
+            reviewCount: 35,
+            reviews: [],
+            categoryId: 'woody',
+            category: 'Woody Attars',
+            sellerId: 'seller-1',
+            sellerName: 'Sufi Essences',
+            tags: ['sandalwood', 'woody', 'warm'],
+            specifications: {
+              concentration: '100% Natural',
+              bottleSize: '30ml',
+              origin: 'India'
+            },
+            featured: true,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }
+        ];
+
+        const mockCategories: Category[] = [
+          {
+            id: 'oudh',
+            name: 'Oudh Attars',
+            slug: 'oudh-attars',
+            description: 'Premium Oudh-based fragrances',
+            image: '/images/categories/oudh-category.jpg',
+            productCount: 15,
+            parentId: undefined,
+            sortOrder: 1,
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          },
+          {
+            id: 'floral',
+            name: 'Floral Attars',
+            slug: 'floral-attars',
+            description: 'Delicate floral fragrances',
+            image: '/images/categories/floral-category.jpg',
+            productCount: 12,
+            parentId: undefined,
+            sortOrder: 2,
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          },
+          {
+            id: 'woody',
+            name: 'Woody Attars',
+            slug: 'woody-attars',
+            description: 'Warm and earthy woody fragrances',
+            image: '/images/categories/woody-category.jpg',
+            productCount: 10,
+            parentId: undefined,
+            sortOrder: 3,
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }
+        ];
+
+        setProducts(mockProducts);
+        setCategories(mockCategories);
+        setIsUsingMockData(true);
+        setBasicLoading(false);
+        setLoading(false);
+        return;
+      }
+
+      // Try to fetch from database with timeout
+      console.log('Attempting to fetch products from database');
+
+      const fetchWithTimeout = async (promise: Promise<any>, timeout = 30000) => {
+        return Promise.race([
+          promise,
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Request timeout')), timeout)
+          )
+        ]);
+      };
+
       try {
-        console.log('Attempting to fetch products from database');
-        const [productsResult, categoriesResult] = await Promise.all([
-          getProductsBasic({ limit: 50 }),
-          getCategories()
+        // Use API optimizer to deduplicate and batch requests
+        const [productsResult, categoriesResult] = await batchRequests([
+          {
+            key: 'products-basic-20',
+            fn: () => getProductsBasic({ limit: 20 })
+          },
+          {
+            key: 'categories-all',
+            fn: () => getCategories()
+          }
         ]);
 
-        console.log('Database fetch results:', { 
-          productsCount: productsResult.length, 
-          categoriesCount: categoriesResult.length 
+        console.log('Database fetch results:', {
+          productsCount: productsResult.length,
+          categoriesCount: categoriesResult.length
         });
 
         // If we get data from database, use it
-        console.log('Using database products');
         setProducts(productsResult);
         productCache.set(productCacheKey, productsResult);
-        setIsUsingMockData(false);
 
-        console.log('Using database categories');
         setCategories(categoriesResult);
         categoryCache.set(categoryCacheKey, categoriesResult);
         setIsUsingMockData(false);
+
+        setBasicLoading(false);
+
+        // Fetch additional products in background if needed
+        if (!forceRefresh && productsResult.length >= 20) {
+          setTimeout(async () => {
+            try {
+              setDetailsLoading(true);
+              const additionalProducts = await getProductsBasic({ limit: 50, offset: 20 });
+              if (additionalProducts.length > 0) {
+                setProducts(prev => [...prev, ...additionalProducts]);
+                productCache.set('products-full', [...productsResult, ...additionalProducts]);
+              }
+            } catch (detailError) {
+              console.warn('Failed to fetch additional products:', detailError);
+            } finally {
+              setDetailsLoading(false);
+            }
+          }, 2000); // Delay to not block UI
+        }
+
       } catch (dbError) {
-        // If database fetch fails, show error but don't use mock data
-        console.log('Database error:', dbError);
-        setError('Failed to load data from database');
+        console.error('Database fetch error:', dbError);
+
+        if (dbError instanceof Error && dbError.message.includes('infinite recursion')) {
+          setError('DATABASE SETUP ERROR: Your database security policies are causing an infinite loop. Please run the provided SQL script in your Supabase SQL Editor to fix it.');
+        } else if (dbError instanceof Error && dbError.message.includes('timeout')) {
+          setError('Database connection timeout. Please check your internet connection.');
+        } else {
+          setError('Failed to load data from database. Please try refreshing the page.');
+        }
+
         setProducts([]);
         setCategories([]);
         setIsUsingMockData(false);
-      }
-
-      setBasicLoading(false);
-
-      // Optionally fetch full product details in background (non-blocking)
-      if (!forceRefresh) {
-        setDetailsLoading(true);
-        setTimeout(async () => {
-          try {
-            const fullProductsData = await getProducts({ limit: 50 });
-            console.log('Fetched full product details:', fullProductsData.length);
-            setProducts(fullProductsData);
-            productCache.set('products-full', fullProductsData);
-          } catch (detailError) {
-            console.warn('Failed to fetch full product details, using basic data:', detailError);
-          } finally {
-            setDetailsLoading(false);
-          }
-        }, 100); // Small delay to not block UI
       }
 
     } catch (error) {
-      if (error instanceof Error && error.message.includes('infinite recursion')) {
-        setError('DATABASE SETUP ERROR: Your database security policies are causing an infinite loop. This is a common setup issue. Please run the provided SQL script in your Supabase SQL Editor to fix it.');
-      } else {
-        console.log('Database error');
-        setError('Failed to load data from database');
-        setProducts([]);
-        setCategories([]);
-        setIsUsingMockData(false);
-      }
-      console.error('Error fetching products:', error);
+      console.error('Error in fetchProducts:', error);
+      setError('An unexpected error occurred while loading data.');
+      setProducts([]);
+      setCategories([]);
+      setIsUsingMockData(false);
+    } finally {
+      setLoading(false);
       setBasicLoading(false);
-      setDetailsLoading(false);
     }
-    setLoading(false);
-  }, [setError]);
+  }, [setError, loading]); // Added loading to dependencies to prevent race conditions
 
 
 
+  // Initial data fetch - only run once on mount
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    let isMounted = true;
 
+    const initializeData = async () => {
+      if (isMounted) {
+        await fetchProducts();
+      }
+    };
+
+    initializeData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array to run only once
+
+  // Featured products fetch - only run once on mount
   useEffect(() => {
-    fetchFeaturedProducts();
-  }, [fetchFeaturedProducts]);
+    let isMounted = true;
+
+    const initializeFeatured = async () => {
+      if (isMounted) {
+        await fetchFeaturedProducts();
+      }
+    };
+
+    initializeFeatured();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array to run only once
 
   const addProduct = async (productData: Omit<Product, 'id' | 'createdAt' | 'reviews' | 'rating' | 'reviewCount'>) => {
     try {
-      // Try to use database
-      const productId = await createProduct(productData);
-      if (productId) {
+      // Use enhanced backend service with validation
+      const newProduct = await productService.create(productData);
+      if (newProduct) {
         // Invalidate cache and refresh
         invalidateProductCache();
         await fetchProducts(true);
+        console.log('✅ Product created successfully:', newProduct);
       } else {
         setError('Failed to add product');
       }
@@ -235,12 +445,13 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const updateProductData = async (updatedProduct: Product) => {
     try {
-      // Try database
-      const success = await updateProduct(updatedProduct);
-      if (success) {
+      // Use enhanced backend service with validation
+      const result = await productService.update(updatedProduct.id, updatedProduct);
+      if (result) {
         // Invalidate cache for this specific product and refresh
         invalidateProductCache(updatedProduct.id);
         await fetchProducts(true);
+        console.log('✅ Product updated successfully:', result);
       } else {
         setError('Failed to update product');
       }
@@ -252,12 +463,13 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const deleteProductData = async (productId: string) => {
     try {
-      // Try database
-      const success = await deleteProduct(productId);
+      // Use enhanced backend service
+      const success = await productService.delete(productId);
       if (success) {
         // Invalidate cache for this specific product and refresh
         invalidateProductCache(productId);
         await fetchProducts(true);
+        console.log('✅ Product deleted successfully');
       } else {
         setError('Failed to delete product');
       }
@@ -288,7 +500,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const submitReview = async (review: Omit<Review, 'id' | 'createdAt' | 'profiles'>) => {
     try {
-      const success = await addReview(review.productId || review.product_id!, review.rating, review.comment || '', review.title);
+      const success = await addReview(review);
       if (!success) {
         setError('Failed to submit review');
       }
@@ -320,7 +532,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   const updateCategoryData = async (updatedCategory: Category) => {
     try {
       // Try database
-      const success = await updateCategory(updatedCategory);
+      const success = await updateCategory(updatedCategory.id, updatedCategory);
       if (success) {
         // Invalidate cache and refresh
         invalidateCategoryCache();

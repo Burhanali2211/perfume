@@ -1,21 +1,17 @@
 // Utilities Barrel Exports
 export { performanceMonitor } from './performance';
-export { enhancedPerformanceMonitor, usePerformanceMonitor } from './enhancedPerformance';
 export { cacheManager } from './cache';
-export { logThrottler } from './logging';
-export { 
-  sanitizeInput, 
-  validateEmail, 
-  generateSecureToken, 
+export {
+  sanitizeInput,
+  validateEmail,
+  generateSecureToken,
   generateCSRFToken,
-  rateLimiter 
+  rateLimiter
 } from './security';
-export { 
-  detectRLSRecursionError, 
+export {
+  detectRLSRecursionError,
   generateRLSFixSuggestion,
-  handleDatabaseError 
+  handleDatabaseError
 } from './errorHandling';
-export { configureSocialAuth } from './socialAuthConfig';
-export { validateUUID, generateUUID } from './uuidValidation';
 export { serviceWorkerManager } from './serviceWorker';
 export { withScrollToTop } from './withScrollToTop';

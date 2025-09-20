@@ -23,9 +23,9 @@ export const ResponsiveAuthButton: React.FC<ResponsiveAuthButtonProps> = ({
   const getVariantClasses = () => {
     switch (variant) {
       case 'primary':
-        return user 
-          ? 'bg-red-600 hover:bg-red-700 text-white' 
-          : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white';
+        return user
+          ? 'bg-red-600 hover:bg-red-700 text-white'
+          : 'bg-neutral-900 hover:bg-neutral-800 text-white';
       case 'secondary':
         return 'bg-gray-100 hover:bg-gray-200 text-gray-800';
       case 'ghost':
@@ -74,7 +74,7 @@ export const ResponsiveAuthButton: React.FC<ResponsiveAuthButtonProps> = ({
         ${className}
         rounded-lg font-medium transition-all duration-200 
         flex items-center justify-center gap-2
-        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
+        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500
       `}
     >
       {showIcon && (

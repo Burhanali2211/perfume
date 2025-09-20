@@ -63,4 +63,5 @@ export const DashboardPage: React.FC = () => {
   );
 };
 
+// Default export for lazy loading
 export default DashboardPage;

@@ -6,7 +6,7 @@ import {
   ShoppingCart,
   BarChart3,
   Settings,
-  UserCog,
+
   Menu,
   X,
   ChevronRight,
@@ -19,19 +19,22 @@ import {
   Gift
 } from 'lucide-react';
 import { ComprehensiveAdminDashboard } from './Admin/ComprehensiveAdminDashboard';
-import { UserManagement } from './Admin/UserManagement';
+
 import { EnhancedUserManagement } from './Admin/EnhancedUserManagement';
 import { ProductManagement } from './Admin/ProductManagement';
 import { OrderManager } from './Admin/OrderManager';
 import { CategoryManagement } from './Admin/CategoryManagement';
+import { CollectionManagement } from './Admin/CollectionManagement';
+import { NewArrivalsManagement } from './Admin/NewArrivalsManagement';
+import { OffersManagement } from './Admin/OffersManagement';
 import { CouponManagement } from './Admin/CouponManagement';
 import { SettingsManagement } from './Admin/SettingsManagement';
-import { EnhancedAnalyticsDashboard } from './Admin/EnhancedAnalyticsDashboard';
-import { DedicatedAnalyticsDashboard } from './Admin/DedicatedAnalyticsDashboard';
-import { MarketingManagement } from './Admin/MarketingManagement';
-import { SystemHealthMonitoring } from './Admin/SystemHealthMonitoring';
-import { AuditLogs } from './Admin/AuditLogs';
-import { AdvancedReports } from './Admin/AdvancedReports';
+
+// Removed DedicatedAnalyticsDashboard import
+// Removed MarketingManagement import
+// Removed SystemHealthMonitoring import
+// Removed AuditLogs import
+// Removed AdvancedReports import
 import { AdminErrorBoundary } from '../Common/AdminErrorBoundary';
 import { AdminLoadingState } from '../Common/EnhancedLoadingStates';
 
@@ -47,12 +50,14 @@ export const AdminDashboard: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [forceRefresh, setForceRefresh] = useState<Record<string, number>>({}); // State to force component refresh
 
   // Check for mobile screen size
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth < 768) {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
         setSidebarCollapsed(false); // Always expanded on mobile when open
       }
     };
@@ -94,6 +99,16 @@ export const AdminDashboard: React.FC = () => {
       component: <CollectionManagement />
     },
     {
+      name: 'New Arrivals',
+      icon: <TrendingUp className="h-5 w-5" />,
+      component: <NewArrivalsManagement />
+    },
+    {
+      name: 'Offers',
+      icon: <Gift className="h-5 w-5" />,
+      component: <OffersManagement />
+    },
+    {
       name: 'Coupons',
       icon: <Tag className="h-5 w-5" />,
       component: <CouponManagement />
@@ -101,27 +116,27 @@ export const AdminDashboard: React.FC = () => {
     {
       name: 'Marketing',
       icon: <TrendingUp className="h-5 w-5" />,
-      component: <MarketingManagement />
+      component: <div className="p-6"><h2 className="text-xl font-bold">Marketing Management</h2><p>Marketing functionality will be available soon.</p></div>
     },
     {
       name: 'Analytics',
       icon: <BarChart3 className="h-5 w-5" />,
-      component: <DedicatedAnalyticsDashboard />
+      component: <div className="p-6"><h2 className="text-xl font-bold">Analytics Dashboard</h2><p>Analytics functionality will be available soon.</p></div>
     },
     {
       name: 'Reports',
       icon: <FileText className="h-5 w-5" />,
-      component: <AdvancedReports />
+      component: <div className="p-6"><h2 className="text-xl font-bold">Advanced Reports</h2><p>Advanced reporting functionality will be available soon.</p></div>
     },
     {
       name: 'System Health',
       icon: <Shield className="h-5 w-5" />,
-      component: <SystemHealthMonitoring />
+      component: <div className="p-6"><h2 className="text-xl font-bold">System Health</h2><p>System health monitoring will be available soon.</p></div>
     },
     {
       name: 'Audit Logs',
       icon: <Bell className="h-5 w-5" />,
-      component: <AuditLogs />
+      component: <div className="p-6"><h2 className="text-xl font-bold">Audit Logs</h2><p>Audit logs functionality will be available soon.</p></div>
     },
     {
       name: 'Settings',
@@ -133,6 +148,10 @@ export const AdminDashboard: React.FC = () => {
   const handleNavigation = async (tabName: string) => {
     setIsLoading(true);
     setActiveTab(tabName.toLowerCase());
+    
+    // Force refresh of the component by updating the forceRefresh state
+    setForceRefresh(prev => ({ ...prev, [tabName.toLowerCase()]: Date.now() }));
+    
     if (isMobile) {
       setSidebarOpen(false); // Close mobile sidebar after navigation
     }
@@ -155,6 +174,20 @@ export const AdminDashboard: React.FC = () => {
     setSidebarOpen(false);
   };
 
+  // Get the active component with a key to force re-rendering
+  const getActiveComponent = () => {
+    const activeComponent = navigation.find(item => item.name.toLowerCase() === activeTab)?.component;
+    
+    // Add a key to force re-rendering when switching tabs
+    if (React.isValidElement(activeComponent)) {
+      return React.cloneElement(activeComponent, { 
+        key: `${activeTab}-${forceRefresh[activeTab] || 0}` 
+      });
+    }
+    
+    return activeComponent;
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Mobile sidebar overlay */}
@@ -171,8 +204,8 @@ export const AdminDashboard: React.FC = () => {
           ? sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           : sidebarCollapsed ? 'w-16' : 'w-64'
       } ${
-        isMobile ? 'fixed inset-y-0 left-0 z-50 w-64' : 'relative'
-      } bg-white transform transition-all duration-300 ease-in-out shadow-lg border-r border-gray-200`}>
+        isMobile ? 'fixed inset-y-0 left-0 z-50' : 'relative'
+      } bg-white transform transition-all duration-300 ease-in-out shadow-lg border-r border-gray-200 flex flex-col`}>
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between flex-shrink-0 px-4 py-4 border-b border-gray-200">
@@ -242,20 +275,20 @@ export const AdminDashboard: React.FC = () => {
             </nav>
 
             {/* Footer */}
-            {(!sidebarCollapsed || isMobile) && (
-              <div className="flex-shrink-0 border-t border-gray-200 p-4">
+            <div className="flex-shrink-0 border-t border-gray-200 p-4">
+              {(!sidebarCollapsed || isMobile) && (
                 <div className="flex items-center space-x-3 text-sm text-gray-500">
                   <Bell className="h-4 w-4" />
                   <span>Admin Dashboard v2.0</span>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main content */}
-      <div className="flex flex-col flex-1 min-w-0">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         {/* Mobile header */}
         {isMobile && (
           <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
@@ -302,11 +335,19 @@ export const AdminDashboard: React.FC = () => {
               <AdminErrorBoundary>
                 {isLoading ? (
                   <AdminLoadingState
-                    type={activeTab as any}
+                    type={
+                      activeTab === 'dashboard' ? 'dashboard' :
+                      activeTab === 'users' ? 'users' :
+                      activeTab === 'products' ? 'products' :
+                      activeTab === 'orders' ? 'orders' :
+                      activeTab === 'analytics' || activeTab === 'reports' || activeTab === 'dedicatedanalytics' ? 'analytics' :
+                      activeTab === 'settings' || activeTab === 'system health' || activeTab === 'audit logs' ? 'settings' :
+                      'dashboard' // default fallback
+                    }
                     message={`Loading ${navigation.find(item => item.name.toLowerCase() === activeTab)?.name || 'content'}...`}
                   />
                 ) : (
-                  navigation.find(item => item.name.toLowerCase() === activeTab)?.component
+                  getActiveComponent()
                 )}
               </AdminErrorBoundary>
             </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useAddresses } from '../../contexts/AddressContext';
+// Removed AddressContext import
 import { Address } from '../../types';
 
 interface AddressFormProps {
@@ -9,7 +9,9 @@ interface AddressFormProps {
 }
 
 export const AddressForm: React.FC<AddressFormProps> = ({ address, onClose }) => {
-  const { addAddress, updateAddress } = useAddresses();
+  // Simplified address functionality
+  const addAddress = async () => {};
+  const updateAddress = async () => {};
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',

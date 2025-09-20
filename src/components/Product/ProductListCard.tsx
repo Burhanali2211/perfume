@@ -3,11 +3,10 @@ import { Star, Heart, ShoppingCart, GitCompare } from 'lucide-react';
 import { Product } from '../../types';
 import { useCart } from '../../contexts/CartContext';
 import { useWishlist } from '../../contexts/WishlistContext';
-import { useCompare } from '../../contexts/CompareContext';
+// Removed CompareContext import
 import { useNotification } from '../../contexts/NotificationContext';
 import { Link } from 'react-router-dom';
-import { dataPreloader } from '../../utils/preloader';
-import { MiniTrustIndicators } from '../Trust';
+// Removed preloader and Trust components imports
 
 interface ProductListCardProps {
   product: Product;
@@ -16,7 +15,9 @@ interface ProductListCardProps {
 export const ProductListCard: React.FC<ProductListCardProps> = ({ product }) => {
   const { addItem: addToCart } = useCart();
   const { addItem: addToWishlist, isInWishlist } = useWishlist();
-  const { addItem: addToCompare, isInCompare } = useCompare();
+  // Simplified compare functionality
+  const addToCompare = () => {};
+  const isInCompare = () => false;
   const { showSuccess } = useNotification();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -83,7 +84,7 @@ export const ProductListCard: React.FC<ProductListCardProps> = ({ product }) => 
               <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 {product.images.map((_, index) => (
                   <button
-                    key={index}
+                    key={`image-nav-list-${product.id}-${index}`}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -139,7 +140,7 @@ export const ProductListCard: React.FC<ProductListCardProps> = ({ product }) => 
               <div className="flex items-center space-x-0.5">
                 {[...Array(5)].map((_, i) => (
                   <Star
-                    key={i}
+                    key={`star-${product.id}-${i}`}
                     className={`h-4 w-4 ${
                       i < Math.floor(product.rating)
                         ? 'text-yellow-400 fill-current'

@@ -1,25 +1,31 @@
 import { createClient } from '@supabase/supabase-js';
-import { createRetryableAction } from '../utils/errorHandling';
-import { performanceMonitor } from '../utils/performance';
-import { logThrottler } from '../utils/logging';
-import { validateSellerId, validateAndFixStoredUser } from '../utils/uuidValidation';
+// import { createRetryableAction } from '../utils/errorHandling'; // Unused import
+// import { performanceMonitor } from '../utils/performance'; // Unused import
+// Removed logging import
+// Removed uuidValidation import
 import {
   User,
   Product,
   Category,
-  CartItem,
-  WishlistItem,
+  // CartItem, // Unused import
+  // WishlistItem, // Unused import
   Order,
   Address,
-  ProductVariant,
-  Coupon,
+  // ProductVariant, // Unused import
+  // Coupon, // Unused import
   DashboardAnalytics
 } from '../types';
 
 // Environment validation with better error messages
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://bxyzvaujvhumupwdmysh.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your_anon_key_here';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://gtnpmxlnzpfqbhfzuitj.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0bnBteGxuenBmcWJoZnp1aXRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4MjExNTQsImV4cCI6MjA3MzM5NzE1NH0.cREEJprRj9dnCk5zc9vqsyiSAdFt3ih7aTUUnpkNjB8';
 const appEnv = import.meta.env.VITE_APP_ENV || 'development';
+
+// Validate required environment variables
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing required Supabase environment variables');
+  throw new Error('Supabase configuration is incomplete. Please check your environment variables.');
+}
 
 // Enhanced environment validation with backend fix detection
 function validateEnvironment() {
@@ -66,28 +72,45 @@ function validateEnvironment() {
   }
 }
 
-// Enhanced database initialization with automatic fix application
+// Enhanced database initialization with better error handling and timeouts
 async function initializeDatabase() {
   try {
-    // Set development mode parameters
-    await supabase.rpc('set_config', {
-      setting_name: 'app.development_mode',
-      new_value: 'true',
-      is_local: false
-    }).catch(() => {
-      // Ignore errors if function doesn't exist
-      console.log('Development mode configuration not available');
-    });
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Database initialization timeout')), 5000)
+    );
 
-    // Test basic connectivity
-    const { data, error } = await supabase
+    // Test basic connectivity with timeout
+    const connectivityTest = supabase
       .from('profiles')
       .select('count')
       .limit(1);
 
-    if (error && error.message.includes('infinite recursion')) {
-      console.warn('⚠️ Database RLS policies need fixing. This is expected on first run.');
-      throw new Error('DATABASE_NEEDS_FIXING: Please run the COMPREHENSIVE-BACKEND-FIX.sql script in your Supabase SQL Editor.');
+    const { error } = await Promise.race([connectivityTest, timeoutPromise]);
+
+    if (error) {
+      if (error.message.includes('infinite recursion')) {
+        console.warn('⚠️ Database RLS policies need fixing. This is expected on first run.');
+        throw new Error('DATABASE_NEEDS_FIXING: Please run the COMPREHENSIVE-BACKEND-FIX.sql script in your Supabase SQL Editor.');
+      } else if (error.message.includes('timeout')) {
+        console.warn('⚠️ Database connection timeout. Continuing with limited functionality.');
+        return false; // Continue without database
+      } else {
+        console.warn('⚠️ Database connection issue:', error.message);
+        return false; // Continue without database
+      }
+    }
+
+    // Only set development mode if basic connectivity works
+    try {
+      await supabase.rpc('set_config', {
+        setting_name: 'app.development_mode',
+        new_value: 'true',
+        is_local: false
+      });
+    } catch (configError) {
+      // Ignore errors if function doesn't exist
+      console.log('Development mode configuration not available');
     }
 
     // Check if we're in direct login mode
@@ -151,12 +174,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       'Authorization': `Bearer ${supabaseAnonKey}`
     },
     fetch: (url, options = {}) => {
-      // Reduce logging frequency - only log RPC calls and critical requests
+      // Simplified logging
       if (appEnv === 'development') {
-        // Only log RPC calls and requests to specific endpoints to reduce noise
+        // Basic console logging for development
         if (url.includes('/rpc/') || url.includes('profiles') || url.includes('orders') || url.includes('products')) {
-          // Use throttled logging to prevent excessive output
-          logThrottler.keyedLog(`db_request_${url}`, `🔗 Database request: ${url}`, 2000); // At most once every 2 seconds
+          console.log(`🔗 Database request: ${url}`);
         }
       }
 
@@ -249,7 +271,7 @@ export const setDirectLoginSession = async (): Promise<void> => {
       new_value: 'true',
       is_local: false
     });
-  } catch (error) {
+  } catch {
     // If RPC fails, try alternative method
     console.log('Setting direct login session context');
     // The RLS policies will handle the direct login mode check
@@ -344,10 +366,10 @@ function isRetryableError(error: Error): boolean {
   return false;
 }
 
-// Helper to validate UUID format
-const isValidUUID = (value: string): boolean => {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
-};
+// Helper to validate UUID format - currently unused
+// const isValidUUID = (value: string): boolean => {
+//   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+// };
 
 // Enhanced product fetching with all details (for when needed)
 export const getProducts = async (filters?: {
@@ -396,7 +418,36 @@ export const getProducts = async (filters?: {
 
     if (error) throw error;
 
-    return data || [];
+    // Map database fields to interface fields
+    const mappedData = (data || []).map(product => ({
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      description: product.description || '',
+      shortDescription: product.short_description,
+      price: parseFloat(product.price),
+      originalPrice: product.original_price ? parseFloat(product.original_price) : undefined,
+      images: product.image_url ? [product.image_url] : [],
+      stock: product.stock || 0,
+      minStockLevel: product.min_stock_level,
+      sku: product.sku,
+      weight: product.weight,
+      dimensions: product.dimensions,
+      rating: parseFloat(product.rating || '0'),
+      reviewCount: product.review_count || 0,
+      reviews: product.reviews || [],
+      categoryId: product.category_id,
+      category: product.categories?.name || '',
+      sellerId: product.seller_id,
+      sellerName: 'Sufi Essences',
+      tags: product.tags || [],
+      specifications: product.specifications || {},
+      featured: product.featured || false,
+      createdAt: new Date(product.created_at),
+      updatedAt: new Date(product.updated_at)
+    }));
+
+    return mappedData;
   } catch (error) {
     console.error('Error fetching products:', error);
     return [];
@@ -415,11 +466,41 @@ export const getProductById = async (id: string) => {
         reviews(*, profiles(display_name))
       `)
       .eq('id', id)
+      .eq('active', true)
       .single();
 
     if (error) throw error;
 
-    return data;
+    // Map database fields to interface fields
+    const mappedData = {
+      id: data.id,
+      name: data.name,
+      slug: data.slug,
+      description: data.description || '',
+      shortDescription: data.short_description,
+      price: parseFloat(data.price),
+      originalPrice: data.original_price ? parseFloat(data.original_price) : undefined,
+      images: data.image_url ? [data.image_url] : [],
+      stock: data.stock || 0,
+      minStockLevel: data.min_stock_level,
+      sku: data.sku,
+      weight: data.weight,
+      dimensions: data.dimensions,
+      rating: parseFloat(data.rating || '0'),
+      reviewCount: data.review_count || 0,
+      reviews: data.reviews || [],
+      categoryId: data.category_id,
+      category: data.categories?.name || '',
+      sellerId: data.seller_id,
+      sellerName: 'Sufi Essences',
+      tags: data.tags || [],
+      specifications: data.specifications || {},
+      featured: data.featured || false,
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at)
+    };
+
+    return mappedData;
   } catch (error) {
     console.error('Error fetching product:', error);
     return null;
@@ -438,11 +519,41 @@ export const getProductBySlug = async (slug: string) => {
         reviews(*, profiles(display_name))
       `)
       .eq('slug', slug)
+      .eq('active', true)
       .single();
 
     if (error) throw error;
 
-    return data;
+    // Map database fields to interface fields
+    const mappedData = {
+      id: data.id,
+      name: data.name,
+      slug: data.slug,
+      description: data.description || '',
+      shortDescription: data.short_description,
+      price: parseFloat(data.price),
+      originalPrice: data.original_price ? parseFloat(data.original_price) : undefined,
+      images: data.image_url ? [data.image_url] : [],
+      stock: data.stock || 0,
+      minStockLevel: data.min_stock_level,
+      sku: data.sku,
+      weight: data.weight,
+      dimensions: data.dimensions,
+      rating: parseFloat(data.rating || '0'),
+      reviewCount: data.review_count || 0,
+      reviews: data.reviews || [],
+      categoryId: data.category_id,
+      category: data.categories?.name || '',
+      sellerId: data.seller_id,
+      sellerName: 'Sufi Essences',
+      tags: data.tags || [],
+      specifications: data.specifications || {},
+      featured: data.featured || false,
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at)
+    };
+
+    return mappedData;
   } catch (error) {
     console.error('Error fetching product by slug:', error);
     return null;
@@ -455,11 +566,27 @@ export const getCategories = async () => {
     const { data, error } = await supabase
       .from('categories')
       .select('*')
-      .order('name', { ascending: true });
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
 
     if (error) throw error;
 
-    return data || [];
+    // Map database fields to interface fields
+    const mappedData = (data || []).map(category => ({
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      description: category.description || '',
+      image: category.image_url || '',
+      productCount: 0, // Will be calculated separately if needed
+      parentId: category.parent_id,
+      sortOrder: category.sort_order || 0,
+      isActive: category.is_active,
+      createdAt: new Date(category.created_at),
+      updatedAt: new Date(category.updated_at)
+    }));
+
+    return mappedData;
   } catch (error) {
     console.error('Error fetching categories:', error);
     return [];
@@ -509,13 +636,42 @@ export const getCartItems = async (userId: string) => {
       .from('cart')
       .select(`
         *,
-        products(name, price, image_url, slug)
+        products(name, price, image_url, slug, stock)
       `)
       .eq('user_id', userId);
 
     if (error) throw error;
 
-    return data || [];
+    // Map database fields to interface fields
+    const mappedData = (data || []).map(item => ({
+      id: item.id,
+      productId: item.product_id,
+      variantId: item.variant_id,
+      quantity: item.quantity,
+      product: {
+        id: item.product_id,
+        name: item.products?.name || '',
+        price: parseFloat(item.products?.price || '0'),
+        images: item.products?.image_url ? [item.products.image_url] : [],
+        slug: item.products?.slug || '',
+        stock: item.products?.stock || 0,
+        description: '',
+        rating: 0,
+        reviewCount: 0,
+        categoryId: '',
+        sellerId: '',
+        sellerName: 'Sufi Essences',
+        reviews: [],
+        tags: [],
+        specifications: {},
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      createdAt: new Date(item.created_at),
+      updatedAt: new Date(item.updated_at)
+    }));
+
+    return mappedData;
   } catch (error) {
     console.error('Error fetching cart items:', error);
     return [];
@@ -529,13 +685,39 @@ export const getWishlistItems = async (userId: string) => {
       .from('wishlist')
       .select(`
         *,
-        products(name, price, image_url, slug)
+        products(name, price, image_url, slug, stock, rating, review_count)
       `)
       .eq('user_id', userId);
 
     if (error) throw error;
 
-    return data || [];
+    // Map database fields to interface fields
+    const mappedData = (data || []).map(item => ({
+      id: item.id,
+      productId: item.product_id,
+      product: {
+        id: item.product_id,
+        name: item.products?.name || '',
+        price: parseFloat(item.products?.price || '0'),
+        images: item.products?.image_url ? [item.products.image_url] : [],
+        slug: item.products?.slug || '',
+        stock: item.products?.stock || 0,
+        rating: parseFloat(item.products?.rating || '0'),
+        reviewCount: item.products?.review_count || 0,
+        description: '',
+        categoryId: '',
+        sellerId: '',
+        sellerName: 'Sufi Essences',
+        reviews: [],
+        tags: [],
+        specifications: {},
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      createdAt: new Date(item.created_at)
+    }));
+
+    return mappedData;
   } catch (error) {
     console.error('Error fetching wishlist items:', error);
     return [];
@@ -556,7 +738,56 @@ export const getOrders = async (userId: string) => {
 
     if (error) throw error;
 
-    return data || [];
+    // Map database fields to interface fields
+    const mappedData = (data || []).map(order => ({
+      id: order.id,
+      orderNumber: order.order_number,
+      userId: order.user_id,
+      status: order.status,
+      totalAmount: parseFloat(order.total_amount || '0'),
+      subtotal: parseFloat(order.subtotal || '0'),
+      taxAmount: parseFloat(order.tax_amount || '0'),
+      shippingAmount: parseFloat(order.shipping_amount || '0'),
+      discountAmount: parseFloat(order.discount_amount || '0'),
+      paymentStatus: order.payment_status,
+      paymentMethod: order.payment_method,
+      shippingAddress: order.shipping_address,
+      billingAddress: order.billing_address,
+      notes: order.notes,
+      items: (order.order_items || []).map((item: Record<string, unknown>) => ({
+        id: item.id,
+        productId: item.product_id,
+        variantId: item.variant_id,
+        quantity: item.quantity,
+        unitPrice: parseFloat(item.unit_price || '0'),
+        totalPrice: parseFloat(item.total_price || '0'),
+        productName: item.product_name,
+        productImage: item.product_image,
+        product: item.products ? {
+          id: item.product_id,
+          name: item.products.name,
+          images: item.products.image_url ? [item.products.image_url] : [],
+          slug: item.products.slug,
+          price: parseFloat(item.unit_price || '0'),
+          description: '',
+          rating: 0,
+          reviewCount: 0,
+          categoryId: '',
+          sellerId: '',
+          sellerName: 'Sufi Essences',
+          stock: 0,
+          reviews: [],
+          tags: [],
+          specifications: {},
+          createdAt: new Date(),
+          updatedAt: new Date()
+        } : undefined
+      })),
+      createdAt: new Date(order.created_at),
+      updatedAt: new Date(order.updated_at)
+    }));
+
+    return mappedData;
   } catch (error) {
     console.error('Error fetching orders:', error);
     return [];
@@ -607,7 +838,7 @@ export const getAddresses = async (userId: string) => {
 export const getDashboardAnalytics = async (userId: string, role: string) => {
   try {
     // Different analytics based on user role
-    let data: DashboardAnalytics = {
+    const data: DashboardAnalytics = {
       totalRevenue: 0,
       totalOrders: 0,
       totalProducts: 0,
@@ -618,29 +849,32 @@ export const getDashboardAnalytics = async (userId: string, role: string) => {
     };
 
     if (role === 'admin') {
-      // Admin gets comprehensive analytics
-      const [revenueResult, ordersResult, productsResult, customersResult] = await Promise.all([
-        supabase.rpc('get_total_revenue'),
-        supabase.rpc('get_total_orders'),
-        supabase.rpc('get_total_products'),
-        supabase.rpc('get_total_customers')
+      // Admin gets comprehensive analytics using direct queries
+      const [ordersResult, productsResult, customersResult] = await Promise.all([
+        supabase.from('orders').select('total_amount').eq('payment_status', 'paid'),
+        supabase.from('products').select('id').eq('active', true),
+        supabase.from('profiles').select('id').eq('role', 'customer')
       ]);
 
-      data.totalRevenue = revenueResult.data || 0;
-      data.totalOrders = ordersResult.data || 0;
-      data.totalProducts = productsResult.data || 0;
-      data.totalCustomers = customersResult.data || 0;
+      // Calculate total revenue
+      const totalRevenue = ordersResult.data?.reduce((sum, order) => sum + parseFloat(order.total_amount || '0'), 0) || 0;
+
+      data.totalRevenue = totalRevenue;
+      data.totalOrders = ordersResult.data?.length || 0;
+      data.totalProducts = productsResult.data?.length || 0;
+      data.totalCustomers = customersResult.data?.length || 0;
     } else if (role === 'seller') {
       // Seller gets their own analytics
-      const [revenueResult, ordersResult, productsResult] = await Promise.all([
-        supabase.rpc('get_seller_revenue', { seller_id: userId }),
-        supabase.rpc('get_seller_orders', { seller_id: userId }),
-        supabase.rpc('get_seller_products', { seller_id: userId })
+      const [ordersResult, productsResult] = await Promise.all([
+        supabase.from('orders').select('total_amount').eq('payment_status', 'paid'),
+        supabase.from('products').select('id').eq('seller_id', userId).eq('active', true)
       ]);
 
-      data.totalRevenue = revenueResult.data || 0;
-      data.totalOrders = ordersResult.data || 0;
-      data.totalProducts = productsResult.data || 0;
+      const totalRevenue = ordersResult.data?.reduce((sum, order) => sum + parseFloat(order.total_amount || '0'), 0) || 0;
+
+      data.totalRevenue = totalRevenue;
+      data.totalOrders = ordersResult.data?.length || 0;
+      data.totalProducts = productsResult.data?.length || 0;
     }
 
     // Get recent orders
@@ -662,19 +896,26 @@ export const getDashboardAnalytics = async (userId: string, role: string) => {
     const { data: topProducts } = await supabase
       .from('products')
       .select('id, name, price, image_url, slug, sales_count')
+      .eq('active', true)
       .order('sales_count', { ascending: false })
       .limit(5);
 
     data.topProducts = topProducts || [];
 
-    // Get sales data
-    const { data: salesData } = await supabase
-      .from('sales_data_view')
-      .select('*')
-      .order('date', { ascending: true })
+    // Get sales data from orders (simplified)
+    const { data: salesOrders } = await supabase
+      .from('orders')
+      .select('created_at, total_amount')
+      .eq('payment_status', 'paid')
+      .order('created_at', { ascending: true })
       .limit(30);
 
-    data.salesData = salesData || [];
+    // Transform orders into sales data format
+    data.salesData = (salesOrders || []).map(order => ({
+      date: order.created_at.split('T')[0], // Extract date part
+      sales: parseFloat(order.total_amount || '0'),
+      orders: 1
+    }));
 
     return data;
   } catch (error) {
@@ -713,8 +954,8 @@ export const updateUserRole = async (userId: string, newRole: string) => {
 // Enhanced user profile creation with all details (for when needed)
 export const createUserProfile = async (profile: Partial<User>) => {
   try {
-    // Validate and fix stored user data if needed
-    const fixedProfile = validateAndFixStoredUser(profile);
+    // Simplified validation
+    const fixedProfile = profile;
     
     const { data, error } = await supabase
       .from('profiles')
@@ -738,8 +979,8 @@ export const createUserProfile = async (profile: Partial<User>) => {
 // Enhanced user profile update with all details (for when needed)
 export const updateUserProfile = async (userId: string, updates: Partial<User>) => {
   try {
-    // Validate and fix stored user data if needed
-    const fixedUpdates = validateAndFixStoredUser(updates);
+    // Simplified validation
+    const fixedUpdates = updates;
     
     const { data, error } = await supabase
       .from('profiles')
@@ -763,8 +1004,8 @@ export const updateUserProfile = async (userId: string, updates: Partial<User>) 
 // Enhanced product creation with all details (for when needed)
 export const createProduct = async (product: Partial<Product>, sellerId: string) => {
   try {
-    // Validate seller ID
-    if (!validateSellerId(sellerId)) {
+    // Simplified seller ID validation
+    if (!sellerId || typeof sellerId !== 'string') {
       throw new Error('Invalid seller ID format');
     }
 
@@ -986,7 +1227,7 @@ export const removeFromWishlist = async (userId: string, productId: string) => {
 };
 
 // Enhanced order creation with all details (for when needed)
-export const createOrder = async (order: Partial<Order>, orderItems: any[]) => {
+export const createOrder = async (order: Partial<Order>, orderItems: Record<string, unknown>[]) => {
   try {
     // Start a transaction
     const { data: orderData, error: orderError } = await supabase
@@ -1030,7 +1271,7 @@ export const createOrder = async (order: Partial<Order>, orderItems: any[]) => {
 };
 
 // Enhanced guest order creation with all details (for when needed)
-export const createGuestOrder = async (order: Partial<Order>, orderItems: any[]) => {
+export const createGuestOrder = async (order: Partial<Order>, orderItems: Record<string, unknown>[]) => {
   try {
     // For guest orders, we still create the order in the database
     // but without associating it with a user ID
@@ -1191,7 +1432,10 @@ export const getFeaturedProducts = async (limit: number = 8) => {
         slug,
         featured,
         rating,
-        review_count
+        review_count,
+        category_id,
+        seller_id,
+        stock
       `)
       .eq('featured', true)
       .eq('active', true)
@@ -1200,7 +1444,29 @@ export const getFeaturedProducts = async (limit: number = 8) => {
 
     if (error) throw error;
 
-    return data || [];
+    // Map database fields to interface fields
+    const mappedData = (data || []).map(product => ({
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: parseFloat(product.price),
+      images: product.image_url ? [product.image_url] : [],
+      slug: product.slug,
+      featured: product.featured,
+      rating: parseFloat(product.rating || '0'),
+      reviewCount: product.review_count || 0,
+      categoryId: product.category_id,
+      sellerId: product.seller_id,
+      sellerName: 'Sufi Essences', // Default seller name
+      stock: product.stock || 0,
+      reviews: [], // Empty array for basic fetch
+      tags: [],
+      specifications: {},
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }));
+
+    return mappedData;
   } catch (error) {
     console.error('Error fetching featured products:', error);
     return [];
@@ -1215,8 +1481,10 @@ export const getProductsBasic = async (filters?: {
     featured?: boolean;
     search?: string;
     limit?: number;
+    offset?: number;
 }) => {
   try {
+    // Simplified query for better performance - avoid joins when possible
     let query = supabase
       .from('products')
       .select(`
@@ -1228,17 +1496,17 @@ export const getProductsBasic = async (filters?: {
         featured,
         rating,
         review_count,
+<<<<<<< HEAD
         tags,
         categories!inner(name, slug)
+=======
+        category_id
+>>>>>>> 13bec73a9cb2635c288b31c9e3205ab1de5a01a7
       `)
       .eq('active', true);
 
     if (filters?.categoryId) {
       query = query.eq('category_id', filters.categoryId);
-    }
-
-    if (filters?.categorySlug) {
-      query = query.eq('categories.slug', filters.categorySlug);
     }
 
     if (filters?.seller) {
@@ -1253,15 +1521,54 @@ export const getProductsBasic = async (filters?: {
       query = query.ilike('name', `%${filters.search}%`);
     }
 
+    // Add pagination support
     if (filters?.limit) {
       query = query.limit(filters.limit);
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false });
+    if (filters?.offset) {
+      query = query.range(filters.offset, (filters.offset + (filters.limit || 20)) - 1);
+    }
 
-    if (error) throw error;
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Query timeout')), 8000)
+    );
 
-    return data || [];
+    const { data, error } = await Promise.race([
+      query.order('created_at', { ascending: false }),
+      timeoutPromise
+    ]);
+
+    if (error) {
+      console.error('Database query error:', error);
+      throw error;
+    }
+
+    // Map database fields to interface fields with simplified data
+    const mappedData = (data || []).map(product => ({
+      id: product.id,
+      name: product.name,
+      price: parseFloat(product.price || '0'),
+      images: product.image_url ? [product.image_url] : [],
+      slug: product.slug,
+      featured: product.featured || false,
+      rating: parseFloat(product.rating || '0'),
+      reviewCount: product.review_count || 0,
+      categoryId: product.category_id,
+      category: '', // Will be populated separately if needed
+      sellerId: '',
+      sellerName: 'Sufi Essences',
+      stock: 100, // Default stock for basic view
+      description: '', // Not needed for basic view
+      reviews: [],
+      tags: [],
+      specifications: {},
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }));
+
+    return mappedData;
   } catch (error) {
     console.error('Error fetching basic products:', error);
     return [];
@@ -1291,7 +1598,28 @@ export const getProductsMinimal = async (limit?: number) => {
 
     if (error) throw error;
 
-    return data || [];
+    // Map database fields to interface fields
+    const mappedData = (data || []).map(product => ({
+      id: product.id,
+      name: product.name,
+      price: parseFloat(product.price),
+      images: product.image_url ? [product.image_url] : [],
+      slug: product.slug,
+      description: '',
+      rating: 0,
+      reviewCount: 0,
+      categoryId: '',
+      sellerId: '',
+      sellerName: 'Sufi Essences',
+      stock: 0,
+      reviews: [],
+      tags: [],
+      specifications: {},
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }));
+
+    return mappedData;
   } catch (error) {
     console.error('Error fetching minimal products:', error);
     return [];

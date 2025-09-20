@@ -1,5 +1,6 @@
 import React, { Component, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Home, X } from 'lucide-react';
+// Removed networkErrorHandler import
 
 interface ErrorInfo {
   componentStack: string;
@@ -43,7 +44,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       'content-script',
       '__cf_bm',
       'Invalid URI',
-      'Load of media resource'
+      'Load of media resource',
+      'ERR_BLOCKED_BY_CLIENT',
+      'Failed to fetch',
+      'google-analytics',
+      'googleapis.com',
+      'contentScript.bundle.js',
+      'i18next',
+      'preloaded using link preload'
     ];
 
     const shouldIgnore = ignoredErrors.some(ignored =>
@@ -150,3 +158,9 @@ export function withErrorBoundary<P extends object>(
     );
   };
 }
+
+// Development-only error display component for network issues
+export const DevErrorDisplay: React.FC = () => {
+  // Simplified - no network error handling
+  return null;
+};
