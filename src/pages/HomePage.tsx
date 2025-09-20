@@ -9,7 +9,6 @@ import { TrendingSection } from '../components/Home/TrendingSection';
 import { Testimonials } from '../components/Home/Testimonials';
 import { RecentlyViewed } from '../components/Home/RecentlyViewed';
 import { useProducts } from '../contexts/ProductContext';
-import { LoadingOptimizer } from '../components/Performance/LoadingOptimizer';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ShoppingBag, Star, ShieldCheck, Headphones, Zap, Award, Users, CheckCircle, Globe, Sparkles, Crown } from 'lucide-react';
 import { motion } from 'framer-motion';

@@ -33,7 +33,7 @@ import { ErrorFallback } from '../../Common/ErrorFallback';
 import { UniversalTableManager } from './UniversalTableManager';
 import { AdvancedAnalytics } from './AdvancedAnalytics';
 import { DatabaseSchemaViewer } from './DatabaseSchemaViewer';
-import { CRUDTestRunner } from './CRUDTestRunner';
+// Removed CRUDTestRunner import
 
 interface TableInfo {
   name: string;
@@ -523,7 +523,7 @@ export const ComprehensiveAdminDashboard: React.FC = () => {
   }
 
   if (currentView === 'testing') {
-    return <CRUDTestRunner />;
+    return <div className="p-6"><h2 className="text-xl font-bold">CRUD Testing</h2><p>CRUD testing functionality will be available soon.</p></div>;
   }
 
   if (loading) {

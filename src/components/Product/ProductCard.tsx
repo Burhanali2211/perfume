@@ -3,14 +3,12 @@ import { Star, Heart, ShoppingCart, GitCompare } from 'lucide-react';
 import { Product } from '../../types';
 // import { useCart } from '../../contexts/CartContext'; // Unused
 import { useWishlist } from '../../contexts/WishlistContext';
-import { useCompare } from '../../contexts/CompareContext';
+// Removed CompareContext import
 import { useNotification } from '../../contexts/NotificationContext';
 import { Link } from 'react-router-dom';
-import { dataPreloader } from '../../utils/preloader';
-import { MiniTrustIndicators, TrendingIndicator } from '../Trust';
-import { useAddToCartWithAuth } from '../../hooks/useAddToCartWithAuth';
-import { useAddToWishlistWithAuth } from '../../hooks/useAddToWishlistWithAuth';
-import { useAddToCompareWithAuth } from '../../hooks/useAddToCompareWithAuth';
+// Removed preloader import
+// Removed Trust components and auth hooks imports
+// Removed auth hooks imports
 
 interface ProductCardProps {
   product: Product;
@@ -18,11 +16,13 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { isInWishlist } = useWishlist();
-  const { isInCompare } = useCompare();
+  // Simplified compare functionality
+  const isInCompare = () => false;
   // const { showSuccess } = useNotification(); // Unused
-  const { handleAddToCart } = useAddToCartWithAuth();
-  const { handleAddToWishlist } = useAddToWishlistWithAuth();
-  const { handleAddToCompare } = useAddToCompareWithAuth();
+  // Simplified auth handlers
+  const handleAddToCart = () => {};
+  const handleAddToWishlist = () => {};
+  const handleAddToCompare = () => {};
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const handleWishlistToggle = (e: React.MouseEvent) => {

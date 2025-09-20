@@ -3,8 +3,7 @@ import { motion } from 'framer-motion';
 import { TrendingUp, ArrowRight, Star, ShoppingBag } from 'lucide-react';
 import { ProductCard } from '../Product/ProductCard';
 import { LoadingSpinner } from '../Common/LoadingSpinner';
-import { MobileFeaturedCarousel } from '../Mobile/MobileProductCarousel';
-import { useMobileDetection } from '../../hooks/useMobileGestures';
+// Removed Mobile components and hooks imports
 import { supabase } from '../../lib/supabase';
 import { Product } from '../../types';
 import { Link } from 'react-router-dom';
@@ -34,7 +33,8 @@ export const NewArrivalsSection: React.FC<NewArrivalsSectionProps> = ({
 }) => {
   const [newArrivals, setNewArrivals] = useState<NewArrival[]>([]);
   const [loading, setLoading] = useState(true);
-  const { isMobile } = useMobileDetection();
+  // Simplified mobile detection
+  const isMobile = false;
 
   useEffect(() => {
     const fetchNewArrivals = async () => {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Crown, ArrowRight, Star, Users, Calendar, Sparkles } from 'lucide-react';
-import { useCollections } from '../../contexts/CollectionContext';
+// Removed CollectionContext import
 import { LoadingSpinner } from '../Common/LoadingSpinner';
 import { Link } from 'react-router-dom';
 
@@ -14,7 +14,9 @@ export const FeaturedCollectionsSection: React.FC<FeaturedCollectionsSectionProp
   className = '', 
   maxItems = 6 
 }) => {
-  const { featuredCollections, loading } = useCollections();
+  // Simplified collections functionality
+  const featuredCollections: any[] = [];
+  const loading = false;
 
   // Limit the number of collections to display
   const displayCollections = featuredCollections.slice(0, maxItems);

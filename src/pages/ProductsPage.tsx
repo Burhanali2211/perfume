@@ -5,13 +5,13 @@ import { Grid, List, X, AlertCircle, RefreshCw } from 'lucide-react';
 import { ProductCard } from '../components/Product/ProductCard';
 import { ProductListCard } from '../components/Product/ProductListCard';
 import { AttrFilters, AttrFilterState } from '../components/Product/AttrFilters';
-import { MobileProductGrid } from '../components/Mobile/MobileProductCarousel';
+// Removed Mobile component import
 import { useProducts } from '../contexts/ProductContext';
-import { useError } from '../contexts/ErrorContext';
+// Removed ErrorContext import
 import { LoadingSpinner, ProgressiveLoading } from '../components/Common/LoadingSpinner';
 import { ProductGridError, NetworkStatus } from '../components/Common/ErrorFallback';
-import { useNetworkStatus } from '../hooks/useNetworkStatus';
-import { ProductPageTrustSignals, RecentPurchaseNotification } from '../components/Trust';
+// Removed useNetworkStatus hook import
+// Removed Trust components import
 
 // Legacy FiltersSidebar component removed - now using enhanced ProductFilters component
 
@@ -19,7 +19,9 @@ export const ProductsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { slug } = useParams<{ slug?: string }>();
   const { products, categories, loading, basicLoading, detailsLoading, fetchProducts } = useProducts();
-  const { error, clearError } = useError();
+  // Simplified error handling
+  const error = null;
+  const clearError = () => {};
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 

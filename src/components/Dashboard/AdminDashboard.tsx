@@ -30,11 +30,11 @@ import { OffersManagement } from './Admin/OffersManagement';
 import { CouponManagement } from './Admin/CouponManagement';
 import { SettingsManagement } from './Admin/SettingsManagement';
 
-import { DedicatedAnalyticsDashboard } from './Admin/DedicatedAnalyticsDashboard';
-import { MarketingManagement } from './Admin/MarketingManagement';
-import { SystemHealthMonitoring } from './Admin/SystemHealthMonitoring';
-import { AuditLogs } from './Admin/AuditLogs';
-import { AdvancedReports } from './Admin/AdvancedReports';
+// Removed DedicatedAnalyticsDashboard import
+// Removed MarketingManagement import
+// Removed SystemHealthMonitoring import
+// Removed AuditLogs import
+// Removed AdvancedReports import
 import { AdminErrorBoundary } from '../Common/AdminErrorBoundary';
 import { AdminLoadingState } from '../Common/EnhancedLoadingStates';
 
@@ -116,27 +116,27 @@ export const AdminDashboard: React.FC = () => {
     {
       name: 'Marketing',
       icon: <TrendingUp className="h-5 w-5" />,
-      component: <MarketingManagement />
+      component: <div className="p-6"><h2 className="text-xl font-bold">Marketing Management</h2><p>Marketing functionality will be available soon.</p></div>
     },
     {
       name: 'Analytics',
       icon: <BarChart3 className="h-5 w-5" />,
-      component: <DedicatedAnalyticsDashboard />
+      component: <div className="p-6"><h2 className="text-xl font-bold">Analytics Dashboard</h2><p>Analytics functionality will be available soon.</p></div>
     },
     {
       name: 'Reports',
       icon: <FileText className="h-5 w-5" />,
-      component: <AdvancedReports />
+      component: <div className="p-6"><h2 className="text-xl font-bold">Advanced Reports</h2><p>Advanced reporting functionality will be available soon.</p></div>
     },
     {
       name: 'System Health',
       icon: <Shield className="h-5 w-5" />,
-      component: <SystemHealthMonitoring />
+      component: <div className="p-6"><h2 className="text-xl font-bold">System Health</h2><p>System health monitoring will be available soon.</p></div>
     },
     {
       name: 'Audit Logs',
       icon: <Bell className="h-5 w-5" />,
-      component: <AuditLogs />
+      component: <div className="p-6"><h2 className="text-xl font-bold">Audit Logs</h2><p>Audit logs functionality will be available soon.</p></div>
     },
     {
       name: 'Settings',

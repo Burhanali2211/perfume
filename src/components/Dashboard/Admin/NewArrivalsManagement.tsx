@@ -25,13 +25,7 @@ import {
 } from 'lucide-react';
 import { EnhancedButton } from '../../Common/EnhancedButton';
 import { AdminErrorBoundary } from '../../Common/AdminErrorBoundary';
-import {
-  ResponsiveAdminLayout,
-  AdminPageHeader,
-  AdminSection,
-  AdminGrid,
-  MobileOptimizedCard
-} from '../../Common/ResponsiveAdminLayout';
+// Removed ResponsiveAdminLayout imports
 import { useResponsive } from '../../Common/AdminDesignSystem';
 
 interface NewArrival {
@@ -206,18 +200,18 @@ export const NewArrivalsManagement: React.FC<NewArrivalsManagementProps> = ({ cl
 
   if (productsLoading || loading) {
     return (
-      <ResponsiveAdminLayout>
+      <div className="p-6">
         <div className="flex items-center justify-center min-h-96">
           <LoadingSpinner size="large" text="Loading new arrivals..." />
         </div>
-      </ResponsiveAdminLayout>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <ResponsiveAdminLayout>
-        <AdminSection variant="card">
+      <div className="p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="text-center py-12">
             <TrendingUp className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading New Arrivals</h3>
@@ -226,8 +220,8 @@ export const NewArrivalsManagement: React.FC<NewArrivalsManagementProps> = ({ cl
               Try Again
             </EnhancedButton>
           </div>
-        </AdminSection>
-      </ResponsiveAdminLayout>
+        </div>
+      </div>
     );
   }
 
@@ -253,15 +247,22 @@ export const NewArrivalsManagement: React.FC<NewArrivalsManagementProps> = ({ cl
 
   return (
     <AdminErrorBoundary>
-      <ResponsiveAdminLayout>
-        <AdminPageHeader
-          title="New Arrivals Management"
-          subtitle="Manage products featured as new arrivals"
-          icon={TrendingUp}
-          actions={headerActions}
-        />
+      <div className="p-6">
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <TrendingUp className="h-8 w-8 text-indigo-600 mr-3" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">New Arrivals Management</h1>
+                <p className="text-gray-600">Manage products featured as new arrivals</p>
+              </div>
+            </div>
+            {headerActions}
+          </div>
+        </div>
 
-        <AdminSection title="New Arrivals" variant="card">
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">New Arrivals</h2>
         {newArrivals.length === 0 ? (
           <div className="text-center py-12">
             <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -316,7 +317,7 @@ export const NewArrivalsManagement: React.FC<NewArrivalsManagementProps> = ({ cl
             ))}
           </div>
         )}
-        </AdminSection>
+        </div>
 
         {/* Add Products Modal */}
         <Modal
@@ -411,7 +412,7 @@ export const NewArrivalsManagement: React.FC<NewArrivalsManagementProps> = ({ cl
             </div>
           </div>
         </Modal>
-      </ResponsiveAdminLayout>
+      </div>
     </AdminErrorBoundary>
   );
 };

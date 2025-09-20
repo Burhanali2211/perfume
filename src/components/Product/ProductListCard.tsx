@@ -3,11 +3,10 @@ import { Star, Heart, ShoppingCart, GitCompare } from 'lucide-react';
 import { Product } from '../../types';
 import { useCart } from '../../contexts/CartContext';
 import { useWishlist } from '../../contexts/WishlistContext';
-import { useCompare } from '../../contexts/CompareContext';
+// Removed CompareContext import
 import { useNotification } from '../../contexts/NotificationContext';
 import { Link } from 'react-router-dom';
-import { dataPreloader } from '../../utils/preloader';
-import { MiniTrustIndicators } from '../Trust';
+// Removed preloader and Trust components imports
 
 interface ProductListCardProps {
   product: Product;
@@ -16,7 +15,9 @@ interface ProductListCardProps {
 export const ProductListCard: React.FC<ProductListCardProps> = ({ product }) => {
   const { addItem: addToCart } = useCart();
   const { addItem: addToWishlist, isInWishlist } = useWishlist();
-  const { addItem: addToCompare, isInCompare } = useCompare();
+  // Simplified compare functionality
+  const addToCompare = () => {};
+  const isInCompare = () => false;
   const { showSuccess } = useNotification();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 

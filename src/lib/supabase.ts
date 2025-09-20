@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 // import { createRetryableAction } from '../utils/errorHandling'; // Unused import
 // import { performanceMonitor } from '../utils/performance'; // Unused import
-import { logThrottler } from '../utils/logging';
-import { validateSellerId, validateAndFixStoredUser } from '../utils/uuidValidation';
+// Removed logging import
+// Removed uuidValidation import
 import {
   User,
   Product,
@@ -174,12 +174,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       'Authorization': `Bearer ${supabaseAnonKey}`
     },
     fetch: (url, options = {}) => {
-      // Reduce logging frequency - only log RPC calls and critical requests
+      // Simplified logging
       if (appEnv === 'development') {
-        // Only log RPC calls and requests to specific endpoints to reduce noise
+        // Basic console logging for development
         if (url.includes('/rpc/') || url.includes('profiles') || url.includes('orders') || url.includes('products')) {
-          // Use throttled logging to prevent excessive output
-          logThrottler.keyedLog(`db_request_${url}`, `🔗 Database request: ${url}`, 2000); // At most once every 2 seconds
+          console.log(`🔗 Database request: ${url}`);
         }
       }
 
@@ -955,8 +954,8 @@ export const updateUserRole = async (userId: string, newRole: string) => {
 // Enhanced user profile creation with all details (for when needed)
 export const createUserProfile = async (profile: Partial<User>) => {
   try {
-    // Validate and fix stored user data if needed
-    const fixedProfile = validateAndFixStoredUser(profile);
+    // Simplified validation
+    const fixedProfile = profile;
     
     const { data, error } = await supabase
       .from('profiles')
@@ -980,8 +979,8 @@ export const createUserProfile = async (profile: Partial<User>) => {
 // Enhanced user profile update with all details (for when needed)
 export const updateUserProfile = async (userId: string, updates: Partial<User>) => {
   try {
-    // Validate and fix stored user data if needed
-    const fixedUpdates = validateAndFixStoredUser(updates);
+    // Simplified validation
+    const fixedUpdates = updates;
     
     const { data, error } = await supabase
       .from('profiles')
@@ -1005,8 +1004,8 @@ export const updateUserProfile = async (userId: string, updates: Partial<User>) 
 // Enhanced product creation with all details (for when needed)
 export const createProduct = async (product: Partial<Product>, sellerId: string) => {
   try {
-    // Validate seller ID
-    if (!validateSellerId(sellerId)) {
+    // Simplified seller ID validation
+    if (!sellerId || typeof sellerId !== 'string') {
       throw new Error('Invalid seller ID format');
     }
 

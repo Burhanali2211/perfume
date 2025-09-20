@@ -28,13 +28,7 @@ import {
 import { EnhancedButton } from '../../Common/EnhancedButton';
 import { Modal } from '../../Common/Modal';
 import { AdminErrorBoundary } from '../../Common/AdminErrorBoundary';
-import {
-  ResponsiveAdminLayout,
-  AdminPageHeader,
-  AdminSection,
-  AdminGrid,
-  MobileOptimizedCard
-} from '../../Common/ResponsiveAdminLayout';
+// Removed ResponsiveAdminLayout imports
 import { EnhancedAdminTable, TableColumn, TableAction } from '../../Common/EnhancedAdminTable';
 import { useResponsive } from '../../Common/AdminDesignSystem';
 
@@ -345,18 +339,18 @@ export const OffersManagement: React.FC<OffersManagementProps> = ({ className = 
 
   if (loading && offers.length === 0) {
     return (
-      <ResponsiveAdminLayout>
+      <div className="p-6">
         <div className="flex items-center justify-center min-h-96">
           <LoadingSpinner size="large" text="Loading offers..." />
         </div>
-      </ResponsiveAdminLayout>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <ResponsiveAdminLayout>
-        <AdminSection variant="card">
+      <div className="p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="text-center py-12">
             <Gift className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Offers</h3>
@@ -365,8 +359,8 @@ export const OffersManagement: React.FC<OffersManagementProps> = ({ className = 
               Try Again
             </EnhancedButton>
           </div>
-        </AdminSection>
-      </ResponsiveAdminLayout>
+        </div>
+      </div>
     );
   }
 
@@ -395,16 +389,26 @@ export const OffersManagement: React.FC<OffersManagementProps> = ({ className = 
 
   return (
     <AdminErrorBoundary>
-      <ResponsiveAdminLayout>
-        <AdminPageHeader
-          title="Offers Management"
-          subtitle="Create and manage promotional offers"
-          icon={Gift}
-          actions={headerActions}
-        />
+      <div className="p-6">
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Gift className="h-8 w-8 text-indigo-600 mr-3" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Offers Management</h1>
+                <p className="text-gray-600">Create and manage promotional offers</p>
+              </div>
+            </div>
+            {headerActions}
+          </div>
+        </div>
 
         {/* Filters */}
-        <AdminSection title="Filters" variant="card" icon={Filter}>
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="flex items-center mb-4">
+            <Filter className="h-5 w-5 text-indigo-600 mr-2" />
+            <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+          </div>
           <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3'} gap-4`}>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
@@ -448,10 +452,11 @@ export const OffersManagement: React.FC<OffersManagementProps> = ({ className = 
             </select>
           </div>
           </div>
-        </AdminSection>
+        </div>
 
         {/* Offers List */}
-        <AdminSection title="Offers" variant="card">
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Offers</h2>
         {filteredOffers.length === 0 ? (
           <div className="text-center py-12">
             <Gift className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -567,7 +572,7 @@ export const OffersManagement: React.FC<OffersManagementProps> = ({ className = 
             ))}
           </div>
         )}
-        </AdminSection>
+        </div>
 
         {/* Create/Edit Offer Modal */}
         <OfferFormModal
@@ -582,7 +587,7 @@ export const OffersManagement: React.FC<OffersManagementProps> = ({ className = 
           editingOffer={editingOffer}
           loading={loading}
         />
-      </ResponsiveAdminLayout>
+      </div>
     </AdminErrorBoundary>
   );
 };

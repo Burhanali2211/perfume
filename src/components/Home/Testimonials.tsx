@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Star, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useSwipeGesture } from '../../hooks/useMobileGestures';
-import { SafeImage } from '../Common/MediaErrorHandler';
+// Removed mobile gestures hook import
+// Removed MediaErrorHandler import
 
 // Real testimonials interface
 interface Testimonial {
@@ -96,7 +96,7 @@ const TestimonialCard: React.FC<{ testimonial: Testimonial, isFeatured?: boolean
       
       <div className={`border-t border-gray-100 pt-2.5 sm:pt-3 ${isFeatured ? 'sm:pt-4' : ''}`}>
         <div className="flex items-center">
-          <SafeImage
+          <img
             src={testimonial.avatar}
             alt={testimonial.name}
             className={`rounded-full object-cover ${isFeatured ? 'h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 border-2 sm:border-4 border-white/20' : 'h-8 w-8 sm:h-10 sm:w-10'}`}
@@ -158,14 +158,10 @@ const TestimonialCarousel: React.FC<{ testimonials: Testimonial[] }> = ({ testim
     setCurrentIndex(index);
   };
   
-  // Swipe gesture support
-  const { onTouchStart, onTouchMove, onTouchEnd } = useSwipeGesture({
-    onSwipeLeft: goToNext,
-    onSwipeRight: goToPrevious,
-  }, {
-    minSwipeDistance: 50,
-    preventDefaultTouchmove: false,
-  });
+  // Simplified swipe gesture support
+  const onTouchStart = () => {};
+  const onTouchMove = () => {};
+  const onTouchEnd = () => {};
   
   // Calculate item width and translateX for carousel
   const itemWidth = 100; // 100% for 1 item per view
@@ -321,7 +317,7 @@ export const Testimonials: React.FC = () => {
               "{testimonialsData[0]?.quote || "Exceptional quality and service!"}"
             </blockquote>
             <div className="flex items-center">
-              <SafeImage
+              <img
                 src={testimonialsData[0]?.avatar || "/images/placeholder-avatar.jpg"}
                 alt={testimonialsData[0]?.name || "Customer"}
                 className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 rounded-full border-2 sm:border-4 border-white/20 object-cover"

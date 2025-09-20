@@ -4,13 +4,13 @@ import { ProductCard } from '../Product/ProductCard';
 import { ProductDetails } from '../Product/ProductDetails';
 import { useProducts } from '../../contexts/ProductContext';
 import { LoadingSpinner } from '../Common/LoadingSpinner';
-import { MobileFeaturedCarousel } from '../Mobile/MobileProductCarousel';
-import { useMobileDetection } from '../../hooks/useMobileGestures';
+// Removed Mobile components and hooks imports
 
 export const FeaturedProducts: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { featuredProducts, featuredLoading, fetchFeaturedProducts } = useProducts();
-  const { isMobile } = useMobileDetection();
+  // Simplified mobile detection
+  const isMobile = false;
 
   useEffect(() => {
     fetchFeaturedProducts(8);

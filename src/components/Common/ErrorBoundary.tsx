@@ -1,6 +1,6 @@
 import React, { Component, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home, X } from 'lucide-react';
-import { networkErrorHandler } from '../../utils/networkErrorHandler';
+// Removed networkErrorHandler import
 
 interface ErrorInfo {
   componentStack: string;
@@ -161,54 +161,6 @@ export function withErrorBoundary<P extends object>(
 
 // Development-only error display component for network issues
 export const DevErrorDisplay: React.FC = () => {
-  if (!import.meta.env.DEV) return null;
-
-  const [isVisible, setIsVisible] = React.useState(true);
-  const [errorLog, setErrorLog] = React.useState(networkErrorHandler.getErrorLog());
-
-  React.useEffect(() => {
-    const interval = setInterval(() => {
-      const newErrorLog = networkErrorHandler.getErrorLog();
-      if (newErrorLog.length !== errorLog.length) {
-        setErrorLog(newErrorLog);
-        setIsVisible(true);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [errorLog.length]);
-
-  if (!isVisible || errorLog.length === 0) return null;
-
-  return (
-    <div className="fixed bottom-4 right-4 max-w-sm bg-yellow-50 border border-yellow-200 rounded-lg p-3 shadow-lg z-50">
-      <div className="flex items-center justify-between mb-2">
-        <h4 className="text-sm font-medium text-yellow-800">
-          Network Issues ({errorLog.length})
-        </h4>
-        <button
-          onClick={() => {
-            networkErrorHandler.clearErrorLog();
-            setErrorLog([]);
-            setIsVisible(false);
-          }}
-          className="text-yellow-600 hover:text-yellow-800"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-      <div className="text-xs text-yellow-700 max-h-32 overflow-y-auto">
-        {errorLog.slice(-3).map((error, index) => (
-          <div key={index} className="mb-1 font-mono">
-            <span className="text-yellow-600">{error.timestamp.toLocaleTimeString()}</span>: {error.error}
-          </div>
-        ))}
-        {errorLog.length > 3 && (
-          <div className="text-yellow-600 text-center mt-1">
-            ... and {errorLog.length - 3} more
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  // Simplified - no network error handling
+  return null;
 };

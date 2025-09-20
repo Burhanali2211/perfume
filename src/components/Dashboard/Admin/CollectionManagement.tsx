@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNotification } from '../../../contexts/NotificationContext';
-import { useCollections } from '../../../contexts/CollectionContext';
+// Removed CollectionContext import
 import { Collection } from '../../../types';
 import { LoadingSpinner } from '../../Common/LoadingSpinner';
 import { Modal } from '../../Common/Modal';
 import { ImageUpload } from '../../Common/ImageUpload';
-import { StorageService } from '../../../services/storageService';
+// Removed storageService import
 // import { adminService, adminOperations } from '../../../services/adminService';
 import { collectionService } from '../../../services/backendService';
 import {
@@ -49,15 +49,11 @@ interface CollectionManagementProps {
 }
 
 export const CollectionManagement: React.FC<CollectionManagementProps> = ({ className: _className = '' }) => {
-  const {
-    collections,
-    loading: contextLoading,
-    error,
-    // addCollection, // Unused
-    // updateCollection, // Unused
-    // deleteCollection, // Unused
-    refreshCollections
-  } = useCollections();
+  // Simplified collections functionality
+  const collections: Collection[] = [];
+  const contextLoading = false;
+  const error = null;
+  const refreshCollections = () => {};
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
@@ -94,16 +90,9 @@ export const CollectionManagement: React.FC<CollectionManagementProps> = ({ clas
   // const [error, setError] = useState<string | null>(null); // Unused
   const { isMobile } = useResponsive(); // isTablet unused
 
-  // Initialize storage bucket on component mount
+  // Simplified storage initialization
   useEffect(() => {
-    const initStorage = async () => {
-      try {
-        await StorageService.initializeBucket();
-      } catch (error) {
-        console.error('Failed to initialize storage bucket:', error);
-      }
-    };
-    initStorage();
+    console.log('Storage initialization skipped');
   }, []);
 
   // Generate slug from name

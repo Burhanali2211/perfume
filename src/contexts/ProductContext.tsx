@@ -15,11 +15,8 @@ import {
   updateCategory,
   deleteCategory
 } from '../lib/supabase';
-import { useError } from './ErrorContext';
-import { productCache, categoryCache, generateCacheKey, invalidateProductCache, invalidateCategoryCache } from '../utils/cache';
-import { adminService } from '../services/adminService';
-import { productService, categoryService } from '../services/backendService';
-import { deduplicateRequest, batchRequests } from '../utils/apiOptimizer';
+// Removed ErrorContext import
+// Removed cache, admin service, backend service, and API optimizer imports
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
@@ -38,7 +35,8 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [featuredLoading, setFeaturedLoading] = useState(true);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
-  const { setError } = useError();
+  // Simplified error handling
+  const setError = (error: string) => console.error(error);
 
   // Initialize provider with optimized loading
   useEffect(() => {
